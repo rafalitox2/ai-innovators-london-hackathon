@@ -15,17 +15,19 @@ Applies to every change in this repository, human or agent authored.
 
 | What it proves | Command | Needs GCP credentials |
 | --- | --- | --- |
+| Unified offline PR gate (tests + eval schema + pack check) | `make verify PACK=t02` | no |
 | Offline unit tests | `make test` | no |
 | Golden eval schema | `make eval-validate PACK=t02` | no |
 | Golden evals against Gemini | `make eval PACK=t02` | yes |
 | Live agent on Agent Runtime | `make test-remote` | yes |
 
-The first two run in GitHub Actions on every PR. The last two need credentials and run in Cloud Build, because `@gcplab.me` org policy blocks exporting service-account JSON keys.
+The first three run offline (and in GitHub Actions on every PR). The last two need credentials and run in Cloud Build, because `@gcplab.me` org policy blocks exporting service-account JSON keys.
 
 ## Spec / eval first
 
 When a PR adds a tool, a guardrail or a prompt change, the test or the golden case lands **before** the implementation, and the PR shows the RED run as well as the GREEN one. This is pillar 2 of the Agentic SDLC bonus, and it is also how we avoid shipping a tool nobody can prove works.
 
-## Parallel work
+## Parallel work (`git worktree` & Multi-Agent Isolation)
 
-Use `git worktree add ../wt-<task> -b feat/<task>` when two people touch the repo at the same time, so concurrent agents do not collide on the same files.
+- Run `make worktree BRANCH=feat/<task>` (or `git worktree add ../wt-<task> -b feat/<task>` followed by `make worktree-link`) when multiple team members or Antigravity subagents touch the repo concurrently. `Makefile` automatically shares `.venv` and `.env` from the primary worktree.
+- Never push new commits to a branch whose PR has already been merged on GitHub; always create a fresh branch/worktree from `origin/main`.
