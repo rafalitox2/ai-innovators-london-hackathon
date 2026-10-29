@@ -1,5 +1,9 @@
 """ADK Agent package for the AI Innovators Expedition Starter."""
 
-from . import agent
+try:
+    from . import agent
 
-__all__ = ["agent"]
+    __all__ = ["agent"]
+except ImportError:
+    agent = None  # type: ignore[assignment]
+    __all__ = []

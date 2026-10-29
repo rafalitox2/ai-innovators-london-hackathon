@@ -45,7 +45,7 @@ gcloud run deploy t02-dynamic-storefronts-mcp \
   --image="${IMAGE_URI}" \
   --platform="managed" \
   --allow-unauthenticated \
-  --set-env-vars="GOOGLE_CLOUD_PROJECT=${GOOGLE_CLOUD_PROJECT},SEED_PACK=${SEED_PACK},BQ_LOCATION=${BQ_LOCATION},GEMINI_MODEL=${GEMINI_MODEL},GEMINI_IMAGE_MODEL=${GEMINI_IMAGE_MODEL},T02_ENABLE_GCS_STATE=1,STAGING_BUCKET=${STAGING_BUCKET}" \
+  --set-env-vars="GOOGLE_CLOUD_PROJECT=${GOOGLE_CLOUD_PROJECT},SEED_PACK=${SEED_PACK},BQ_LOCATION=${BQ_LOCATION},GEMINI_MODEL=${GEMINI_MODEL},GEMINI_IMAGE_MODEL=${GEMINI_IMAGE_MODEL},T02_ENABLE_GCS_STATE=1,STAGING_BUCKET=${STAGING_BUCKET},AGENT_ENGINE_RESOURCE_NAME=projects/633924037012/locations/europe-west1/reasoningEngines/5876565294532526080" \
   --quiet
 
 MCP_SERVER_URL="$(gcloud run services describe t02-dynamic-storefronts-mcp --project="${GOOGLE_CLOUD_PROJECT}" --region="${AGENT_RUNTIME_LOCATION}" --format="value(status.url)")"

@@ -26,6 +26,44 @@ _REPO_ROOT = Path(__file__).resolve().parent.parent
 _UI_DIR = _REPO_ROOT / "seed_packs" / "t02_dynamic_storefronts" / "ui"
 
 
+def _resolve_public_base_url(request: Request) -> str:
+    """Resolve external HTTPS base URL behind Cloud Run GFE proxy."""
+    env_url = os.environ.get("MCP_SERVER_URL", "").strip().rstrip("/")
+    if env_url:
+        return env_url
+    base_url = str(request.base_url).rstrip("/")
+    forwarded_proto = request.headers.get("x-forwarded-proto", "").lower()
+    if (forwarded_proto == "https" or ".a.run.app" in base_url) and base_url.startswith("http://"):
+        base_url = "https://" + base_url[len("http://") :]
+    return base_url
+
+
+def _resolve_reasoning_engine_resource() -> str:
+    """Resolve the active Vertex AI ReasoningEngine resource name from env or state files."""
+    from_env = os.environ.get("AGENT_ENGINE_RESOURCE_NAME", "").strip()
+    if from_env:
+        return from_env
+    deployed_file = _REPO_ROOT / ".deployed_agent.json"
+    if deployed_file.exists():
+        try:
+            resource = str(json.loads(deployed_file.read_text(encoding="utf-8")).get("resource_name", "")).strip()
+            if resource:
+                return resource
+        except Exception:
+            pass
+    cd_state_file = _REPO_ROOT / "cd" / "cd_deployment_state.json"
+    if cd_state_file.exists():
+        try:
+            resource = str(
+                json.loads(cd_state_file.read_text(encoding="utf-8")).get("vertex_ai_reasoning_engine", "")
+            ).strip()
+            if resource:
+                return resource
+        except Exception:
+            pass
+    return "projects/633924037012/locations/europe-west1/reasoningEngines/5876565294532526080"
+
+
 def build_a2a_agent_card(base_url: str = "") -> dict[str, Any]:
     """Build the A2A Agent Discovery Card (/.well-known/agent.json) for Table 2."""
     clean_base = (
@@ -33,7 +71,9 @@ def build_a2a_agent_card(base_url: str = "") -> dict[str, Any]:
         or os.environ.get("MCP_SERVER_URL", "")
         or "http://localhost:8080"
     ).rstrip("/")
-    reasoning_engine = os.environ.get("AGENT_ENGINE_RESOURCE_NAME", "").strip()
+    if ".a.run.app" in clean_base and clean_base.startswith("http://"):
+        clean_base = "https://" + clean_base[len("http://") :]
+    reasoning_engine = _resolve_reasoning_engine_resource()
     return {
         "name": "expedition_t02_dynamic_storefronts",
         "displayName": "Table 2 — Dynamic Storefront Engine (ADK + Cloud Run MCP)",
@@ -47,7 +87,7 @@ def build_a2a_agent_card(base_url: str = "") -> dict[str, Any]:
         "url": f"{clean_base}/a2a",
         "mcp_sse_endpoint": f"{clean_base}/sse",
         "storefront_preview_endpoint": f"{clean_base}/preview/SEG-001",
-        "reasoning_engine_resource": reasoning_engine or "pending-agent-runtime-deploy",
+        "reasoning_engine_resource": reasoning_engine,
         "capabilities": {
             "streaming": True,
             "mcp_sse": True,
@@ -86,7 +126,7 @@ def build_a2a_agent_card(base_url: str = "") -> dict[str, Any]:
 
 async def healthz_endpoint(request: Request) -> JSONResponse:
     """Return Cloud Run health status and registered ADK/MCP tool manifest."""
-    base_url = str(request.base_url).rstrip("/")
+    base_url = _resolve_public_base_url(request)
     return JSONResponse(
         {
             "status": "ONLINE",
@@ -95,6 +135,7 @@ async def healthz_endpoint(request: Request) -> JSONResponse:
             "project_id": resolve_env_config("GOOGLE_CLOUD_PROJECT", default="expedition-dn26lon-5922"),
             "gemini_model": resolve_env_config("GEMINI_MODEL"),
             "gemini_image_model": resolve_env_config("GEMINI_IMAGE_MODEL"),
+            "reasoning_engine_resource": _resolve_reasoning_engine_resource(),
             "mcp_tools": [fn.__name__ for fn in MCP_TOOLS],
             "adk_tools": [fn.__name__ for fn in ADK_TOOLS if hasattr(fn, "__name__")],
             "endpoints": {
@@ -122,7 +163,7 @@ async def root_ui_or_health_endpoint(request: Request) -> Response:
 
 async def agent_card_endpoint(request: Request) -> JSONResponse:
     """Serve /.well-known/agent.json for A2A & Google Cloud Agent Registry discovery."""
-    base_url = str(request.base_url).rstrip("/")
+    base_url = _resolve_public_base_url(request)
     return JSONResponse(build_a2a_agent_card(base_url=base_url))
 
 
