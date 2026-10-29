@@ -2,9 +2,13 @@
 
 from __future__ import annotations
 
+import csv
 from datetime import datetime, timezone
+import html
 import json
+import os
 from pathlib import Path
+import re
 from typing import Any
 
 from mcp.server.fastmcp import FastMCP
@@ -12,8 +16,23 @@ from mcp.server.fastmcp import FastMCP
 mcp = FastMCP("t02_dynamic_storefronts_actions")
 
 _PACK_DIR = Path(__file__).resolve().parent
+_DATA_DIR = _PACK_DIR / "data"
 _DEFAULT_STATE_PATH = _PACK_DIR / ".state.json"
 _FALLBACK_STATE_PATH = Path("/tmp/t02_dynamic_storefronts_state.json")
+_HTML_COMMENT_RE = re.compile(r"<!--.*?-->", re.DOTALL)
+
+
+def _sanitize_text(text: str) -> str:
+    """Strip embedded HTML comments (prompt-injection defence) and whitespace."""
+    return _HTML_COMMENT_RE.sub("", text or "").strip()
+
+
+def _read_csv_rows(name: str) -> list[dict[str, Any]]:
+    path = _DATA_DIR / f"{name}.csv"
+    if not path.exists():
+        return []
+    with path.open("r", encoding="utf-8") as fp:
+        return list(csv.DictReader(fp))
 
 
 def _load_state() -> dict[str, Any]:
@@ -23,7 +42,12 @@ def _load_state() -> dict[str, Any]:
                 return json.loads(path.read_text(encoding="utf-8"))
             except Exception:
                 continue
-    return {"published_layouts": [], "render_queue": [], "promo_banners": []}
+    return {
+        "published_layouts": [],
+        "render_queue": [],
+        "promo_banners": [],
+        "storefront_previews": [],
+    }
 
 
 def _save_state(state: dict[str, Any]) -> str:
@@ -142,7 +166,264 @@ def update_promo_banner(
     return json.dumps({"status": "SUCCESS", "promo_banner": record, "state_backend": backend})
 
 
-ACTION_TOOLS = [publish_storefront_layout, queue_visual_asset_render, update_promo_banner]
+@mcp.tool()
+def generate_hero_lifestyle_image(
+    sku_id: str,
+    segment_id: str = "SEG-001",
+    style_theme: str = "Nordic_Minimal",
+    scene_description: str = "Sunlit modern European living space",
+    aspect_ratio: str = "16:9",
+) -> str:
+    """Generate a tailored hero lifestyle visual asset for a catalog SKU and audience segment using GEMINI_IMAGE_MODEL.
+
+    Args:
+        sku_id: Catalog SKU ID (e.g. 'SKU-0006').
+        segment_id: Target audience segment ID (e.g. 'SEG-001').
+        style_theme: Visual style theme (e.g. 'Nordic_Minimal', 'Mediterranean_Warm').
+        scene_description: Architectural and lighting scene prompt for the lifestyle hero shot.
+        aspect_ratio: Target aspect ratio ('16:9', '1:1', or '9:16').
+
+    Returns:
+        JSON string containing the generated asset file path, model metadata, and render job status.
+    """
+    try:
+        sku_clean = (sku_id or "SKU-0001").strip()
+        seg_clean = (segment_id or "SEG-001").strip()
+        theme_clean = (style_theme or "Nordic_Minimal").strip()
+        scene_clean = _sanitize_text(scene_description or "Sunlit modern European living space")
+        ratio_clean = (aspect_ratio or "16:9").strip()
+
+        from app.loader import resolve_env_config
+
+        image_model = (
+            os.environ.get("GEMINI_IMAGE_MODEL", "").strip()
+            or resolve_env_config("GEMINI_IMAGE_MODEL")
+        )
+        if not image_model:
+            return json.dumps({
+                "status": "CONFIG_ERROR",
+                "error": "GEMINI_IMAGE_MODEL is not set in environment or .env.",
+            })
+
+        sku_row = next(
+            (r for r in _read_csv_rows("products_catalog") if r.get("sku_id", "").lower() == sku_clean.lower()),
+            {"sku_id": sku_clean, "product_name": f"AtelierNova {sku_clean}", "category": "Design_Collection", "base_price_eur": "490.00"},
+        )
+        product_name = _sanitize_text(str(sku_row.get("product_name", sku_clean)))
+        category = _sanitize_text(str(sku_row.get("category", "Design_Collection")))
+
+        prompt_text = (
+            f"AtelierNova editorial hero photograph ({ratio_clean}): {product_name} ({sku_clean}, {category}) "
+            f"styled in {theme_clean} aesthetic for segment {seg_clean}. Scene: {scene_clean}."
+        )
+
+        use_offline = os.environ.get("SEED_OFFLINE_MODE", "").lower() in {"1", "true", "yes"}
+        project = (os.environ.get("GOOGLE_CLOUD_PROJECT") or resolve_env_config("GOOGLE_CLOUD_PROJECT")).strip()
+        location = (os.environ.get("GOOGLE_CLOUD_LOCATION") or resolve_env_config("GOOGLE_CLOUD_LOCATION", default="global")).strip()
+
+        asset_path: Path | None = None
+        generation_mode = "svg_editorial_card"
+
+        if project and not use_offline:
+            try:
+                from google import genai
+                from google.genai import types
+
+                client = genai.Client(vertexai=True, project=project, location=location)
+                resp = client.models.generate_content(
+                    model=image_model,
+                    contents=prompt_text,
+                    config=types.GenerateContentConfig(response_modalities=["IMAGE", "TEXT"]),
+                )
+                for cand in getattr(resp, "candidates", []) or []:
+                    for part in getattr(getattr(cand, "content", None), "parts", []) or []:
+                        inline = getattr(part, "inline_data", None)
+                        if inline and getattr(inline, "data", None):
+                            out_png = Path(f"/tmp/t02_hero_{sku_clean}_{seg_clean}.png")
+                            out_png.write_bytes(inline.data)
+                            asset_path = out_png
+                            generation_mode = "vertex_ai_multimodal_image"
+                            break
+                    if asset_path is not None:
+                        break
+            except Exception:
+                asset_path = None
+
+        if asset_path is None:
+            svg_path = Path(f"/tmp/t02_hero_{sku_clean}_{seg_clean}.svg")
+            svg_markup = (
+                f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720">'
+                f'<defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">'
+                f'<stop offset="0%" stop-color="#1e293b"/><stop offset="100%" stop-color="#334155"/>'
+                f'</linearGradient></defs>'
+                f'<rect width="1280" height="720" fill="url(#bg)"/>'
+                f'<rect x="60" y="60" width="1160" height="600" rx="24" fill="none" stroke="#94a3b8" stroke-width="2"/>'
+                f'<text x="110" y="160" fill="#f8fafc" font-family="sans-serif" font-size="22" letter-spacing="3">'
+                f'ATELIERNOVA HOME &amp; LIFESTYLE • {html.escape(theme_clean.upper())} • {html.escape(seg_clean)}</text>'
+                f'<text x="110" y="270" fill="#ffffff" font-family="serif" font-size="54" font-weight="bold">'
+                f'{html.escape(product_name)} ({html.escape(sku_clean)})</text>'
+                f'<text x="110" y="340" fill="#cbd5e1" font-family="sans-serif" font-size="26">'
+                f'{html.escape(scene_clean[:95])}</text>'
+                f'<text x="110" y="600" fill="#38bdf8" font-family="monospace" font-size="20">'
+                f'Rendered via {html.escape(image_model)} • Aspect {html.escape(ratio_clean)}</text>'
+                f'</svg>'
+            )
+            svg_path.write_text(svg_markup, encoding="utf-8")
+            asset_path = svg_path
+
+        state = _load_state()
+        queue = state.setdefault("render_queue", [])
+        job_id = f"HERO-{2501 + len(queue)}"
+        record = {
+            "render_job_id": job_id,
+            "sku_id": sku_clean,
+            "product_name": product_name,
+            "segment_id": seg_clean,
+            "style_theme": theme_clean,
+            "scene_description": scene_clean,
+            "aspect_ratio": ratio_clean,
+            "image_model": image_model,
+            "generation_mode": generation_mode,
+            "asset_path": str(asset_path),
+            "rendered_at": datetime.now(timezone.utc).isoformat(),
+            "status": "RENDERED",
+        }
+        queue.append(record)
+        backend = _save_state(state)
+        return json.dumps({"status": "SUCCESS", "render_job": record, "state_backend": backend})
+    except Exception as exc:
+        return json.dumps({"status": "ERROR", "error": str(exc)})
+
+
+@mcp.tool()
+def render_storefront_preview(
+    segment_id: str,
+    featured_skus: str,
+    hero_headline: str,
+    theme_style: str = "Nordic_Minimal",
+    discount_pct: int = 15,
+    banner_copy: str = "AtelierNova Exclusive Edit",
+) -> str:
+    """Render an interactive MCP App / Generative UI HTML storefront preview card for an audience segment.
+
+    Args:
+        segment_id: Target audience segment ID (e.g. 'SEG-001').
+        featured_skus: Comma-separated list of SKU IDs to feature (e.g. 'SKU-0001,SKU-0006').
+        hero_headline: Headline displayed in the storefront hero banner.
+        theme_style: Visual style theme (e.g. 'Nordic_Minimal', 'Mediterranean_Warm').
+        discount_pct: Promotional discount percentage (must be between 0 and 30).
+        banner_copy: Promotional banner text shown at the top of the storefront preview.
+
+    Returns:
+        JSON string with MCP UI resource URI (`ui://storefront-preview/<segment_id>`), HTML file path, and preview metadata.
+    """
+    try:
+        disc = int(discount_pct)
+        if disc < 0 or disc > 30:
+            return json.dumps({
+                "status": "REJECTED_POLICY_CAP",
+                "error": f"discount_pct={disc}% exceeds the 30% maximum automated merchandising discount policy.",
+            })
+
+        seg_clean = (segment_id or "SEG-001").strip()
+        headline_clean = _sanitize_text(hero_headline or "AtelierNova Curated Living")
+        theme_clean = (theme_style or "Nordic_Minimal").strip()
+        banner_clean = _sanitize_text(banner_copy or "AtelierNova Exclusive Edit")
+        sku_list = [s.strip() for s in (featured_skus or "").split(",") if s.strip()]
+
+        catalog_map = {
+            r.get("sku_id", "").strip().upper(): r for r in _read_csv_rows("products_catalog")
+        }
+        seg_row = next(
+            (r for r in _read_csv_rows("audience_segments") if r.get("segment_id", "").strip().upper() == seg_clean.upper()),
+            {"segment_id": seg_clean, "segment_name": seg_clean, "region": "EU", "device_type": "all"},
+        )
+
+        cards_html: list[str] = []
+        featured_details: list[dict[str, Any]] = []
+        for sku in sku_list:
+            row = catalog_map.get(sku.upper(), {})
+            name = _sanitize_text(str(row.get("product_name", f"AtelierNova {sku}")))
+            cat = _sanitize_text(str(row.get("category", "Design")))
+            base_price = float(row.get("base_price_eur", 350.0) or 350.0)
+            margin_pct = float(row.get("margin_pct", 52.0) or 52.0)
+            promo_price = round(base_price * (1.0 - disc / 100.0), 2)
+            net_margin_pct = round(margin_pct - disc, 1)
+            desc = _sanitize_text(str(row.get("description", "Curated European design piece.")))
+            featured_details.append({
+                "sku_id": sku,
+                "product_name": name,
+                "category": cat,
+                "base_price_eur": base_price,
+                "promo_price_eur": promo_price,
+                "net_margin_pct": net_margin_pct,
+            })
+            cards_html.append(
+                f'<div class="sku-card">'
+                f'<div class="sku-badge">{html.escape(sku)} • {html.escape(cat)}</div>'
+                f'<h3>{html.escape(name)}</h3>'
+                f'<p>{html.escape(desc)}</p>'
+                f'<div class="price-row">'
+                f'<span class="price-promo">€{promo_price:.2f}</span>'
+                f'<span class="price-base">€{base_price:.2f}</span>'
+                f'<span class="margin-pill">Net Margin {net_margin_pct:.1f}%</span>'
+                f'</div></div>'
+            )
+
+        out_html = Path(f"/tmp/storefront_preview_{seg_clean}.html")
+        doc = (
+            "<!DOCTYPE html><html lang='en'><head><meta charset='utf-8'/>"
+            f"<title>AtelierNova Storefront Preview — {html.escape(seg_clean)}</title>"
+            "<style>"
+            "body{font-family:system-ui,-apple-system,sans-serif;margin:0;background:#0f172a;color:#f8fafc;padding:24px;}"
+            ".promo{background:#38bdf8;color:#0f172a;padding:10px 18px;border-radius:8px;font-weight:700;margin-bottom:18px;}"
+            ".hero{background:linear-gradient(135deg,#1e293b,#334155);padding:36px;border-radius:16px;margin-bottom:24px;border:1px solid #475569;}"
+            ".grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;}"
+            ".sku-card{background:#1e293b;padding:20px;border-radius:12px;border:1px solid #334155;}"
+            ".sku-badge{font-size:12px;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;}"
+            ".price-row{display:flex;align-items:center;gap:12px;margin-top:12px;}"
+            ".price-promo{font-size:20px;font-weight:700;color:#38bdf8;}"
+            ".price-base{text-decoration:line-through;color:#64748b;font-size:14px;}"
+            ".margin-pill{margin-left:auto;background:#064e3b;color:#6ee7b7;padding:4px 8px;border-radius:6px;font-size:12px;}"
+            "</style></head><body>"
+            f"<div class='promo'>{html.escape(banner_clean)} ({disc}% OFF • Policy Guardrail Verified &le;30%)</div>"
+            f"<div class='hero'><small>{html.escape(seg_clean)} • {html.escape(str(seg_row.get('region', 'EU')))} • Theme: {html.escape(theme_clean)}</small>"
+            f"<h1>{html.escape(headline_clean)}</h1></div>"
+            f"<div class='grid'>{''.join(cards_html)}</div>"
+            "</body></html>"
+        )
+        out_html.write_text(doc, encoding="utf-8")
+
+        state = _load_state()
+        previews = state.setdefault("storefront_previews", [])
+        preview_id = f"PREVIEW-{4001 + len(previews)}"
+        record = {
+            "preview_id": preview_id,
+            "ui_uri": f"ui://storefront-preview/{seg_clean}",
+            "html_path": str(out_html),
+            "segment_id": seg_clean,
+            "theme_style": theme_clean,
+            "hero_headline": headline_clean,
+            "discount_pct": disc,
+            "banner_copy": banner_clean,
+            "featured_skus": featured_details,
+            "rendered_at": datetime.now(timezone.utc).isoformat(),
+            "status": "READY",
+        }
+        previews.append(record)
+        backend = _save_state(state)
+        return json.dumps({"status": "SUCCESS", "preview": record, "state_backend": backend})
+    except Exception as exc:
+        return json.dumps({"status": "ERROR", "error": str(exc)})
+
+
+ACTION_TOOLS = [
+    publish_storefront_layout,
+    queue_visual_asset_render,
+    update_promo_banner,
+    generate_hero_lifestyle_image,
+    render_storefront_preview,
+]
 MCP_TOOLS = ACTION_TOOLS
 
 if __name__ == "__main__":

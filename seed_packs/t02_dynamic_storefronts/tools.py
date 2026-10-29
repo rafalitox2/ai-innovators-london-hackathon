@@ -11,8 +11,10 @@ from typing import Any
 from google.cloud import bigquery
 from seed_packs.t02_dynamic_storefronts.mcp_server import (
     ACTION_TOOLS,
+    generate_hero_lifestyle_image,
     publish_storefront_layout,
     queue_visual_asset_render,
+    render_storefront_preview,
     update_promo_banner,
 )
 
@@ -232,10 +234,191 @@ def get_audience_segments(region: str = "all") -> str:
     })
 
 
+def recommend_storefront_optimization(
+    region: str = "all",
+    min_bounce_rate_pct: float = 55.0,
+    min_stock: int = 20,
+    limit: int = 5,
+) -> str:
+    """Recommend end-to-end storefront optimizations by joining audience_segments, storefront_experiments, and products_catalog in BigQuery.
+
+    Args:
+        region: Region filter (e.g. 'ES_Madrid', 'UK_London', 'ES_Barcelona', or 'all').
+        min_bounce_rate_pct: Minimum experiment bounce rate percentage to flag for optimization (default 55.0).
+        min_stock: Minimum required stock quantity for recommended replacement SKUs (default 20).
+        limit: Max recommendations to return (default 5).
+
+    Returns:
+        JSON string with joined segment-experiment-SKU recommendations, margin headroom, and max safe discount cap (<=30%).
+    """
+    try:
+        project, dataset = _resolve_project_and_dataset()
+        reg_clean = (region or "all").strip()
+        min_bounce = float(min_bounce_rate_pct)
+        min_stk = int(min_stock)
+        lim = int(limit)
+        use_offline = os.environ.get("SEED_OFFLINE_MODE", "").lower() in {"1", "true", "yes"}
+
+        if project and not use_offline:
+            try:
+                client = bigquery.Client(project=project)
+                seg_tbl = f"`{project}.{dataset}.audience_segments`"
+                exp_tbl = f"`{project}.{dataset}.storefront_experiments`"
+                cat_tbl = f"`{project}.{dataset}.products_catalog`"
+
+                reg_clause = ""
+                params: list[Any] = [
+                    bigquery.ScalarQueryParameter("min_bounce", "FLOAT64", min_bounce),
+                    bigquery.ScalarQueryParameter("min_stock", "INT64", min_stk),
+                    bigquery.ScalarQueryParameter("lim", "INT64", lim),
+                ]
+                if reg_clean.lower() != "all":
+                    reg_clause = "WHERE LOWER(region) = LOWER(@reg)"
+                    params.append(bigquery.ScalarQueryParameter("reg", "STRING", reg_clean))
+
+                sql = f"""
+                WITH filtered_segments AS (
+                    SELECT segment_id, segment_name, region, preferred_style, device_type,
+                           avg_order_value_eur, conversion_rate_pct
+                    FROM {seg_tbl}
+                    {reg_clause}
+                ),
+                high_bounce_experiments AS (
+                    SELECT experiment_id, segment_id, sku_id AS current_sku_id,
+                           layout_variant, bounce_rate_pct, purchases, views
+                    FROM {exp_tbl}
+                    WHERE bounce_rate_pct >= @min_bounce
+                ),
+                top_style_skus AS (
+                    SELECT sku_id AS recommended_sku_id,
+                           product_name AS recommended_product_name,
+                           category AS recommended_category,
+                           style_theme,
+                           base_price_eur AS recommended_price_eur,
+                           stock_qty AS recommended_stock_qty,
+                           margin_pct AS recommended_margin_pct,
+                           GREATEST(0, LEAST(30, CAST(FLOOR(margin_pct - 15.0) AS INT64))) AS max_safe_discount_pct,
+                           ROW_NUMBER() OVER (
+                               PARTITION BY LOWER(style_theme)
+                               ORDER BY margin_pct DESC, stock_qty DESC
+                           ) AS rn
+                    FROM {cat_tbl}
+                    WHERE stock_qty >= @min_stock
+                )
+                SELECT
+                    s.segment_id,
+                    s.segment_name,
+                    s.region,
+                    s.preferred_style,
+                    s.device_type,
+                    s.conversion_rate_pct,
+                    e.experiment_id,
+                    e.current_sku_id,
+                    e.layout_variant,
+                    e.bounce_rate_pct,
+                    e.purchases,
+                    k.recommended_sku_id,
+                    k.recommended_product_name,
+                    k.recommended_category,
+                    k.recommended_price_eur,
+                    k.recommended_stock_qty,
+                    k.recommended_margin_pct,
+                    k.max_safe_discount_pct
+                FROM filtered_segments AS s
+                INNER JOIN high_bounce_experiments AS e
+                    ON s.segment_id = e.segment_id
+                INNER JOIN top_style_skus AS k
+                    ON LOWER(s.preferred_style) = LOWER(k.style_theme) AND k.rn = 1
+                ORDER BY e.bounce_rate_pct DESC, k.recommended_margin_pct DESC
+                LIMIT @lim
+                """
+                cfg = bigquery.QueryJobConfig(query_parameters=params)
+                rows = [dict(r.items()) for r in client.query(sql, job_config=cfg).result()]
+                return json.dumps({
+                    "status": "SUCCESS",
+                    "source": f"bigquery_join:{project}.{dataset}.(audience_segments+storefront_experiments+products_catalog)",
+                    "region": reg_clean,
+                    "count": len(rows),
+                    "recommendations": rows,
+                }, default=str)
+            except Exception as exc:
+                fallback_error = _bq_error_hint(exc)
+        else:
+            fallback_error = _offline_reason(project)
+
+        segments = [
+            s for s in _read_local_csv("audience_segments")
+            if reg_clean.lower() == "all" or s["region"].lower() == reg_clean.lower()
+        ]
+        seg_map = {s["segment_id"]: s for s in segments}
+
+        experiments = [
+            e for e in _read_local_csv("storefront_experiments")
+            if e["segment_id"] in seg_map and float(e["bounce_rate_pct"]) >= min_bounce
+        ]
+
+        catalog = [
+            p for p in _read_local_csv("products_catalog")
+            if int(p["stock_qty"]) >= min_stk
+        ]
+        catalog.sort(key=lambda p: (float(p["margin_pct"]), int(p["stock_qty"])), reverse=True)
+        top_by_style: dict[str, dict[str, Any]] = {}
+        for p in catalog:
+            st = p["style_theme"].lower()
+            if st not in top_by_style:
+                top_by_style[st] = p
+
+        joined: list[dict[str, Any]] = []
+        for e in experiments:
+            s = seg_map[e["segment_id"]]
+            k = top_by_style.get(s["preferred_style"].lower())
+            if not k:
+                continue
+            margin_val = float(k["margin_pct"])
+            max_disc = max(0, min(30, int(margin_val - 15.0)))
+            joined.append({
+                "segment_id": s["segment_id"],
+                "segment_name": s["segment_name"],
+                "region": s["region"],
+                "preferred_style": s["preferred_style"],
+                "device_type": s["device_type"],
+                "conversion_rate_pct": float(s["conversion_rate_pct"]),
+                "experiment_id": e["experiment_id"],
+                "current_sku_id": e["sku_id"],
+                "layout_variant": e["layout_variant"],
+                "bounce_rate_pct": float(e["bounce_rate_pct"]),
+                "purchases": int(e["purchases"]),
+                "recommended_sku_id": k["sku_id"],
+                "recommended_product_name": k["product_name"],
+                "recommended_category": k["category"],
+                "recommended_price_eur": float(k["base_price_eur"]),
+                "recommended_stock_qty": int(k["stock_qty"]),
+                "recommended_margin_pct": margin_val,
+                "max_safe_discount_pct": max_disc,
+            })
+
+        joined.sort(
+            key=lambda r: (float(r["bounce_rate_pct"]), float(r["recommended_margin_pct"])),
+            reverse=True,
+        )
+        sliced = joined[:lim]
+        return json.dumps({
+            "status": "SUCCESS",
+            "source": "local_csv_fallback",
+            "fallback_reason": fallback_error,
+            "region": reg_clean,
+            "count": len(sliced),
+            "recommendations": sliced,
+        })
+    except Exception as exc:
+        return json.dumps({"status": "ERROR", "error": str(exc)})
+
+
 TOOLS = [
     find_catalog_products,
     get_storefront_performance,
     get_audience_segments,
+    recommend_storefront_optimization,
 ]
 
 __all__ = [
@@ -244,7 +427,10 @@ __all__ = [
     "find_catalog_products",
     "get_storefront_performance",
     "get_audience_segments",
+    "recommend_storefront_optimization",
     "publish_storefront_layout",
     "queue_visual_asset_render",
     "update_promo_banner",
+    "generate_hero_lifestyle_image",
+    "render_storefront_preview",
 ]
