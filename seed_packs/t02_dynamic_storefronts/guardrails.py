@@ -5,7 +5,7 @@ from typing import Any
 
 _HTML_COMMENT_RE = re.compile(r"<!--.*?-->", re.DOTALL)
 
-_INJECTION_MARKERS = (
+INJECTION_MARKERS = (
     "<!--",
     "-->",
     "admin override",
@@ -13,6 +13,8 @@ _INJECTION_MARKERS = (
     "ignore the above",
     "disregard previous instructions",
 )
+_INJECTION_MARKERS = INJECTION_MARKERS
+INJECTION_REGEX_PATTERN = "|".join(INJECTION_MARKERS)
 
 MAX_DISCOUNT_PCT = 30
 MARGIN_SAFETY_BUFFER_PCT = 15.0

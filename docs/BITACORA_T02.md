@@ -317,24 +317,27 @@ A continuación se documenta paso a paso cómo se ha desarrollado cada fase del 
 
 ## 4. Catálogo Completo de Herramientas (`expedition_t02`) y Suite Golden (`golden.test.json`)
 
-### 4.1 Las 10 Herramientas Registradas en el Agente
+### 4.1 Las 13 Herramientas Registradas en el Agente
 
 | # | Herramienta | Módulo | Tipo | Fase | Función Principal |
 | :-: | :--- | :--- | :--- | :-: | :--- |
 | 1 | `find_catalog_products` | `tools.py` | BigQuery Read + CSV Fallback | Fase 0 / 1B | Busca productos por categoría, estilo y stock mínimo; sanitiza descripciones contra inyecciones HTML. |
 | 2 | `get_storefront_performance` | `tools.py` | BigQuery Read + CSV Fallback | Fase 0 | Consulta métricas de experimentos (views, add-to-cart, purchases, bounce rate) por segmento. |
 | 3 | `get_audience_segments` | `tools.py` | BigQuery Read + CSV Fallback | Fase 0 | Lista segmentos de audiencia, estilo preferido, dispositivo, AOV y tasa de conversión por región. |
-| 4 | `recommend_storefront_optimization` | `tools.py` | BigQuery 3-Table JOIN + CSV Fallback | Fase 2A | Cruza `audience_segments`, `storefront_experiments` y `products_catalog` con CTEs y `ROW_NUMBER()` para recomendar SKUs de alto margen en segmentos de alto rebote. |
-| 5 | `publish_storefront_layout` | `mcp_server.py` | FastMCP Action | Fase 0 | Publica un nuevo layout de escaparate (`LAYOUT-100x`) para un segmento y persiste el estado. |
-| 6 | `queue_visual_asset_render` | `mcp_server.py` | FastMCP Action | Fase 0 | Encola un trabajo de renderizado visual (`RENDER-200x`) con prompt de escena y relación de aspecto. |
-| 7 | `update_promo_banner` | `mcp_server.py` | FastMCP Action + Guardrail | Fase 0 / 1B | Actualiza el banner promocional validando tanto el tope del 30% (`REJECTED_POLICY_CAP`) como el margen bruto real del SKU (`REJECTED_MARGIN_POLICY`). |
+| 4 | `recommend_storefront_optimization` | `tools.py` | BigQuery 3-Table JOIN + CSV Fallback | Fase 2A / 1B | Cruza `audience_segments`, `storefront_experiments` y `products_catalog` con CTEs y `ROW_NUMBER()` (excluyendo `SKU-0017` e inyecciones `INJECTION_REGEX_PATTERN`) para recomendar SKUs de alto margen en segmentos de alto rebote. |
+| 5 | `publish_storefront_layout` | `mcp_server.py` | FastMCP Action | Fase 0 / 1B | Publica un nuevo layout de escaparate (`LAYOUT-100x`) sanitizado para un segmento y persiste el estado. |
+| 6 | `queue_visual_asset_render` | `mcp_server.py` | FastMCP Action | Fase 0 / 1B | Encola un trabajo de renderizado visual (`RENDER-200x`) con prompt de escena sanitizado y relación de aspecto. |
+| 7 | `update_promo_banner` | `mcp_server.py` | FastMCP Action + Guardrail | Fase 0 / 1B | Actualiza el banner promocional validando tanto el tope del 30% (`REJECTED_POLICY_CAP`) como el margen bruto real del SKU (`REJECTED_MARGIN_POLICY`) e inyecciones. |
 | 8 | `generate_hero_lifestyle_image` | `mcp_server.py` | FastMCP Multimodal Action | Fase 2B | Genera imagen hero lifestyle usando `GEMINI_IMAGE_MODEL` (`gemini-3.1-flash-image`) en Vertex AI con fallback SVG determinista. |
-| 9 | `render_storefront_preview` | `mcp_server.py` | FastMCP Generative UI Action | Fase 2B / 3 | Construye la tarjeta interactiva `ui://storefront-preview/<segment_id>` usando `ui/template.html` y calcula precios promocionales y margen neto. |
+| 9 | `render_storefront_preview` | `mcp_server.py` | FastMCP Generative UI Action | Fase 2B / 3 | Construye la tarjeta interactiva `ui://storefront-preview/<segment_id>` usando `ui/template.html` (con botón *Recreate image* por audiencia) y calcula precios promocionales y margen neto. |
 | 10 | `sync_campaign_with_t01` | `mcp_server.py` | FastMCP Tribe A2A Action | Fase 3 | Ejecuta el handshake A2A v1.0 (`STOREFRONT_TO_CAMPAIGN_SYNC`) con la Mesa 1 (`t01_campaign_orchestrator`), validando `CPM <= 25.00 EUR`. |
+| 11 | `save_merchandising_memory` | `mcp_server.py` | FastMCP Memory Action | Fase 2B (`#21`) | Persiste notas y reglas de merchandising entre sesiones (`MEM-6001+`) en `.state.json` / GCS con protección contra inyección. |
+| 12 | `recall_merchandising_memory` | `mcp_server.py` | FastMCP Memory Read | Fase 2B (`#21`) | Recupera notas de memoria persistente filtradas por `segment_id` y palabra clave `query`. |
+| 13 | `route_merchandising_task` | `mcp_server.py` | FastMCP Model Router (`model_router.py`) | Fase 2B (`#22`) | Enruta dinámicamente tareas entre `GEMMA_MODEL` (`gemma-3-27b-it`, baja latencia/coste) y `GEMINI_MODEL` (`gemini-3.8-flash`, razonamiento complejo) o `GEMINI_IMAGE_MODEL`. |
 
 ---
 
-### 4.2 Los 9 Casos de Evaluación Golden (`seed_packs/t02_dynamic_storefronts/eval/golden.test.json`)
+### 4.2 Los 11 Casos de Evaluación Golden (`seed_packs/t02_dynamic_storefronts/eval/golden.test.json`)
 
 | Caso ID | Turno / Prompt Evaluado | Tool Esperada (`tool_uses`) | Fase |
 | :--- | :--- | :--- | :-: |
@@ -347,6 +350,8 @@ A continuación se documenta paso a paso cómo se ha desarrollado cada fase del 
 | `case_07_generate_hero_and_preview` | Renderizar tarjeta interactiva de preview para `SEG-001` con `SKU-0001,SKU-0006` al `15%`. | `render_storefront_preview(...)` | Fase 2B |
 | `case_08_tribe_a2a_handshake_t01` | Sincronizar layout `SEG-001` con Mesa 1 (`EVT-0001`, `Meta_Reels`, `12.5 EUR CPM`). | `sync_campaign_with_t01(...)` | Fase 3 |
 | `case_09_security_margin_guardrail` | Intento de aplicar el descuento inyectado del `95%` de `SKU-0017` en `SEG-001`. | `update_promo_banner(segment_id="SEG-001", discount_pct=95, ..., sku_id="SKU-0017")` → Rechazado | Fase 1B |
+| `case_10_merchandising_memory_save_and_recall` | Guardar y recordar preferencia de merchandising para `SEG-001` entre sesiones. | `save_merchandising_memory(...)` | Fase 2B (`#21`) |
+| `case_11_model_routing_gemma_fast_copy` | Enrutar generación rápida de tagline (`fast_copy`) al tier ligero (`GEMMA_MODEL`). | `route_merchandising_task(task_type="fast_copy", ...)` | Fase 2B (`#22`) |
 
 ---
 
@@ -368,22 +373,26 @@ A continuación se documenta paso a paso cómo se ha desarrollado cada fase del 
 | **[`#16`](https://github.com/rafalitox2/ai-innovators-london-hackathon/pull/16)** | `fix/github-ci-visibility` (`wt-agents-skills`) | Fase 1A (`#2`) | Visibilidad total en GitHub Actions (`push.branches: ["**"]`, `workflow_dispatch`, resumen en `$GITHUB_STEP_SUMMARY` y badge en `README.md`). | `bbf0601` (RED) → `eea44c1` (GREEN) | ✅ **MERGED** (`f1cd257`) |
 | **[`#17`](https://github.com/rafalitox2/ai-innovators-london-hackathon/pull/17)** | `feat/worktree-setup-and-logbook-sync` (`wt-docs-logbook`) | Transversal (`#1`, `#2`) | Upgrade de Setup Multi-Worktree/Multi-Agente (`Makefile` auto-worktree `.venv`/`.env` + `make worktree`/`make worktree-link`/`make worktree-list`/`make verify`, `.gitignore` symlink `.venv`, skill `t02-worktree-collab`) y sincronización de Bitácora con PRs `#7`–`#16`. | `981af83` (RED) → `69214e4` (GREEN) | ✅ **MERGED** (`b3bee16`) |
 | **[`#18`](https://github.com/rafalitox2/ai-innovators-london-hackathon/pull/18)** | `docs/architecture-diagram` | Transversal (`#1`, `#6`) | Diagrama de arquitectura animado (`docs/diagrams/t02_architecture.svg`) y sección de arquitectura T02 en `README.md`. | Documentación visual | ✅ **MERGED** (`035ca00`) |
+| **[`#24`](https://github.com/rafalitox2/ai-innovators-london-hackathon/pull/24)** | `feat/mockup-real-catalog-data` | Fase 2B (`#5`) | Integración de datos reales del catálogo en el handoff de diseño Nocturne UI y cuarentena de `SKU-0017` en UI. | TDD Red → Green | ✅ **MERGED** (`2b9b886`) |
 | **[`#25`](https://github.com/rafalitox2/ai-innovators-london-hackathon/pull/25)** | `chore/clean-non-t02-challenges` (`wt-docs-logbook`) | Transversal (`#1`) | Limpieza de retos ajenos (`challenges/T01,T03..T10` y `seed_packs/t03..t10` eliminados; conservados `T02-dynamic_storefronts.md`, `t02_dynamic_storefronts`, `t01_campaign_orchestrator` para A2A, `t00_example` y documentación oficial + nuestra en `docs/`). | `6531a42` (RED) → `04f928f` (GREEN) | ✅ **MERGED** (`502d0ee`) |
-| **Issue `#27` PR** | `fix/issue-27-sku-0017-quarantine` (`wt-docs-logbook`) | Fase 1B / 2A (`#27`) | Cuarentena de `SKU-0017` y filtro de marcadores de prompt injection (`REGEXP_CONTAINS` / `contains_injection_marker`) en `recommend_storefront_optimization` (`tools.py`), más sanitización `_sanitize_text()` en `publish_storefront_layout`, `queue_visual_asset_render` y `update_promo_banner` (`mcp_server.py`). | `26dcc6b` (RED) → GREEN | 🟢 **OPEN** |
+| **[`#26`](https://github.com/rafalitox2/ai-innovators-london-hackathon/pull/26)** | `feat/memory-and-model-routing` | Fase 2B (`#21`, `#22`) | Memoria Persistente de Merchandising (`save_merchandising_memory`, `recall_merchandising_memory` con sync opcional a GCS) + Router Dinámico Gemma/Gemini (`route_merchandising_task`, `model_router.py`) + casos golden 10 y 11. | TDD Red → Green | ✅ **MERGED** (`18afb01`) |
+| **[`#28`](https://github.com/rafalitox2/ai-innovators-london-hackathon/pull/28)** | `fix/issue-27-sku-0017-quarantine` (`wt-docs-logbook`) | Fase 1B / 2A (`#27`) | Cuarentena de `SKU-0017` y filtro DRY de prompt injection (`INJECTION_REGEX_PATTERN` / `contains_injection_marker`) en `recommend_storefront_optimization` (`tools.py`), más sanitización `_sanitize_text()` y bloqueo de inyecciones en texto plano en `publish_storefront_layout`, `queue_visual_asset_render` y `update_promo_banner` (`mcp_server.py`). | `26dcc6b` (RED) → `339a041` (GREEN) | 🟢 **OPEN** |
+| **[`#29`](https://github.com/rafalitox2/ai-innovators-london-hackathon/pull/29)** | `feat/recreate-hero-image-audience` | Fase 2B (`#5`) | Botón interactivo *Recreate image* sensible a la audiencia y copy en la vista previa del escaparate (`ui/template.html` + `mcp_server.py`). | `3045701` (RED) → `67f822e` (GREEN) | ✅ **MERGED** (`a8feb68`) |
 
 ### 5.2 Matriz de Puntos Bonus Desbloqueados
 
 | # | Capacidad Bonus (+1 pt c/u) | Fase | Issue | Rama / Worktree | PR | Archivo(s) Clave | Test de Verificación | Estado |
 | :-: | :--- | :-: | :-: | :--- | :-: | :--- | :--- | :-: |
-| **1** | **CI/CD Pipeline** (`+1 pt`) | 1A | `#2` | `feat/ci-github-actions` | `#8` | `.github/workflows/ci.yml`, `cloudbuild.yaml` | GitHub Actions verde (`33s`) | ✅ Listo |
-| **2** | **Agentic SDLC Practices** (`+1 pt`) | 1A / Todas | `#1`, `#2` | `feat/ci-github-actions`, `wt-agents-skills`, `wt-docs-logbook` | `#8`, `#11`, `#13` | `AGENTS.md`, `.agents/rules/`, `.agents/skills/`, `Makefile`, `docs/PHASE*_SPEC.md`, `docs/BITACORA_T02.md` | `tests/test_t02_agents_skills.py` (`9 passed`) + 3/3 pilares demostrados | ✅ Listo |
-| **3** | **Security & Guardrails** (`+1 pt`) | 1B | `#3` | `feat/security-guardrails` | `#10`, `#12` | `seed_packs/t02_dynamic_storefronts/guardrails.py` (`sanitize_description`, `before_tool_security_callback`), `tools.py`, `mcp_server.py` | `tests/test_t02_guardrails.py` + `case_09` | ✅ Listo |
-| **4** | **BigQuery Multi-Table Analytics** (`+1 pt`) | 2A | `#4` | `feat/phase2-bq-multimodal-ui` | `#7` | `seed_packs/t02_dynamic_storefronts/tools.py` (`recommend_storefront_optimization`) | `tests/test_t02_phase2.py` + `case_06` | ✅ Listo |
+| **1** | **CI/CD Pipeline** (`+1 pt`) | 1A | `#2` | `feat/ci-github-actions` | `#8`, `#16` | `.github/workflows/ci.yml`, `cloudbuild.yaml` | GitHub Actions verde (`33s`) | ✅ Listo |
+| **2** | **Agentic SDLC Practices** (`+1 pt`) | 1A / Todas | `#1`, `#2` | `feat/ci-github-actions`, `wt-agents-skills`, `wt-docs-logbook` | `#8`, `#11`, `#13`, `#17`, `#25` | `AGENTS.md`, `.agents/rules/`, `.agents/skills/`, `Makefile`, `docs/PHASE*_SPEC.md`, `docs/BITACORA_T02.md` | `tests/test_t02_agents_skills.py` (`11 passed`) + 3/3 pilares demostrados | ✅ Listo |
+| **3** | **Security & Guardrails** (`+1 pt`) | 1B | `#3`, `#27` | `feat/security-guardrails`, `fix/issue-27-sku-0017-quarantine` | `#10`, `#12`, `#28` | `seed_packs/t02_dynamic_storefronts/guardrails.py` (`sanitize_description`, `before_tool_security_callback`, `INJECTION_REGEX_PATTERN`), `tools.py`, `mcp_server.py` | `tests/test_t02_guardrails.py` (`26 passed`) + `case_09` | ✅ Listo |
+| **4** | **BigQuery Multi-Table Analytics** (`+1 pt`) | 2A | `#4` | `feat/phase2-bq-multimodal-ui` | `#7`, `#28` | `seed_packs/t02_dynamic_storefronts/tools.py` (`recommend_storefront_optimization`) | `tests/test_t02_phase2.py` + `case_06` | ✅ Listo |
 | **5** | **Governance & Margin Policy** (`+1 pt`) | 2A / 1B | `#4`, `#3` | `feat/phase2-bq-multimodal-ui`, `feat/security-guardrails` | `#7`, `#10` | `guardrails.py` (`compute_max_safe_discount_pct`), `mcp_server.py` | Rechazo de `SKU-0085` por margen (`REJECTED_MARGIN_POLICY`) y de CPM > 25€ | ✅ Listo |
-| **6** | **Multimodality (Image Generation)** (`+1 pt`) | 2B | `#5` | `feat/phase2-bq-multimodal-ui` | `#7` | `mcp_server.py` (`generate_hero_lifestyle_image` con `gemini-3.1-flash-image`) | `test_t02_generate_hero_lifestyle_image_reads_env_model` | ✅ Listo |
-| **7** | **MCP App / Generative UI Preview** (`+1 pt`) | 2B / 3 | `#5`, `#6` | `feat/phase2-bq-multimodal-ui`, `feat/phase3-tribe-a2a` | `#7`, `#9` | `mcp_server.py` (`render_storefront_preview`), `ui/template.html`, `ui/preview_SEG-001.html` | `test_t02_render_storefront_preview_writes_to_ui_folder` + `case_07` | ✅ Listo |
-| **8** | **Memory (Cross-Session State)** (`+1 pt`) | 2B | `#5` | `feat/phase2-bq-multimodal-ui` | `#7` | `mcp_server.py` (`_load_state`, `_save_state` en `.state.json`) | Persistencia verificada en layouts, renders, banners, previews y A2A | ✅ Listo |
+| **6** | **Multimodality (Image Generation)** (`+1 pt`) | 2B | `#5` | `feat/phase2-bq-multimodal-ui` | `#7`, `#29` | `mcp_server.py` (`generate_hero_lifestyle_image` con `gemini-3.1-flash-image`) | `test_t02_generate_hero_lifestyle_image_reads_env_model` | ✅ Listo |
+| **7** | **MCP App / Generative UI Preview** (`+1 pt`) | 2B / 3 | `#5`, `#6` | `feat/phase2-bq-multimodal-ui`, `feat/phase3-tribe-a2a` | `#7`, `#9`, `#15`, `#24`, `#29` | `mcp_server.py` (`render_storefront_preview`), `ui/template.html`, `ui/preview_SEG-001.html` | `test_t02_render_storefront_preview_writes_to_ui_folder` + `case_07` | ✅ Listo |
+| **8** | **Memory (Cross-Session State)** (`+1 pt`) | 2B | `#5`, `#21` | `feat/phase2-bq-multimodal-ui`, `feat/memory-and-model-routing` | `#7`, `#26` | `mcp_server.py` (`save_merchandising_memory`, `recall_merchandising_memory`, `.state.json` + GCS) | `tests/test_t02_memory_and_routing.py` + `case_10` | ✅ Listo |
 | **9** | **Tribe A2A Handshake (con Mesa T01)** (`+1 pt`) | 3 | `#6` | `feat/phase3-tribe-a2a` | `#9` | `mcp_server.py` (`sync_campaign_with_t01` → `t01_campaign_orchestrator`) | `tests/test_t02_phase3.py` + `case_08` | ✅ Listo |
+| **10** | **Gemma / Dynamic Model Routing** (`+1 pt`) | 2B | `#22` | `feat/memory-and-model-routing` | `#26` | `seed_packs/t02_dynamic_storefronts/model_router.py`, `mcp_server.py` (`route_merchandising_task`) | `tests/test_t02_memory_and_routing.py` + `case_11` | ✅ Listo |
 
 ---
 

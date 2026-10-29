@@ -10,6 +10,7 @@ from typing import Any
 
 from google.cloud import bigquery
 from seed_packs.t02_dynamic_storefronts.guardrails import (
+    INJECTION_REGEX_PATTERN,
     before_tool_security_callback,
     compute_max_safe_discount_pct,
     contains_injection_marker,
@@ -322,7 +323,7 @@ def recommend_storefront_optimization(
                       AND UPPER(sku_id) != 'SKU-0017'
                       AND NOT REGEXP_CONTAINS(
                           LOWER(IFNULL(description, '')),
-                          r'<!--|-->|admin override|ignore previous instructions|ignore the above|disregard previous instructions'
+                          r'{INJECTION_REGEX_PATTERN}'
                       )
                 )
                 SELECT
