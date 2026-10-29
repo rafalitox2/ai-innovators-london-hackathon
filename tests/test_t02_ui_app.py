@@ -245,6 +245,30 @@ def test_ui_react_folder_structure_and_nocturne_design_system() -> None:
         assert screen_label in app_text, f"Missing screen element {screen_label!r} in ui/src/App.tsx"
 
 
+def test_ui_google_material3_theme_tokens_and_switcher() -> None:
+    """Verify Google Material Design 3 + Gemini Studio theme tokens, 4-color ribbon, and Light/Dark toggle."""
+    ui_root = REPO_ROOT / "ui"
+    css_text = (ui_root / "src" / "styles" / "nocturne.css").read_text(encoding="utf-8")
+    for google_token in (
+        "--color-google-blue: #4285f4",
+        "--color-google-red: #ea4335",
+        "--color-google-yellow: #fbbc04",
+        "--color-google-green: #34a853",
+        '[data-theme="google-light"]',
+        '[data-theme="google-dark"]',
+        ".google-ribbon",
+        ".kpi-grid",
+        ".table-wrap",
+        ".copilot-drawer",
+    ):
+        assert google_token in css_text, f"Missing Google theme token {google_token!r} in nocturne.css"
+
+    app_text = (ui_root / "src" / "App.tsx").read_text(encoding="utf-8")
+    assert "google-ribbon" in app_text
+    assert "Google Light" in app_text
+    assert "Gemini Dark" in app_text
+
+
 def test_cloudrun_mcp_server_serves_nocturne_ui_and_api_routes(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
