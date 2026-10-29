@@ -9,7 +9,7 @@ Bienvenido al directorio de documentación técnica, metodología de trabajo y *
 | Documento | Propósito | Fase / Alcance |
 | :--- | :--- | :--- |
 | **[`BITACORA_T02.md`](./BITACORA_T02.md)** | **Cuaderno de Bitácora Maestro y Guía de Trabajo del Challenge**: Cómo indica el reto que debemos trabajar (Must-Haves, Agentic SDLC, `git worktree`, TDD, PRs) y registro cronológico detallado de **todas las fases desarrolladas (Fases 0 a 4)** con arquitectura, decisiones, pruebas y trazabilidad. | **Todas las Fases (0–4)** |
-| **[`PHASE1_SPEC.md`](./PHASE1_SPEC.md)** | **Especificación Técnica — Fase 0 y Fase 1 (1A + 1B)**: Los 5 Must-Haves, Pipeline CI/CD dividido (GitHub Actions + Cloud Build), Prácticas Agentic SDLC y Guardrails de Seguridad/Margen contra *Discount Injection* (`SKU-0017` y `SKU-0085`). | **Fase 0, Fase 1A y Fase 1B** (`Issues #1, #2, #3` · `PR #8, #10`) |
+| **[`PHASE1_SPEC.md`](./PHASE1_SPEC.md)** | **Especificación Técnica — Fase 0 y Fase 1 (1A + 1B)**: Los 5 Must-Haves, Pipeline CI/CD dividido (GitHub Actions + Cloud Build), Prácticas Agentic SDLC (5 Skills + Worktrees) y Guardrails en 3 capas contra *Discount Injection* (`SKU-0017`, `SKU-0085`, `before_tool_security_callback`). | **Fase 0, Fase 1A y Fase 1B** (`Issues #1, #2, #3` · `PR #8, #10, #11, #12, #13`) |
 | **[`PHASE2_SPEC.md`](./PHASE2_SPEC.md)** | **Especificación Técnica — Fase 2 (2A + 2B)**: Analítica avanzada en BigQuery con `INNER JOIN` de 3 tablas (`recommend_storefront_optimization`), generación multimodal de imágenes hero (`generate_hero_lifestyle_image` con `gemini-3.1-flash-image`) y preview UI interactiva (`render_storefront_preview`). | **Fase 2A y Fase 2B** (`Issues #4, #5` · `PR #7`) |
 | **[`PHASE3_SPEC.md`](./PHASE3_SPEC.md)** | **Especificación Técnica — Fase 3**: Protocolo Tribe A2A Handshake (`sync_campaign_with_t01`) con la Mesa Hermana **Table 1 (`t01_campaign_orchestrator`)** y plantilla HTML5/CSS editable (`seed_packs/t02_dynamic_storefronts/ui/`). | **Fase 3** (`Issue #6` · `PR #9`) |
 | **[`PITCH_T02.md`](./PITCH_T02.md)** | **Storyboard del Pitch (2 Slides) y Runbook de Demo en Vivo (3:00 min / 5:00 Hard Stop)**: Guion minuto a minuto para los jueces, comandos para levantar la UI y prompts exactos de demostración. | **Fase 4 (Pitch & Demo)** (`Issue #6` · `PR #9`) |
@@ -23,13 +23,14 @@ Bienvenido al directorio de documentación técnica, metodología de trabajo y *
 Este trabajo se ha documentado siguiendo el **Pilar 3 de Agentic SDLC** en un worktree aislado (`../wt-docs-logbook`, rama `docs/challenge-workflow-and-logbook`) para no interferir con otros agentes o ramas activas:
 
 ```bash
-# 1. Ver todos los worktrees activos del equipo
-git worktree list
+# 1. Ver todos los worktrees activos del equipo o crear uno nuevo con .venv y .env enlazados
+make worktree-list
+make worktree BRANCH=feat/mi-rama
 
-# 2. Entrar al worktree de documentación y bitácora
+# 2. Entrar al worktree de documentación y bitácora (y enlazar .venv/.env si se desea para el IDE)
 cd ../wt-docs-logbook
+make worktree-link
 
-# 3. Ejecutar la suite de tests offline y validar los casos golden
-make test
-make eval-validate PACK=t02
+# 3. Ejecutar el gate completo de PR (pytest + eval-validate + check_packs)
+make verify PACK=t02
 ```
