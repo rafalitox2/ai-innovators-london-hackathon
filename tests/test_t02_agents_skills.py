@@ -105,3 +105,18 @@ def test_agents_md_documents_t02_skills_and_architecture() -> None:
         "sync_campaign_with_t01",
     ):
         assert expected in agents_md, f"AGENTS.md is missing reference to '{expected}'"
+
+
+def test_github_ci_workflow_triggers_on_all_branches_pr_and_manual_dispatch() -> None:
+    """Verify .github/workflows/ci.yml triggers on all branch pushes, PRs, and workflow_dispatch."""
+    ci_path = REPO_ROOT / ".github" / "workflows" / "ci.yml"
+    assert ci_path.exists(), "Missing .github/workflows/ci.yml"
+    ci_data = yaml.safe_load(ci_path.read_text(encoding="utf-8"))
+    triggers = ci_data.get("on") or ci_data.get(True)
+    assert isinstance(triggers, dict), "ci.yml 'on' section must be a mapping"
+    assert "pull_request" in triggers, "ci.yml must trigger on pull_request"
+    assert "push" in triggers, "ci.yml must trigger on push"
+    assert "workflow_dispatch" in triggers, "ci.yml must enable manual workflow_dispatch trigger"
+    push_branches = triggers["push"].get("branches", [])
+    assert "**" in push_branches, "ci.yml push trigger must cover all branches ('**')"
+
