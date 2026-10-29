@@ -279,12 +279,9 @@
       <div class="modal-header">
         <div class="brand-stack">
           <span class="kicker">Storefront variant · Nordic_Minimal</span>
-          <span class="segment-title">SEG-001 · UK_London_Nordic_Minimal_Mobile (UK_London)</span>
+          <span class="segment-title">SEG-001 · UK_London</span>
         </div>
-        <div style="display: flex; gap: 8px; align-items: center;">
-          <button type="button" id="recreate-btn" class="btn" style="cursor: pointer;" onclick="recreateHeroImage()">Recreate image</button>
-          <span class="btn">Approve &amp; publish</span>
-        </div>
+        <span class="btn">Approve &amp; publish</span>
       </div>
 
       <div class="storefront-frame">
@@ -301,20 +298,14 @@
         </div>
 
         <div class="hero">
-          <div class="hero-visual" id="hero-visual-box">
-            <div id="hero-img-slot"><img src="/ui/hero_SEG-001.png" alt="Nordic Comfort for London Living" /></div>
-            <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap;">
-              <span id="hero-caption">Hero lifestyle render · Nordic_Minimal · SEG-001</span>
-              <button type="button" class="btn" style="padding: 4px 10px; font-size: 11px; cursor: pointer;" onclick="recreateHeroImage()">Recreate image</button>
-            </div>
-            <div id="audience-prompt-box" style="font-size: 11px; color: var(--color-neutral-400); background: color-mix(in srgb, var(--color-bg) 70%, transparent); padding: 8px 10px; border-radius: var(--radius-sm); border: 1px solid var(--color-divider);">
-              <strong style="color: var(--color-accent-300);">Audience Context (SEG-001):</strong> UK_London_Nordic_Minimal_Mobile · Region UK_London · Style Nordic_Minimal · Device Mobile_iOS · AOV €307.73
-            </div>
+          <div class="hero-visual">
+            <img src="hero_SEG-001.png" alt="Nordic Comfort for London Living" />
+            <span>Hero lifestyle render · Nordic_Minimal · SEG-001</span>
           </div>
           <div class="hero-copy">
             <span class="kicker">Nordic_Minimal edit</span>
             <h1>Nordic Comfort for London Living</h1>
-            <p>Curated pieces selected for segment SEG-001 (UK_London_Nordic_Minimal_Mobile, UK_London) with real-time margin protection.</p>
+            <p>Curated pieces selected for segment SEG-001 (UK_London) with real-time margin protection.</p>
             <div>
               <span class="btn">Shop Nordic_Minimal Edit</span>
             </div>
@@ -327,62 +318,12 @@
       </div>
 
       <div class="modal-footer">
-        <span>Segment SEG-001 (UK_London_Nordic_Minimal_Mobile)</span>
+        <span>Segment SEG-001</span>
         <span>Region UK_London</span>
-        <span>Device Mobile_iOS · AOV €307.73</span>
         <span>Theme Nordic_Minimal</span>
         <span>Discount 15% · Policy Guardrail Verified &le;30%</span>
       </div>
     </div>
   </div>
-  <script>
-    let variationIdx = 1;
-    const scenes = [
-      "Golden-hour architectural wide shot tailored to regional apartment aesthetic",
-      "Close-up artisanal material texture with warm ambient evening lighting",
-      "Sunlit morning minimalist editorial composition with natural shadows",
-      "Twilight gallery-style interior spotlight with city skyline backdrop"
-    ];
-    async function recreateHeroImage() {
-      const btn = document.getElementById("recreate-btn");
-      const caption = document.getElementById("hero-caption");
-      const promptBox = document.getElementById("audience-prompt-box");
-      const scene = scenes[variationIdx % scenes.length];
-      variationIdx += 1;
-      const aspect = "Mobile_iOS".toLowerCase().includes("mobile") ? "9:16" : ("Mobile_iOS".toLowerCase().includes("tablet") ? "1:1" : "16:9");
-      if (btn) btn.textContent = "Recreating image…";
-      if (caption) caption.textContent = "Calling Google Image endpoint (v" + variationIdx + " · " + aspect + ")…";
-      try {
-        const resp = await fetch("/api/recreate-hero-image", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            sku_id: "SKU-0001",
-            segment_id: "SEG-001",
-            style_theme: "Nordic_Minimal",
-            scene_description: scene,
-            aspect_ratio: aspect
-          })
-        });
-        if (resp.ok) {
-          const data = await resp.json();
-          const job = data.render_job || {};
-          const imgSlot = document.getElementById("hero-img-slot");
-          if (imgSlot && data.ui_filename) {
-            imgSlot.innerHTML = '<img src="/ui/' + data.ui_filename + '?t=' + Date.now() + '" alt="Hero lifestyle render" />';
-          }
-          if (promptBox && job.prompt_text) {
-            promptBox.innerHTML = "<strong style='color: var(--color-accent-300);'>Google Image Endpoint (" + (job.image_model || "env:GEMINI_IMAGE_MODEL") + " · v" + variationIdx + "):</strong> " + job.prompt_text;
-          }
-        }
-      } catch (_) {
-        if (promptBox) {
-          promptBox.innerHTML = "<strong style='color: var(--color-accent-300);'>Audience-Adjusted Prompt (v" + variationIdx + " · " + aspect + "):</strong> AtelierNova hero render for SEG-001 (UK_London_Nordic_Minimal_Mobile, region=UK_London, style=Nordic_Minimal, device=Mobile_iOS, AOV=€307.73). Scene: " + scene;
-        }
-      }
-      if (caption) caption.textContent = "Hero lifestyle render (v" + variationIdx + " · " + aspect + ") · Nordic_Minimal · SEG-001";
-      if (btn) btn.textContent = "Recreate image";
-    }
-  </script>
 </body>
 </html>

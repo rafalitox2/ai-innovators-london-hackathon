@@ -194,15 +194,21 @@ export const App: React.FC = () => {
     });
   };
 
-  const handlePublishOpportunity = async (expId: string) => {
+  const handlePublishOpportunity = async (
+    expId: string,
+    layoutId?: string,
+    bannerId?: string
+  ) => {
     const opp = data.low.find((e) => e.id === expId);
-    if (opp) {
+    let resolvedLayoutId = layoutId;
+    let resolvedBannerId = bannerId;
+    if (opp && !layoutId && !bannerId) {
       const maxSafe = computeMaxSafeDiscountPct(opp.p.marginPct);
       const disc =
         items[expId]?.discountPct ??
         Math.max(5, Math.min(DISCOUNT_CAP, maxSafe, Math.floor((opp.p.marginPct * 0.4) / 5) * 5));
       const code = `${opp.g.city.slice(0, 3).toUpperCase()}${disc}`;
-      await publishStorefrontOpportunity({
+      const res = await publishStorefrontOpportunity({
         experiment_id: opp.id,
         segment_id: opp.g.id,
         featured_skus: opp.p.sku,
@@ -214,6 +220,8 @@ export const App: React.FC = () => {
         published_by: currentUser ? currentUser.username : 'rafalitox2',
         published_by_avatar: currentUser?.avatar_url
       });
+      resolvedLayoutId = res.layout?.layout_id;
+      resolvedBannerId = res.promo_banner?.banner_id;
     }
     setPreviewExpId(null);
     setItems((prev) => ({
@@ -224,6 +232,8 @@ export const App: React.FC = () => {
         day: 20,
         progress: 1,
         opened: true,
+        layoutId: resolvedLayoutId || prev[expId]?.layoutId,
+        bannerId: resolvedBannerId || prev[expId]?.bannerId,
         publishedBy: currentUser ? `@${currentUser.username}` : undefined,
         publishedByAvatar: currentUser?.avatar_url
       }
@@ -1142,7 +1152,9 @@ export const App: React.FC = () => {
           discountCap={DISCOUNT_CAP}
           user={currentUser}
           onClose={() => setPreviewExpId(null)}
-          onPublished={(expId) => handlePublishOpportunity(expId)}
+          onPublished={(expId, layoutId, bannerId) =>
+            handlePublishOpportunity(expId, layoutId, bannerId)
+          }
         />
       )}
 

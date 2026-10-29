@@ -76,7 +76,11 @@ export const GitHubAuthModal: React.FC<GitHubAuthModalProps> = ({
 
   const handleOAuthRedirect = () => {
     if (!config?.client_id) return;
-    const redirect = encodeURIComponent(window.location.origin + config.redirect_uri);
+    const rawRedirect = config.redirect_uri || '/ui';
+    const fullRedirect = /^https?:\/\//i.test(rawRedirect)
+      ? rawRedirect
+      : `${window.location.origin}${rawRedirect.startsWith('/') ? '' : '/'}${rawRedirect}`;
+    const redirect = encodeURIComponent(fullRedirect);
     const scope = encodeURIComponent('read:user user:email');
     window.location.href = `https://github.com/login/oauth/authorize?client_id=${encodeURIComponent(
       config.client_id

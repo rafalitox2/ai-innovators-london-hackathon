@@ -121,23 +121,26 @@ export async function fetchGitHubPublicProfile(username: string): Promise<GitHub
   let role = existingTeam?.role || 'Digital Merchandiser';
   let avatarUrl = existingTeam?.avatar_url || `https://github.com/${clean}.png`;
 
-  try {
-    const resp = await fetch(`https://api.github.com/users/${encodeURIComponent(clean)}`, {
-      headers: { Accept: 'application/vnd.github.v3+json' }
-    });
-    if (resp.ok) {
-      const gh = await resp.json();
-      if (gh.name) name = gh.name;
-      if (gh.avatar_url) avatarUrl = gh.avatar_url;
-      if (gh.company) company = gh.company;
-      if (gh.bio) bio = gh.bio;
+  // Only query public GitHub API for custom handles outside the curated team roster
+  if (!existingTeam) {
+    try {
+      const resp = await fetch(`https://api.github.com/users/${encodeURIComponent(clean)}`, {
+        headers: { Accept: 'application/vnd.github.v3+json' }
+      });
+      if (resp.ok) {
+        const gh = await resp.json();
+        if (gh.name) name = gh.name;
+        if (gh.avatar_url) avatarUrl = gh.avatar_url;
+        if (gh.company) company = gh.company;
+        if (gh.bio) bio = gh.bio;
+      }
+    } catch {
+      // use fallbacks
     }
-  } catch {
-    // use fallbacks
   }
 
   const user: GitHubUser = {
-    username: clean,
+    username: existingTeam?.username || clean,
     name,
     role,
     avatar_url: avatarUrl,
@@ -149,9 +152,9 @@ export async function fetchGitHubPublicProfile(username: string): Promise<GitHub
     loginTime: new Date().toISOString()
   };
 
-  // Persist session to backend if possible
+  // Persist session to backend if possible and sync backend-issued token
   try {
-    await fetch('/api/auth/session', {
+    const sessResp = await fetch('/api/auth/session', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -162,6 +165,12 @@ export async function fetchGitHubPublicProfile(username: string): Promise<GitHub
         auth_method: user.authMethod
       })
     });
+    if (sessResp.ok) {
+      const sessData = await sessResp.json();
+      if (sessData?.session?.token) {
+        user.sessionToken = sessData.session.token;
+      }
+    }
   } catch {
     // offline safe
   }

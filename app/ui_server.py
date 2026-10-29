@@ -25,6 +25,8 @@ from seed_packs.t02_dynamic_storefronts.guardrails import (
 )
 from seed_packs.t02_dynamic_storefronts.mcp_server import (
     MCP_TOOLS as T02_MCP_TOOLS,
+    _load_state,
+    _save_state,
     generate_hero_lifestyle_image,
     publish_storefront_layout,
     queue_visual_asset_render,
@@ -737,10 +739,24 @@ def register_ui_routes(app: FastAPI) -> None:
                 theme_style=req.theme_style,
             )
         )
+        layout_obj = layout_res.get("layout", {})
+        if isinstance(layout_obj, dict):
+            layout_obj["published_by"] = req.published_by
+            layout_obj["published_by_avatar"] = req.published_by_avatar
+            try:
+                state = _load_state()
+                for entry in reversed(state.get("published_layouts", [])):
+                    if entry.get("layout_id") == layout_obj.get("layout_id"):
+                        entry["published_by"] = req.published_by
+                        entry["published_by_avatar"] = req.published_by_avatar
+                        break
+                _save_state(state)
+            except Exception:
+                pass
         return {
             "status": "SUCCESS",
             "experiment_id": req.experiment_id,
-            "layout": layout_res.get("layout", {}),
+            "layout": layout_obj,
             "promo_banner": banner_res.get("promo_banner", {}),
             "published_by": req.published_by,
             "published_by_avatar": req.published_by_avatar,
