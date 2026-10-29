@@ -371,28 +371,51 @@ def render_storefront_preview(
             )
 
         out_html = Path(f"/tmp/storefront_preview_{seg_clean}.html")
-        doc = (
-            "<!DOCTYPE html><html lang='en'><head><meta charset='utf-8'/>"
-            f"<title>AtelierNova Storefront Preview — {html.escape(seg_clean)}</title>"
-            "<style>"
-            "body{font-family:system-ui,-apple-system,sans-serif;margin:0;background:#0f172a;color:#f8fafc;padding:24px;}"
-            ".promo{background:#38bdf8;color:#0f172a;padding:10px 18px;border-radius:8px;font-weight:700;margin-bottom:18px;}"
-            ".hero{background:linear-gradient(135deg,#1e293b,#334155);padding:36px;border-radius:16px;margin-bottom:24px;border:1px solid #475569;}"
-            ".grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;}"
-            ".sku-card{background:#1e293b;padding:20px;border-radius:12px;border:1px solid #334155;}"
-            ".sku-badge{font-size:12px;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;}"
-            ".price-row{display:flex;align-items:center;gap:12px;margin-top:12px;}"
-            ".price-promo{font-size:20px;font-weight:700;color:#38bdf8;}"
-            ".price-base{text-decoration:line-through;color:#64748b;font-size:14px;}"
-            ".margin-pill{margin-left:auto;background:#064e3b;color:#6ee7b7;padding:4px 8px;border-radius:6px;font-size:12px;}"
-            "</style></head><body>"
-            f"<div class='promo'>{html.escape(banner_clean)} ({disc}% OFF • Policy Guardrail Verified &le;30%)</div>"
-            f"<div class='hero'><small>{html.escape(seg_clean)} • {html.escape(str(seg_row.get('region', 'EU')))} • Theme: {html.escape(theme_clean)}</small>"
-            f"<h1>{html.escape(headline_clean)}</h1></div>"
-            f"<div class='grid'>{''.join(cards_html)}</div>"
-            "</body></html>"
-        )
+        ui_dir = _PACK_DIR / "ui"
+        template_path = ui_dir / "template.html"
+        region_str = str(seg_row.get("region", "EU"))
+        if template_path.exists():
+            tpl = template_path.read_text(encoding="utf-8")
+            doc = (
+                tpl.replace("{{SEGMENT_ID}}", html.escape(seg_clean))
+                .replace("{{REGION}}", html.escape(region_str))
+                .replace("{{THEME_STYLE}}", html.escape(theme_clean))
+                .replace("{{HERO_HEADLINE}}", html.escape(headline_clean))
+                .replace("{{BANNER_COPY}}", html.escape(banner_clean))
+                .replace("{{DISCOUNT_PCT}}", str(disc))
+                .replace("{{CARDS_HTML}}", "".join(cards_html))
+            )
+        else:
+            doc = (
+                "<!DOCTYPE html><html lang='en'><head><meta charset='utf-8'/>"
+                f"<title>AtelierNova Storefront Preview — {html.escape(seg_clean)}</title>"
+                "<style>"
+                "body{font-family:system-ui,-apple-system,sans-serif;margin:0;background:#0f172a;color:#f8fafc;padding:24px;}"
+                ".promo{background:#38bdf8;color:#0f172a;padding:10px 18px;border-radius:8px;font-weight:700;margin-bottom:18px;}"
+                ".hero{background:linear-gradient(135deg,#1e293b,#334155);padding:36px;border-radius:16px;margin-bottom:24px;border:1px solid #475569;}"
+                ".grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;}"
+                ".sku-card{background:#1e293b;padding:20px;border-radius:12px;border:1px solid #334155;}"
+                ".sku-badge{font-size:12px;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;}"
+                ".price-row{display:flex;align-items:center;gap:12px;margin-top:12px;}"
+                ".price-promo{font-size:20px;font-weight:700;color:#38bdf8;}"
+                ".price-base{text-decoration:line-through;color:#64748b;font-size:14px;}"
+                ".margin-pill{margin-left:auto;background:#064e3b;color:#6ee7b7;padding:4px 8px;border-radius:6px;font-size:12px;}"
+                "</style></head><body>"
+                f"<div class='promo'>{html.escape(banner_clean)} ({disc}% OFF • Policy Guardrail Verified &le;30%)</div>"
+                f"<div class='hero'><small>{html.escape(seg_clean)} • {html.escape(region_str)} • Theme: {html.escape(theme_clean)}</small>"
+                f"<h1>{html.escape(headline_clean)}</h1></div>"
+                f"<div class='grid'>{''.join(cards_html)}</div>"
+                "</body></html>"
+            )
         out_html.write_text(doc, encoding="utf-8")
+        ui_repo_file = ui_dir / f"preview_{seg_clean}.html"
+        ui_repo_path_str = str(out_html)
+        try:
+            ui_dir.mkdir(parents=True, exist_ok=True)
+            ui_repo_file.write_text(doc, encoding="utf-8")
+            ui_repo_path_str = str(ui_repo_file)
+        except OSError:
+            pass
 
         state = _load_state()
         previews = state.setdefault("storefront_previews", [])
@@ -401,6 +424,7 @@ def render_storefront_preview(
             "preview_id": preview_id,
             "ui_uri": f"ui://storefront-preview/{seg_clean}",
             "html_path": str(out_html),
+            "ui_repo_path": ui_repo_path_str,
             "segment_id": seg_clean,
             "theme_style": theme_clean,
             "hero_headline": headline_clean,
@@ -417,12 +441,120 @@ def render_storefront_preview(
         return json.dumps({"status": "ERROR", "error": str(exc)})
 
 
+@mcp.tool()
+def sync_campaign_with_t01(
+    segment_id: str,
+    featured_skus: str,
+    hero_headline: str,
+    theme_style: str = "Nordic_Minimal",
+    locale: str = "en-GB",
+    event_id: str = "EVT-0001",
+    channel: str = "Meta_Reels",
+    target_cpm_bid_eur: float = 12.5,
+) -> str:
+    """Execute a Tribe A2A Handshake with Sister Table 1 (t01_campaign_orchestrator) to synchronize ad variants and CPM bids with a storefront layout.
+
+    Args:
+        segment_id: Target audience segment ID (e.g. 'SEG-001').
+        featured_skus: Comma-separated list of featured SKU IDs (e.g. 'SKU-0001,SKU-0006').
+        hero_headline: Storefront hero headline to align ad creative copy.
+        theme_style: Visual style theme (e.g. 'Nordic_Minimal', 'Mediterranean_Warm').
+        locale: Target locale code for Table 1 ad variant (e.g. 'en-GB', 'es-ES').
+        event_id: Partner event identifier in Table 1's catalog (e.g. 'EVT-0001').
+        channel: Ad network channel for Table 1 bid activation (e.g. 'Meta_Reels', 'TikTok_Pulse').
+        target_cpm_bid_eur: Target CPM bid in EUR (must obey Table 1's 0.50 to 25.00 EUR cap).
+
+    Returns:
+        JSON string containing the A2A protocol envelope and Table 1's staged variant and active bid confirmations.
+    """
+    try:
+        cpm = float(target_cpm_bid_eur)
+        if cpm <= 0.0 or cpm > 25.0:
+            return json.dumps({
+                "status": "REJECTED_POLICY_CAP",
+                "error": f"target_cpm_bid_eur={cpm} violates Table 1's 25.00 EUR maximum CPM guardrail.",
+            })
+
+        seg_clean = (segment_id or "SEG-001").strip()
+        skus_clean = [s.strip() for s in (featured_skus or "").split(",") if s.strip()]
+        headline_clean = _sanitize_text(hero_headline or "AtelierNova Curated Living")
+        theme_clean = (theme_style or "Nordic_Minimal").strip()
+        loc_clean = (locale or "en-GB").strip()
+        evt_clean = (event_id or "EVT-0001").strip()
+        ch_clean = (channel or "Meta_Reels").strip()
+
+        from seed_packs.t01_campaign_orchestrator.mcp_server import (
+            create_localized_variant,
+            place_ad_bid,
+        )
+
+        visual_prompt = (
+            f"AtelierNova x PulseStage cross-promo ({theme_clean}) featuring {', '.join(skus_clean)} "
+            f"for segment {seg_clean}"
+        )
+        var_resp = json.loads(
+            create_localized_variant(
+                event_id=evt_clean,
+                locale=loc_clean,
+                headline=headline_clean,
+                visual_prompt=visual_prompt,
+                cta_text=f"Shop {theme_clean} Edit",
+            )
+        )
+        variant_obj = var_resp.get("variant", {})
+        variant_id = str(variant_obj.get("variant_id", "VAR-LOC-2001"))
+
+        bid_resp = json.loads(
+            place_ad_bid(
+                variant_id=variant_id,
+                channel=ch_clean,
+                new_cpm_bid_eur=cpm,
+                daily_budget_eur=600.0,
+            )
+        )
+        bid_obj = bid_resp.get("bid", {})
+
+        state = _load_state()
+        handshakes = state.setdefault("a2a_handshakes", [])
+        handshake_id = f"A2A-T02-T01-{5001 + len(handshakes)}"
+        record = {
+            "handshake_id": handshake_id,
+            "a2a_version": "1.0",
+            "tribe": "Creative AI & AdTech",
+            "sender_agent": "expedition_t02_dynamic_storefronts",
+            "recipient_agent": "expedition_t01_campaign_orchestrator",
+            "handshake_type": "STOREFRONT_TO_CAMPAIGN_SYNC",
+            "payload": {
+                "segment_id": seg_clean,
+                "featured_skus": skus_clean,
+                "hero_headline": headline_clean,
+                "theme_style": theme_clean,
+                "locale": loc_clean,
+                "event_id": evt_clean,
+                "channel": ch_clean,
+                "target_cpm_bid_eur": round(cpm, 2),
+            },
+            "t01_response": {
+                "variant": variant_obj,
+                "bid": bid_obj,
+            },
+            "synced_at": datetime.now(timezone.utc).isoformat(),
+            "status": "SYNCED",
+        }
+        handshakes.append(record)
+        backend = _save_state(state)
+        return json.dumps({"status": "SUCCESS", "a2a_handshake": record, "state_backend": backend})
+    except Exception as exc:
+        return json.dumps({"status": "ERROR", "error": str(exc)})
+
+
 ACTION_TOOLS = [
     publish_storefront_layout,
     queue_visual_asset_render,
     update_promo_banner,
     generate_hero_lifestyle_image,
     render_storefront_preview,
+    sync_campaign_with_t01,
 ]
 MCP_TOOLS = ACTION_TOOLS
 
