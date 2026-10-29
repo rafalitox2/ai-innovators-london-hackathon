@@ -165,6 +165,7 @@ export async function triggerAdkGenerateOpportunity(params: {
       max_safe_discount_pct: maxSafe,
       banner_copy: `${disc}% off ${params.product.cat.replace(/_/g, ' ').toLowerCase()} this week · code ${code}`,
       hero_headline: `${params.style_theme.replace(/_/g, ' ')} living for ${params.city} spaces`,
+      hero_asset_url: `/api/assets/hero/${params.segment_id}?sku_id=${encodeURIComponent(params.sku_id)}&style_theme=${encodeURIComponent(params.style_theme)}`,
       steps: [
         {
           step: 1,
@@ -208,9 +209,19 @@ export async function publishStorefrontOpportunity(params: {
   discount_pct: number;
   banner_copy: string;
   sku_id: string;
+  hero_asset_url?: string;
   published_by?: string;
   published_by_avatar?: string;
-}): Promise<{ status: string; error?: string; layout?: { layout_id: string }; promo_banner?: { banner_id: string } }> {
+}): Promise<{
+  status: string;
+  error?: string;
+  sku_id?: string;
+  hero_asset_url?: string;
+  published_by?: string;
+  published_by_avatar?: string;
+  layout?: { layout_id: string };
+  promo_banner?: { banner_id: string };
+}> {
   try {
     const res = await fetch('/api/opportunities/publish', {
       method: 'POST',

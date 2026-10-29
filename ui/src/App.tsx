@@ -194,48 +194,77 @@ export const App: React.FC = () => {
     });
   };
 
+  const handleUpdateItemState = (expId: string, patch: Partial<ItemState>) => {
+    setItems((prev) => ({
+      ...prev,
+      [expId]: {
+        ...(prev[expId] || { status: 'review' }),
+        ...patch
+      }
+    }));
+  };
+
   const handlePublishOpportunity = async (
     expId: string,
     layoutId?: string,
-    bannerId?: string
+    bannerId?: string,
+    patch?: Partial<ItemState>
   ) => {
     const opp = data.low.find((e) => e.id === expId);
-    let resolvedLayoutId = layoutId;
-    let resolvedBannerId = bannerId;
-    if (opp && !layoutId && !bannerId) {
+    let resolvedPatch: Partial<ItemState> = { ...(patch || {}) };
+    if (opp && !patch && !layoutId && !bannerId) {
       const maxSafe = computeMaxSafeDiscountPct(opp.p.marginPct);
       const disc =
         items[expId]?.discountPct ??
         Math.max(5, Math.min(DISCOUNT_CAP, maxSafe, Math.floor((opp.p.marginPct * 0.4) / 5) * 5));
       const code = `${opp.g.city.slice(0, 3).toUpperCase()}${disc}`;
+      const headline =
+        items[expId]?.heroHeadline ||
+        `${opp.p.theme.replace(/_/g, ' ')} living for ${opp.g.city} spaces`;
+      const bannerCopy =
+        items[expId]?.bannerCopy ||
+        `${disc}% off ${opp.p.cat.replace(/_/g, ' ').toLowerCase()} this week · code ${code}`;
+      const heroAssetUrl =
+        items[expId]?.heroAssetUrl ||
+        `/api/assets/hero/${opp.g.id}?sku_id=${encodeURIComponent(opp.p.sku)}&style_theme=${encodeURIComponent(opp.p.theme)}`;
       const res = await publishStorefrontOpportunity({
         experiment_id: opp.id,
         segment_id: opp.g.id,
         featured_skus: opp.p.sku,
-        hero_headline: `${opp.p.theme.replace(/_/g, ' ')} living for ${opp.g.city} spaces`,
+        hero_headline: headline,
         theme_style: opp.p.theme,
         discount_pct: disc,
-        banner_copy: `${disc}% off ${opp.p.cat.replace(/_/g, ' ').toLowerCase()} this week · code ${code}`,
+        banner_copy: bannerCopy,
         sku_id: opp.p.sku,
+        hero_asset_url: heroAssetUrl,
         published_by: currentUser ? currentUser.username : 'rafalitox2',
         published_by_avatar: currentUser?.avatar_url
       });
-      resolvedLayoutId = res.layout?.layout_id;
-      resolvedBannerId = res.promo_banner?.banner_id;
+      resolvedPatch = {
+        discountPct: disc,
+        bannerCopy,
+        heroHeadline: headline,
+        skuId: opp.p.sku,
+        themeStyle: opp.p.theme,
+        heroAssetUrl: res.hero_asset_url || heroAssetUrl,
+        layoutId: res.layout?.layout_id,
+        bannerId: res.promo_banner?.banner_id
+      };
     }
     setPreviewExpId(null);
     setItems((prev) => ({
       ...prev,
       [expId]: {
         ...(prev[expId] || {}),
+        ...resolvedPatch,
+        ...(layoutId ? { layoutId } : {}),
+        ...(bannerId ? { bannerId } : {}),
         status: 'published',
-        day: 20,
+        day: prev[expId]?.day ?? 20,
         progress: 1,
         opened: true,
-        layoutId: resolvedLayoutId || prev[expId]?.layoutId,
-        bannerId: resolvedBannerId || prev[expId]?.bannerId,
-        publishedBy: currentUser ? `@${currentUser.username}` : undefined,
-        publishedByAvatar: currentUser?.avatar_url
+        publishedBy: currentUser ? `@${currentUser.username}` : prev[expId]?.publishedBy,
+        publishedByAvatar: currentUser?.avatar_url || prev[expId]?.publishedByAvatar
       }
     }));
   };
@@ -1152,9 +1181,10 @@ export const App: React.FC = () => {
           discountCap={DISCOUNT_CAP}
           user={currentUser}
           onClose={() => setPreviewExpId(null)}
-          onPublished={(expId, layoutId, bannerId) =>
-            handlePublishOpportunity(expId, layoutId, bannerId)
+          onPublished={(expId, layoutId, bannerId, patch) =>
+            handlePublishOpportunity(expId, layoutId, bannerId, patch)
           }
+          onUpdateItemState={handleUpdateItemState}
         />
       )}
 
