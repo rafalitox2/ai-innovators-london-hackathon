@@ -21,6 +21,7 @@ from seed_packs.t02_dynamic_storefronts.guardrails import (
     sanitize_description,
     scan_args_for_injection,
     quarantine_action_args,
+    validate_policy_number,
 )
 
 mcp = FastMCP("t02_dynamic_storefronts_actions")
@@ -230,13 +231,14 @@ def update_promo_banner(
     rejection = quarantine_action_args(locals())
     if rejection is not None:
         return json.dumps(rejection)
-    disc = int(discount_pct)
-    if disc < 0 or disc > MAX_DISCOUNT_PCT:
+    disc = validate_policy_number(discount_pct, cap=MAX_DISCOUNT_PCT, integral=True)
+    if disc is None:
         return json.dumps({
             "status": "REJECTED_POLICY_CAP",
-            "error": f"discount_pct={disc}% exceeds the {MAX_DISCOUNT_PCT}% maximum automated merchandising discount policy.",
+            "error": f"discount_pct must be a finite whole number between 0 and {MAX_DISCOUNT_PCT}; booleans are not allowed.",
         })
 
+    disc = int(disc)
     sku_clean = sku_id.strip()
     if sku_clean:
         sku_row = next(
@@ -490,13 +492,14 @@ def render_storefront_preview(
     if rejection is not None:
         return json.dumps(rejection)
     try:
-        disc = int(discount_pct)
-        if disc < 0 or disc > MAX_DISCOUNT_PCT:
+        disc = validate_policy_number(discount_pct, cap=MAX_DISCOUNT_PCT, integral=True)
+        if disc is None:
             return json.dumps({
                 "status": "REJECTED_POLICY_CAP",
-                "error": f"discount_pct={disc}% exceeds the {MAX_DISCOUNT_PCT}% maximum automated merchandising discount policy.",
+                "error": f"discount_pct must be a finite whole number between 0 and {MAX_DISCOUNT_PCT}; booleans are not allowed.",
             })
 
+        disc = int(disc)
         seg_clean = (segment_id or "SEG-001").strip()
         headline_clean = _sanitize_text(hero_headline or "AtelierNova Curated Living")
         theme_clean = (theme_style or "Nordic_Minimal").strip()
@@ -679,11 +682,11 @@ def sync_campaign_with_t01(
     if rejection is not None:
         return json.dumps(rejection)
     try:
-        cpm = float(target_cpm_bid_eur)
-        if cpm <= 0.0 or cpm > 25.0:
+        cpm = validate_policy_number(target_cpm_bid_eur, cap=25.0, positive=True)
+        if cpm is None:
             return json.dumps({
                 "status": "REJECTED_POLICY_CAP",
-                "error": f"target_cpm_bid_eur={cpm} violates Table 1's 25.00 EUR maximum CPM guardrail.",
+                "error": "target_cpm_bid_eur must be finite and greater than 0, at most 25.00 EUR; booleans are not allowed.",
             })
 
         seg_clean = (segment_id or "SEG-001").strip()

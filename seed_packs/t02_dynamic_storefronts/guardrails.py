@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import math
 import re
 import unicodedata
 from typing import Any
@@ -109,6 +110,21 @@ def quarantine_action_args(args: dict[str, Any]) -> dict[str, Any] | None:
     return None
 
 
+def validate_policy_number(value: Any, *, cap: float, positive: bool = False, integral: bool = False) -> float | None:
+    """Coerce scalar numeric strings only after excluding booleans and nonfinite values."""
+    if isinstance(value, bool) or not isinstance(value, (int, float, str)):
+        return None
+    try:
+        number = float(value)
+    except (TypeError, ValueError, OverflowError):
+        return None
+    if not math.isfinite(number) or number < 0 or number > cap:
+        return None
+    if (positive and number == 0) or (integral and not number.is_integer()):
+        return None
+    return number
+
+
 def before_tool_security_callback(
     tool: Any,
     args: dict[str, Any],
@@ -129,19 +145,17 @@ def before_tool_security_callback(
         if rejection is not None:
             return rejection
 
-    if tool.name == "update_promo_banner":
-        discount_pct = args.get("discount_pct")
-        try:
-            disc = int(discount_pct) if discount_pct is not None else None
-        except (TypeError, ValueError):
-            disc = None
-        if disc is not None and disc > MAX_DISCOUNT_PCT:
+    if tool.name in {"update_promo_banner", "render_storefront_preview", "sync_campaign_with_t01"}:
+        is_cpm = tool.name == "sync_campaign_with_t01"
+        key = "target_cpm_bid_eur" if is_cpm else "discount_pct"
+        # Omitted optional values use the function's valid defaults; explicit None is invalid.
+        if key in args and validate_policy_number(
+            args[key], cap=25.0 if is_cpm else MAX_DISCOUNT_PCT,
+            positive=is_cpm, integral=not is_cpm,
+        ) is None:
             return {
                 "status": "REJECTED_SECURITY_CALLBACK",
-                "error": (
-                    f"update_promo_banner blocked before execution: discount_pct={disc}% "
-                    f"exceeds the {MAX_DISCOUNT_PCT}% policy cap."
-                ),
+                "error": f"{tool.name} blocked before execution: {key} violates numeric policy.",
             }
 
     return None

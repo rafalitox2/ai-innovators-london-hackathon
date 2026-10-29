@@ -173,3 +173,40 @@ def test_recommendations_csv_reject_other_poisoned_fields(monkeypatch):
     original = reads._read_local_csv
     monkeypatch.setattr(reads, "_read_local_csv", lambda table: [dict(r, visual_tags="developer_mode") for r in original(table)] if table == "products_catalog" else original(table))
     assert json.loads(reads.recommend_storefront_optimization())["recommendations"] == []
+
+NUMERIC_ACTIONS = ["update_promo_banner", "render_storefront_preview", "sync_campaign_with_t01"]
+
+
+@pytest.mark.parametrize("name", NUMERIC_ACTIONS)
+@pytest.mark.parametrize("value", [True, False, float("nan"), float("inf"), -float("inf"), "nan", "inf", "-Infinity", None, "invalid", -1, -0.1, 30.1, 95, 10**400])
+def test_invalid_numeric_values_fail_closed_at_both_layers(name, value, isolated):
+    key = "target_cpm_bid_eur" if name == "sync_campaign_with_t01" else "discount_pct"
+    args = dict(ACTION_ARGS[name], **{key: value})
+    result = json.loads(getattr(actions, name)(**args))
+    assert result["status"] == "REJECTED_POLICY_CAP", result
+    blocked = g.before_tool_security_callback(SimpleNamespace(name=name), args, None)
+    assert blocked and blocked["status"] == "REJECTED_SECURITY_CALLBACK"
+    assert isolated == []
+
+
+@pytest.mark.parametrize("name,value", [(name, value) for name in NUMERIC_ACTIONS for value in [1, 15, "15", 25.0]] + [("update_promo_banner", 0), ("render_storefront_preview", 30), ("sync_campaign_with_t01", 0.5)])
+def test_valid_numeric_boundaries(name, value):
+    key = "target_cpm_bid_eur" if name == "sync_campaign_with_t01" else "discount_pct"
+    args = dict(ACTION_ARGS[name], **{key: value})
+    assert g.before_tool_security_callback(SimpleNamespace(name=name), args, None) is None
+    assert json.loads(getattr(actions, name)(**args))["status"] == "SUCCESS"
+
+
+def test_zero_cpm_is_rejected(isolated):
+    args = dict(ACTION_ARGS["sync_campaign_with_t01"], target_cpm_bid_eur=0)
+    assert json.loads(actions.sync_campaign_with_t01(**args))["status"] == "REJECTED_POLICY_CAP"
+    assert g.before_tool_security_callback(SimpleNamespace(name="sync_campaign_with_t01"), args, None)
+    assert isolated == []
+
+
+@pytest.mark.parametrize("name", ["render_storefront_preview", "update_promo_banner"])
+def test_fractional_discount_not_truncated(name, isolated):
+    args = dict(ACTION_ARGS[name], discount_pct=15.5)
+    assert json.loads(getattr(actions, name)(**args))["status"] == "REJECTED_POLICY_CAP"
+    assert g.before_tool_security_callback(SimpleNamespace(name=name), args, None)
+    assert isolated == []
