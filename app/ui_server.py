@@ -753,7 +753,13 @@ def register_ui_routes(app: FastAPI) -> None:
             scene_description=req.scene_description,
             aspect_ratio=req.aspect_ratio,
         )
-        return json.loads(raw)
+        res: dict[str, Any] = json.loads(raw)
+        job = res.get("render_job", {})
+        ui_asset_path = job.get("ui_asset_path") or job.get("asset_path") or ""
+        if ui_asset_path:
+            res["ui_filename"] = Path(ui_asset_path).name
+            res["hero_asset_url"] = f"/ui/{Path(ui_asset_path).name}"
+        return res
 
     @app.post("/api/chat")
     async def api_chat(req: ChatRequest) -> dict[str, Any]:
@@ -771,6 +777,25 @@ def register_ui_routes(app: FastAPI) -> None:
         return HTMLResponse(
             "<!doctype html><html><body><p>Run <code>cd ui &amp;&amp; npm run build</code> to build the Nocturne UI bundle.</p></body></html>"
         )
+
+    @app.get("/ui/{file_name}")
+    def serve_ui_static_file(file_name: str) -> Response:
+        safe_name = Path(file_name).name
+        if not safe_name or safe_name in {".", ".."} or "/" in file_name or "\\" in file_name:
+            raise HTTPException(status_code=400, detail="Invalid file name")
+        for base_dir in (T02_UI_DIR, Path("/tmp/t02_assets"), UI_DIST_DIR):
+            candidate = base_dir / safe_name
+            if candidate.exists() and candidate.is_file():
+                suffix = candidate.suffix.lower()
+                media_map = {
+                    ".svg": "image/svg+xml",
+                    ".png": "image/png",
+                    ".html": "text/html",
+                    ".css": "text/css",
+                    ".js": "application/javascript",
+                }
+                return FileResponse(candidate, media_type=media_map.get(suffix))
+        raise HTTPException(status_code=404, detail=f"UI file {safe_name} not found")
 
     @app.get("/assets/{file_path:path}")
     def serve_nocturne_assets(file_path: str) -> Response:

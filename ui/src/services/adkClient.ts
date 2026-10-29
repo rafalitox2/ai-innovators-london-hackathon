@@ -79,6 +79,23 @@ export interface AdkChatResponse {
   reply: string;
 }
 
+export interface RecreateHeroImageResult {
+  status: string;
+  ui_filename?: string;
+  hero_asset_url?: string;
+  render_job?: {
+    render_job_id: string;
+    sku_id: string;
+    segment_id: string;
+    style_theme: string;
+    aspect_ratio: string;
+    image_model: string;
+    generation_mode: string;
+    prompt_text: string;
+    ui_asset_path?: string;
+  };
+}
+
 export async function fetchAdkHealth(): Promise<AdkHealthResponse> {
   try {
     const res = await fetch('/api/health');
@@ -313,6 +330,40 @@ export async function triggerTribeA2ASync(params: {
           }
         },
         synced_at: new Date().toISOString()
+      }
+    };
+  }
+}
+
+export async function recreateHeroImageForAudience(params: {
+  sku_id: string;
+  segment_id: string;
+  style_theme: string;
+  scene_description: string;
+  aspect_ratio: string;
+}): Promise<RecreateHeroImageResult> {
+  try {
+    const res = await fetch('/api/recreate-hero-image', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(params)
+    });
+    if (!res.ok) throw new Error('Recreate hero image endpoint offline');
+    return await res.json();
+  } catch {
+    return {
+      status: 'SUCCESS',
+      ui_filename: `hero_${params.segment_id}.svg`,
+      hero_asset_url: `/api/assets/hero/${params.segment_id}`,
+      render_job: {
+        render_job_id: 'HERO-LOCAL-2501',
+        sku_id: params.sku_id,
+        segment_id: params.segment_id,
+        style_theme: params.style_theme,
+        aspect_ratio: params.aspect_ratio,
+        image_model: 'env:GEMINI_IMAGE_MODEL',
+        generation_mode: 'svg_fallback',
+        prompt_text: `AtelierNova hero lifestyle render for ${params.segment_id} (${params.style_theme}, ${params.aspect_ratio}): ${params.scene_description}`
       }
     };
   }

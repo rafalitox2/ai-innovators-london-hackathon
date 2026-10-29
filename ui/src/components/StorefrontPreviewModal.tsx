@@ -8,6 +8,7 @@ import {
 import {
   A2ASyncResult,
   publishStorefrontOpportunity,
+  recreateHeroImageForAudience,
   triggerTribeA2ASync,
   validateGuardrailsLocal
 } from '../services/adkClient';
@@ -37,7 +38,7 @@ export const StorefrontPreviewModal: React.FC<StorefrontPreviewModalProps> = ({
   onPublished
 }) => {
   const e = opportunity;
-  const defaultMaxSafe = Math.max(0, Math.floor((e.p.m * 100 - 10) / 5) * 5);
+  const defaultMaxSafe = Math.floor(computeMaxSafeDiscountPct(e.p.marginPct) / 5) * 5;
   const initialDisc =
     itemState?.discountPct ??
     Math.max(5, Math.min(discountCap, defaultMaxSafe, Math.floor(((e.p.m * 100) * 0.4) / 5) * 5));
@@ -51,6 +52,10 @@ export const StorefrontPreviewModal: React.FC<StorefrontPreviewModalProps> = ({
   const [publishing, setPublishing] = useState<boolean>(false);
   const [publishError, setPublishError] = useState<string | null>(null);
   const [heroImgFailed, setHeroImgFailed] = useState<boolean>(false);
+  const [recreatingHero, setRecreatingHero] = useState<boolean>(false);
+  const [heroVariationIdx, setHeroVariationIdx] = useState<number>(1);
+  const [customHeroSrc, setCustomHeroSrc] = useState<string | null>(null);
+  const [heroPromptNote, setHeroPromptNote] = useState<string | null>(null);
 
   const activeProduct =
     allProducts.find((p) => p.sku === selectedSkuId) || e.p;
@@ -88,7 +93,45 @@ export const StorefrontPreviewModal: React.FC<StorefrontPreviewModalProps> = ({
     .replace(/_/g, ' ')
     .toLowerCase()} this week · code ${promoCode}`;
 
-  const heroAssetSrc = itemState?.heroAssetUrl || `/api/assets/hero/${e.g.id}`;
+  const heroAssetSrc =
+    customHeroSrc || itemState?.heroAssetUrl || `/api/assets/hero/${e.g.id}`;
+
+  const handleRecreateHeroImage = async () => {
+    const scenes = [
+      'Golden-hour architectural wide shot tailored to regional apartment aesthetic',
+      'Close-up artisanal material texture with warm ambient evening lighting',
+      'Sunlit morning minimalist editorial composition with natural shadows',
+      'Twilight gallery-style interior spotlight with city skyline backdrop'
+    ];
+    const nextIdx = heroVariationIdx + 1;
+    const scene = scenes[heroVariationIdx % scenes.length];
+    const aspect = e.g.device.toLowerCase().includes('mobile')
+      ? '9:16'
+      : e.g.device.toLowerCase().includes('tablet')
+      ? '1:1'
+      : '16:9';
+
+    setRecreatingHero(true);
+    setHeroImgFailed(false);
+    const res = await recreateHeroImageForAudience({
+      sku_id: activeProduct.sku,
+      segment_id: e.g.id,
+      style_theme: activeProduct.theme,
+      scene_description: scene,
+      aspect_ratio: aspect
+    });
+    const baseImgUrl = res.ui_filename
+      ? `/ui/${res.ui_filename}`
+      : res.hero_asset_url || `/api/assets/hero/${e.g.id}`;
+    setCustomHeroSrc(`${baseImgUrl}?t=${Date.now()}`);
+    setHeroVariationIdx(nextIdx);
+    if (res.render_job?.prompt_text) {
+      setHeroPromptNote(
+        `${res.render_job.render_job_id} (${res.render_job.image_model} · v${nextIdx} · ${aspect}): ${res.render_job.prompt_text}`
+      );
+    }
+    setRecreatingHero(false);
+  };
 
   const handleA2ASync = async () => {
     setA2aLoading(true);
@@ -187,6 +230,14 @@ export const StorefrontPreviewModal: React.FC<StorefrontPreviewModalProps> = ({
               {e.id} · {e.g.label}
             </span>
           </div>
+          <button
+            type="button"
+            className="btn btn-secondary"
+            disabled={recreatingHero}
+            onClick={handleRecreateHeroImage}
+          >
+            {recreatingHero ? 'Recreating image…' : 'Recreate image'}
+          </button>
           <button type="button" className="btn btn-ghost" onClick={onClose}>
             Close
           </button>
@@ -275,9 +326,45 @@ export const StorefrontPreviewModal: React.FC<StorefrontPreviewModalProps> = ({
                   }}
                 />
               )}
-              <span style={{ position: 'relative', zIndex: 1 }}>
-                Hero lifestyle render · {activeProduct.theme.replace(/_/g, ' ')} · {activeProduct.name}
-              </span>
+              <div
+                style={{
+                  position: 'relative',
+                  zIndex: 1,
+                  width: '100%',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 6
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                  <span>
+                    Hero lifestyle render (v{heroVariationIdx}) · {activeProduct.theme.replace(/_/g, ' ')} ·{' '}
+                    {activeProduct.name}
+                  </span>
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    style={{ padding: '4px 10px', fontSize: 11 }}
+                    disabled={recreatingHero}
+                    onClick={handleRecreateHeroImage}
+                  >
+                    {recreatingHero ? 'Recreating…' : 'Recreate image'}
+                  </button>
+                </div>
+                {heroPromptNote && (
+                  <span
+                    style={{
+                      fontSize: 10,
+                      color: 'var(--color-neutral-300)',
+                      background: 'color-mix(in srgb, var(--color-bg) 82%, transparent)',
+                      padding: '6px 8px',
+                      borderRadius: 'var(--radius-sm)'
+                    }}
+                  >
+                    {heroPromptNote}
+                  </span>
+                )}
+              </div>
             </div>
 
             <div

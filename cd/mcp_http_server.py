@@ -13,6 +13,7 @@ from starlette.requests import Request
 from starlette.responses import HTMLResponse, JSONResponse, Response
 import uvicorn
 
+from app.loader import resolve_env_config
 from app.ui_server import UI_DIST_DIR, register_ui_routes
 from seed_packs.t02_dynamic_storefronts.mcp_server import (
     MCP_TOOLS,
@@ -86,19 +87,29 @@ def build_a2a_agent_card(base_url: str = "") -> dict[str, Any]:
 async def healthz_endpoint(request: Request) -> JSONResponse:
     """Return Cloud Run health status and registered ADK/MCP tool manifest."""
     base_url = str(request.base_url).rstrip("/")
+    gemini_model = (
+        os.environ.get("GEMINI_MODEL", "").strip()
+        or resolve_env_config("GEMINI_MODEL")
+    )
+    image_model = (
+        os.environ.get("GEMINI_IMAGE_MODEL", "").strip()
+        or resolve_env_config("GEMINI_IMAGE_MODEL")
+    )
     return JSONResponse(
         {
             "status": "ONLINE",
             "service": "t02-dynamic-storefronts-mcp",
             "seed_pack": os.environ.get("SEED_PACK", "t02"),
             "project_id": os.environ.get("GOOGLE_CLOUD_PROJECT", "expedition-dn26lon-5922"),
-            "gemini_model": os.environ.get("GEMINI_MODEL", "gemini-3.8-flash"),
-            "gemini_image_model": os.environ.get("GEMINI_IMAGE_MODEL", "gemini-3.1-flash-image"),
+            "gemini_model": gemini_model,
+            "gemini_image_model": image_model,
             "mcp_tools": [fn.__name__ for fn in MCP_TOOLS],
             "adk_tools": [fn.__name__ for fn in ADK_TOOLS if hasattr(fn, "__name__")],
             "endpoints": {
                 "nocturne_ui": f"{base_url}/ui",
+                "health": f"{base_url}/health",
                 "healthz": f"{base_url}/healthz",
+                "api_health": f"{base_url}/api/health",
                 "api_dashboard": f"{base_url}/api/dashboard",
                 "mcp_sse": f"{base_url}/sse",
                 "mcp_messages": f"{base_url}/messages",
@@ -165,6 +176,7 @@ def build_mcp_cloudrun_app() -> FastAPI:
     register_ui_routes(cloud_app)
 
     cloud_app.add_route("/", root_ui_or_health_endpoint, methods=["GET"])
+    cloud_app.add_route("/health", healthz_endpoint, methods=["GET"])
     cloud_app.add_route("/healthz", healthz_endpoint, methods=["GET"])
     cloud_app.add_route("/.well-known/agent.json", agent_card_endpoint, methods=["GET"])
     cloud_app.add_route("/preview/{segment_id}", storefront_preview_endpoint, methods=["GET"])

@@ -12,12 +12,13 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 
 
 def test_ui_server_no_hardcoded_gemini_model() -> None:
-    """app/ui_server.py must never hardcode a gemini-* model string."""
-    ui_server_path = REPO_ROOT / "app" / "ui_server.py"
-    assert ui_server_path.exists(), "Expected app/ui_server.py to exist"
-    source = ui_server_path.read_text(encoding="utf-8")
-    hardcoded = re.findall(r'["\']gemini-[0-9][^"\']*["\']', source)
-    assert not hardcoded, f"Found hardcoded Gemini model strings in app/ui_server.py: {hardcoded}"
+    """app/ui_server.py and cd/mcp_http_server.py must never hardcode a gemini-* model string."""
+    for rel_path in (("app", "ui_server.py"), ("cd", "mcp_http_server.py")):
+        target_path = REPO_ROOT.joinpath(*rel_path)
+        assert target_path.exists(), f"Expected {target_path} to exist"
+        source = target_path.read_text(encoding="utf-8")
+        hardcoded = re.findall(r'["\']gemini-[0-9][^"\']*["\']', source)
+        assert not hardcoded, f"Found hardcoded Gemini model strings in {target_path}: {hardcoded}"
 
 
 def test_ui_server_health_and_dashboard_data(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -247,11 +248,18 @@ def test_ui_react_folder_structure_and_nocturne_design_system() -> None:
 def test_cloudrun_mcp_server_serves_nocturne_ui_and_api_routes(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """Verify cd/Dockerfile.mcp builds /ui and cd/mcp_http_server.py serves Nocturne UI + /api/* on Cloud Run."""
+    """Verify cd/Dockerfile.mcp builds /ui and cd/mcp_http_server.py serves Nocturne UI, /health, /ui/{file_name}, and /api/*."""
     monkeypatch.setenv("SEED_OFFLINE_MODE", "1")
     dockerfile_text = (REPO_ROOT / "cd" / "Dockerfile.mcp").read_text(encoding="utf-8")
     assert "AS ui-builder" in dockerfile_text
     assert "COPY --from=ui-builder /ui/dist ./ui/dist" in dockerfile_text
+    assert "google-cloud-storage==3.17.1" in dockerfile_text
+
+    modal_text = (
+        REPO_ROOT / "ui" / "src" / "components" / "StorefrontPreviewModal.tsx"
+    ).read_text(encoding="utf-8")
+    assert "computeMaxSafeDiscountPct(e.p.marginPct)" in modal_text
+    assert "recreateHeroImageForAudience" in modal_text
 
     from cd.mcp_http_server import build_mcp_cloudrun_app
 
@@ -260,6 +268,11 @@ def test_cloudrun_mcp_server_serves_nocturne_ui_and_api_routes(
     ui_resp = client.get("/ui")
     assert ui_resp.status_code == 200
     assert "text/html" in ui_resp.headers.get("content-type", "")
+
+    cloud_health = client.get("/health")
+    assert cloud_health.status_code == 200
+    assert cloud_health.json()["status"] == "ONLINE"
+    assert "/health" in cloud_health.json()["endpoints"]["health"]
 
     api_health = client.get("/api/health")
     assert api_health.status_code == 200
@@ -276,5 +289,10 @@ def test_cloudrun_mcp_server_serves_nocturne_ui_and_api_routes(
         },
     )
     assert recreate_resp.status_code == 200
-    assert recreate_resp.json()["status"] == "SUCCESS"
-    assert recreate_resp.json()["render_job"]["segment_id"] == "SEG-057"
+    recreate_json = recreate_resp.json()
+    assert recreate_json["status"] == "SUCCESS"
+    assert recreate_json["render_job"]["segment_id"] == "SEG-057"
+    assert recreate_json.get("ui_filename", "").startswith("hero_SEG-057")
+
+    hero_file_resp = client.get(f"/ui/{recreate_json['ui_filename']}")
+    assert hero_file_resp.status_code == 200
