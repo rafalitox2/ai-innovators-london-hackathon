@@ -10,6 +10,7 @@ steps:
       - "GEMINI_IMAGE_MODEL=gemini-3.1-flash-image"
       - "AGENT_RUNTIME_LOCATION=europe-west1"
       - "BQ_LOCATION=EU"
+      - "STAGING_BUCKET=gs://$PROJECT_ID-hackathon-staging"
       - "SEED_PACK=${_SEED_PACK}"
       - "AGENT_RUNTIME_DEPLOY=1"
     args:
@@ -20,7 +21,10 @@ steps:
         uv pip install --python .venv/bin/python -r pyproject.toml
         .venv/bin/python -m pytest -q
         .venv/bin/python -m eval.run_eval --pack "${_SEED_PACK}"
+        .venv/bin/python -c 'from pathlib import Path; import os; from deploy.deploy import sync_state_from_gcs; p = os.environ["GOOGLE_CLOUD_PROJECT"]; sync_state_from_gcs(p, f"gs://{p}-hackathon-staging", Path(".deployed_agent.json"))'
         .venv/bin/python -m deploy.deploy --pack "${_SEED_PACK}"
+        .venv/bin/python -c 'from pathlib import Path; import os; from deploy.deploy import sync_state_to_gcs; p = os.environ["GOOGLE_CLOUD_PROJECT"]; sync_state_to_gcs(p, f"gs://{p}-hackathon-staging", Path(".deployed_agent.json"))'
+        .venv/bin/python -m deploy.test_remote
 
 substitutions:
   _SEED_PACK: "t02"
