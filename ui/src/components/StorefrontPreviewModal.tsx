@@ -5,6 +5,7 @@ import {
   ItemState,
   ProductItem
 } from '../data/seedData';
+import { GitHubUser } from '../types/auth';
 import {
   A2ASyncResult,
   publishStorefrontOpportunity,
@@ -18,6 +19,7 @@ interface StorefrontPreviewModalProps {
   itemState?: ItemState;
   allProducts: ProductItem[];
   discountCap?: number;
+  user?: GitHubUser | null;
   onClose: () => void;
   onPublished: (expId: string, layoutId?: string, bannerId?: string) => void;
 }
@@ -34,6 +36,7 @@ export const StorefrontPreviewModal: React.FC<StorefrontPreviewModalProps> = ({
   itemState,
   allProducts,
   discountCap = 30,
+  user,
   onClose,
   onPublished
 }) => {
@@ -166,7 +169,9 @@ export const StorefrontPreviewModal: React.FC<StorefrontPreviewModalProps> = ({
       theme_style: activeProduct.theme,
       discount_pct: discountPct,
       banner_copy: promoText,
-      sku_id: activeProduct.sku
+      sku_id: activeProduct.sku,
+      published_by: user ? user.username : 'rafalitox2',
+      published_by_avatar: user?.avatar_url
     });
     setPublishing(false);
     if (res.status !== 'SUCCESS') {

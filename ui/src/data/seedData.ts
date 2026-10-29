@@ -67,6 +67,8 @@ export interface ItemState {
   heroHeadline?: string;
   layoutId?: string;
   bannerId?: string;
+  publishedBy?: string;
+  publishedByAvatar?: string;
 }
 
 export interface Sku0017Audit {

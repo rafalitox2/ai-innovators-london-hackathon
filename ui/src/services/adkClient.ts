@@ -208,6 +208,8 @@ export async function publishStorefrontOpportunity(params: {
   discount_pct: number;
   banner_copy: string;
   sku_id: string;
+  published_by?: string;
+  published_by_avatar?: string;
 }): Promise<{ status: string; error?: string; layout?: { layout_id: string }; promo_banner?: { banner_id: string } }> {
   try {
     const res = await fetch('/api/opportunities/publish', {
