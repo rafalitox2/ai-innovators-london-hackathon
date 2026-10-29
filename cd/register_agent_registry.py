@@ -14,6 +14,8 @@ import urllib.error
 import urllib.request
 
 from app.loader import REPO_ROOT
+from seed_packs.t02_dynamic_storefronts.mcp_server import MCP_TOOLS
+from seed_packs.t02_dynamic_storefronts.tools import TOOLS as ADK_TOOLS
 
 STATE_FILE = REPO_ROOT / ".deployed_agent.json"
 CD_MANIFEST_FILE = REPO_ROOT / "cd" / "cd_deployment_state.json"
@@ -27,12 +29,12 @@ def build_mcp_registry_service_payload(
     """Build the agentregistry.googleapis.com v1alpha Service payload for the Cloud Run MCP Server."""
     clean_url = mcp_url.rstrip("/")
     sse_url = clean_url if clean_url.endswith("/sse") else f"{clean_url}/sse"
+    tool_names = ", ".join(fn.__name__ for fn in MCP_TOOLS)
     return {
         "displayName": display_name[:63],
         "description": (
-            "Table 2 (t02_dynamic_storefronts) FastMCP Server hosted on Google Cloud Run "
-            "providing publish_storefront_layout, queue_visual_asset_render, update_promo_banner, "
-            "generate_hero_lifestyle_image, render_storefront_preview, and sync_campaign_with_t01."
+            f"Table 2 (t02_dynamic_storefronts) FastMCP Server hosted on Google Cloud Run "
+            f"providing {len(MCP_TOOLS)} MCP tools: {tool_names}."
         ),
         "mcpServerSpec": {
             "type": "NO_SPEC",
@@ -59,11 +61,13 @@ def build_agent_registry_service_payload(
         if reasoning_engine_resource.startswith("projects/")
         else f"{clean_url}/.well-known/agent.json"
     )
+    adk_tool_names = ", ".join(fn.__name__ for fn in ADK_TOOLS if hasattr(fn, "__name__"))
     return {
         "displayName": display_name[:63],
         "description": (
             "Table 2 Dynamic Storefront Engine ADK Agent deployed on Vertex AI Agent Runtime "
-            f"({reasoning_engine_resource or 'europe-west1'}) and paired with Cloud Run MCP ({clean_url})."
+            f"({reasoning_engine_resource or 'europe-west1'}), paired with Cloud Run MCP ({clean_url}), "
+            f"and exposing BigQuery/merchandising read tools ({adk_tool_names})."
         ),
         "agentSpec": {
             "type": "NO_SPEC",
@@ -233,6 +237,10 @@ def register_all_in_agent_registry(
             token=token,
         )
 
+    # Note: In agentregistry.googleapis.com/v1alpha (europe-west1), `POST /bindings` requires a
+    # pre-provisioned Workforce/IAM `auth_provider` resource (`400 INVALID_ARGUMENT: fieldViolations:
+    # [binding.auth_provider]`), whereas `services` (`mcpServers` and `agents`) support `"type": "NO_SPEC"`
+    # directly. We record the canonical URN binding descriptor in `cd_deployment_state.json`.
     binding_result: dict[str, Any] = {}
     agent_urn = str(agent_entity.get("agentId") or "")
     mcp_urn = str(mcp_entity.get("mcpServerId") or "")

@@ -72,13 +72,13 @@ def build_a2a_agent_card(base_url: str = "") -> dict[str, Any]:
                 "id": "t02-storefront-ui-multimodal",
                 "name": "Gemini Multimodal Hero Image & Interactive Storefront UI Preview",
                 "description": "Generates lifestyle hero assets via GEMINI_IMAGE_MODEL and renders interactive HTML storefront preview cards.",
-                "tags": ["multimodal", "gemini-image", "mcp-ui", "storefront"],
+                "tags": ["multimodal", "image-generation", "mcp-ui", "storefront"],
             },
             {
                 "id": "t02-eval-and-deploy",
-                "name": "Golden Evaluation & OpenTofu Cloud Run + Agent Registry CD",
+                "name": "Golden Evaluation & GitHub Actions Cloud Run + Agent Registry CD",
                 "description": "Validates golden trajectories and deploys MCP on Cloud Run + ADK Agent on Vertex AI Agent Runtime and Google Cloud Agent Registry.",
-                "tags": ["eval", "opentofu", "cloud-run", "agent-registry"],
+                "tags": ["eval", "github-actions", "cloud-run", "agent-registry"],
             },
         ],
     }
@@ -87,22 +87,14 @@ def build_a2a_agent_card(base_url: str = "") -> dict[str, Any]:
 async def healthz_endpoint(request: Request) -> JSONResponse:
     """Return Cloud Run health status and registered ADK/MCP tool manifest."""
     base_url = str(request.base_url).rstrip("/")
-    gemini_model = (
-        os.environ.get("GEMINI_MODEL", "").strip()
-        or resolve_env_config("GEMINI_MODEL")
-    )
-    image_model = (
-        os.environ.get("GEMINI_IMAGE_MODEL", "").strip()
-        or resolve_env_config("GEMINI_IMAGE_MODEL")
-    )
     return JSONResponse(
         {
             "status": "ONLINE",
             "service": "t02-dynamic-storefronts-mcp",
-            "seed_pack": os.environ.get("SEED_PACK", "t02"),
-            "project_id": os.environ.get("GOOGLE_CLOUD_PROJECT", "expedition-dn26lon-5922"),
-            "gemini_model": gemini_model,
-            "gemini_image_model": image_model,
+            "seed_pack": resolve_env_config("SEED_PACK", default="t02"),
+            "project_id": resolve_env_config("GOOGLE_CLOUD_PROJECT", default="expedition-dn26lon-5922"),
+            "gemini_model": resolve_env_config("GEMINI_MODEL"),
+            "gemini_image_model": resolve_env_config("GEMINI_IMAGE_MODEL"),
             "mcp_tools": [fn.__name__ for fn in MCP_TOOLS],
             "adk_tools": [fn.__name__ for fn in ADK_TOOLS if hasattr(fn, "__name__")],
             "endpoints": {
