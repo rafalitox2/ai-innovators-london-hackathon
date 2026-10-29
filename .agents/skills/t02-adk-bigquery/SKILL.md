@@ -1,6 +1,6 @@
 ---
 name: t02-adk-bigquery
-description: This skill should be used when adding, modifying, or debugging ADK LlmAgent instructions and BigQuery analytics tools (find_catalog_products, get_storefront_performance, get_audience_segments, recommend_storefront_optimization) for Table 2 (t02_dynamic_storefronts).
+description: This skill should be used when adding, modifying, or debugging ADK LlmAgent instructions and BigQuery analytics tools (find_catalog_products, get_storefront_performance, get_audience_segments, recommend_storefront_optimization, query_merchandising_knowledge_graph) for Table 2 (t02_dynamic_storefronts).
 ---
 
 # Table 2 ADK & BigQuery Analytics Skill (`t02-adk-bigquery`)
@@ -24,7 +24,9 @@ Guides development and maintenance of the ADK `LlmAgent` (`app/agent.py`, `seed_
 3. `get_audience_segments(region: str = "", dominant_style: str = "", limit: int = 10) -> str`
    - Queries `audience_segments` ordered by `avg_basket_eur DESC`.
 4. `recommend_storefront_optimization(region: str = "", segment_id: str = "", min_bounce_rate_pct: float = 45.0, min_stock: int = 15, limit: int = 5) -> str`
-   - Performs a 3-table BigQuery JOIN across `audience_segments`, `storefront_experiments`, and `products_catalog` (matching `p.style_theme = s.dominant_style` and excluding `SKU-0017` injection payloads) to rank high-margin replacement SKUs and compute `max_safe_discount_pct` (`min(30, floor(margin_pct - 10.0))`).
+   - Performs a 3-table BigQuery JOIN across `audience_segments`, `storefront_experiments`, and `products_catalog` (matching `p.style_theme = s.dominant_style` and excluding `SKU-0017` injection payloads) to rank high-margin replacement SKUs and compute `max_safe_discount_pct` (`min(30, floor(margin_pct - 15.0))`).
+5. `query_merchandising_knowledge_graph(segment_id: str = "SEG-001", max_bundle_size: int = 3, min_stock: int = 15) -> str`
+   - Queries `audience_segments`, `products_catalog` (with parameterized pushdown on `stock_qty >= @min_stock`, `margin_pct > @min_margin`, `LOWER(sku_id) != 'sku-0017'`, and `NOT REGEXP_CONTAINS(..., @injection_pattern)`), and `storefront_experiments`, and builds a typed Merchandising Knowledge Graph (`nodes` with `"namespace"` + `"canonical_uri"`, `edges`, and a multi-category `cross_sell_bundle` via `seed_packs/t02_dynamic_storefronts/knowledge_graph.py`).
 
 ## Implementation Pattern for New or Updated BigQuery Tools
 
