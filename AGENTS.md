@@ -79,3 +79,36 @@ Tables can unlock two dedicated engineering-rigor Bonus points (`+1 pt` each onc
    - **Parallel Git Collaboration**: Use feature branches, `git worktree` isolation, and Pull Requests across the 5 Table members rather than pushing untested code directly to `main`.
 2. **Automated CI/CD Pipeline (`+1 pt`)**:
    - Wire GitHub Actions and/or Google Cloud Build (`cloudbuild.yaml`) to run automated quality gates (`make test` + `make eval-validate`/`make eval`) and deploy to Vertex AI Agent Runtime (`make deploy`). Note: `@gcplab.me` sandbox projects forbid exporting Service Account JSON keys, so use Cloud Build (native GCP service agent) or Workload Identity Federation for cloud steps. See `docs/STARTER.md` for copy-paste templates.
+
+## 5. Table 2 (`t02_dynamic_storefronts`) Architecture, Tools & Antigravity Skills
+
+Our team repository is configured for **Table 2 — Dynamic Storefront Engine** (`SEED_PACK=t02`, directory `seed_packs/t02_dynamic_storefronts`, tribe: **Marketing & Customer Acquisition** paired with Table 1 `t01_campaign_orchestrator`).
+
+### BigQuery Dataset (`seed_t02`, `BQ_LOCATION=EU`)
+- `audience_segments` (80 rows) — regional shopper segments (`SEG-001`..`SEG-080`), `dominant_style`, `avg_basket_eur`, `return_sensitivity`, `region`.
+- `products_catalog` (100 rows) — SKUs (`SKU-0001`..`SKU-0100`), `style_theme`, `price_eur`, `margin_pct`, `stock_available`, `visual_tags` (note: `SKU-0017` contains an untrusted prompt injection payload).
+- `storefront_experiments` (120 rows) — historical A/B tests (`EXP-0001`..`EXP-0120`), `conversion_rate_pct`, `bounce_rate_pct`, `layout_variant`.
+
+### Registered Table 2 Tool Catalog
+- **BigQuery Read & Analytics Tools (`seed_packs/t02_dynamic_storefronts/tools.py`)**:
+  - `find_catalog_products`: Queries `products_catalog` by `style_theme`, `category`, and `min_stock`.
+  - `get_storefront_performance`: Queries `storefront_experiments` by `segment_id` and `layout_variant`.
+  - `get_audience_segments`: Queries `audience_segments` by `region` and `dominant_style`.
+  - `recommend_storefront_optimization`: 3-table BigQuery JOIN ranking high-margin replacement SKUs (`p.style_theme = s.dominant_style`, excluding `SKU-0017`) and computing `max_safe_discount_pct`.
+- **FastMCP Action, Multimodal, UI & Tribe A2A Tools (`seed_packs/t02_dynamic_storefronts/mcp_server.py`)**:
+  - `publish_storefront_layout`: Publishes a personalized layout (`Editorial_Grid`, `Single_Hero_Spotlight`, `Curated_Bundle_Carousel`) for a segment.
+  - `queue_visual_asset_render`: Queues a visual lifestyle render job (`16:9`, `4:5`, `1:1`).
+  - `update_promo_banner`: Updates promotional banner copy and enforces the `<= 30%` discount cap (`REJECTED_POLICY_CAP`).
+  - `generate_hero_lifestyle_image`: Generates a hero lifestyle visual via `GEMINI_IMAGE_MODEL` (`gemini-3.1-flash-image`).
+  - `render_storefront_preview`: Renders an interactive MCP App UI preview (`ui://storefront-preview/<segment_id>`) from `seed_packs/t02_dynamic_storefronts/ui/template.html` and enforces the `<= 30%` discount cap.
+  - `sync_campaign_with_t01`: Executes the `STOREFRONT_TO_CAMPAIGN_SYNC` A2A handshake with Table 1 (`expedition_t01_campaign_orchestrator`), enforcing the `<= 25.0 EUR` CPM bid guardrail.
+
+### Workspace Rules & Antigravity Skills (`.agents/`)
+- **Domain & Security Rules**:
+  - `.agents/rules/pull-requests.md`: Mandatory Spec/Eval-first TDD workflow and PR template verification gates.
+  - `.agents/rules/t02-domain-invariants.md`: Non-negotiable Table 2 merchandising guardrails (`<= 30%` discount cap, `>= 10%` net margin floor, `SKU-0017` prompt injection defense, `MCP_TOOLS` parity).
+- **Antigravity Skills (`.agents/skills/`)**:
+  - `t02-adk-bigquery` (`.agents/skills/t02-adk-bigquery/SKILL.md`): Adding/modifying parameterized BigQuery analytics tools and ADK instructions.
+  - `t02-mcp-actions-a2a` (`.agents/skills/t02-mcp-actions-a2a/SKILL.md`): FastMCP action tools, policy guardrails, `MCP_TOOLS` parity, and Table 1 A2A handshake (`sync_campaign_with_t01`).
+  - `t02-storefront-ui-multimodal` (`.agents/skills/t02-storefront-ui-multimodal/SKILL.md`): Multimodal hero lifestyle image generation (`GEMINI_IMAGE_MODEL`) and MCP App UI storefront preview (`template.html`).
+  - `t02-eval-and-deploy` (`.agents/skills/t02-eval-and-deploy/SKILL.md`): Authoring `golden.test.json` scenarios, running `make eval-validate PACK=t02`, Cloud Build (`cloudbuild.yaml`), and `make deploy` / `make test-remote`.
