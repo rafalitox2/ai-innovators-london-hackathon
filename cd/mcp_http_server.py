@@ -7,13 +7,13 @@ import os
 from pathlib import Path
 from typing import Any
 
+from dotenv import dotenv_values
 from starlette.applications import Starlette
 from starlette.requests import Request
 from starlette.responses import HTMLResponse, JSONResponse
 from starlette.routing import Route
 import uvicorn
 
-from app.loader import resolve_env_config
 from seed_packs.t02_dynamic_storefronts.mcp_server import (
     MCP_TOOLS,
     mcp,
@@ -23,6 +23,20 @@ from seed_packs.t02_dynamic_storefronts.tools import TOOLS as ADK_TOOLS
 
 _REPO_ROOT = Path(__file__).resolve().parent.parent
 _UI_DIR = _REPO_ROOT / "seed_packs" / "t02_dynamic_storefronts" / "ui"
+
+
+def resolve_env_config(key: str, default: str = "") -> str:
+    """Resolve configuration from environment, .env, or .env.example without importing google-adk."""
+    val = os.environ.get(key, "").strip()
+    if val:
+        return val
+    for env_name in (".env", ".env.example"):
+        env_path = _REPO_ROOT / env_name
+        if env_path.exists():
+            from_file = (dotenv_values(env_path).get(key) or "").strip()
+            if from_file:
+                return from_file
+    return default
 
 
 def _resolve_public_base_url(request: Request) -> str:
