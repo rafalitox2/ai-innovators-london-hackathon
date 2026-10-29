@@ -297,6 +297,53 @@
         "user_id": "eval_user",
         "state": {}
       }
+    },
+    {
+      "eval_id": "case_08_tribe_a2a_handshake_t01",
+      "conversation": [
+        {
+          "invocation_id": "t02-inv-008",
+          "user_content": {
+            "parts": [
+              {
+                "text": "Synchronize our SEG-001 storefront layout (featured SKUs SKU-0001,SKU-0006, hero headline 'Nordic Comfort for London Living', theme style Nordic_Minimal, locale en-GB) with Table 1 Campaign Orchestrator for event EVT-0001 on channel Meta_Reels with a 12.5 EUR CPM bid."
+              }
+            ],
+            "role": "user"
+          },
+          "final_response": {
+            "parts": [
+              {
+                "text": "The Tribe A2A handshake with Table 1 (t01_campaign_orchestrator) succeeded for segment SEG-001, staging a localized variant for EVT-0001 in en-GB and activating a 12.50 EUR CPM bid on Meta_Reels."
+              }
+            ],
+            "role": "model"
+          },
+          "intermediate_data": {
+            "tool_uses": [
+              {
+                "name": "sync_campaign_with_t01",
+                "args": {
+                  "segment_id": "SEG-001",
+                  "featured_skus": "SKU-0001,SKU-0006",
+                  "hero_headline": "Nordic Comfort for London Living",
+                  "theme_style": "Nordic_Minimal",
+                  "locale": "en-GB",
+                  "event_id": "EVT-0001",
+                  "channel": "Meta_Reels",
+                  "target_cpm_bid_eur": 12.5
+                }
+              }
+            ],
+            "intermediate_responses": []
+          }
+        }
+      ],
+      "session_input": {
+        "app_name": "app",
+        "user_id": "eval_user",
+        "state": {}
+      }
     }
   ]
 }
