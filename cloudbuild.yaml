@@ -7,6 +7,7 @@ steps:
       - "GOOGLE_GENAI_USE_VERTEXAI=1"
       - "GOOGLE_CLOUD_LOCATION=global"
       - "GEMINI_MODEL=gemini-3.8-flash"
+      - "GEMINI_IMAGE_MODEL=gemini-3.1-flash-image"
       - "AGENT_RUNTIME_LOCATION=europe-west1"
       - "BQ_LOCATION=EU"
       - "SEED_PACK=${_SEED_PACK}"
@@ -15,7 +16,7 @@ steps:
       - "-c"
       - |
         set -euo pipefail
-        uv venv --python 3.12 .venv
+        uv venv --clear --python 3.12 .venv
         uv pip install --python .venv/bin/python -r pyproject.toml
         .venv/bin/python -m pytest -q
         .venv/bin/python -m eval.run_eval --pack "${_SEED_PACK}"

@@ -70,6 +70,55 @@ def test_t02_render_storefront_preview_writes_to_ui_folder(monkeypatch: pytest.M
     assert "Dynamic Storefront Engine" in ui_file.read_text(encoding="utf-8")
 
 
+def test_mcp_stdio_toolset_uses_30s_timeout_for_multimodal_tools() -> None:
+    """_build_mcp_stdio_toolset sets timeout >= 30.0s so live image generation never times out at 5s."""
+    from app.loader import _build_mcp_stdio_toolset
+
+    toolset = _build_mcp_stdio_toolset("seed_packs.t02_dynamic_storefronts.mcp_server")
+    assert toolset is not None
+    conn_params = getattr(toolset, "_connection_params", None)
+    assert conn_params is not None
+    assert float(getattr(conn_params, "timeout", 0.0)) >= 30.0
+
+
+def test_generate_hero_and_render_preview_embeds_hero_visual_in_ui(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """generate_hero_lifestyle_image syncs hero asset to ui/ and render_storefront_preview embeds it."""
+    monkeypatch.setenv("SEED_OFFLINE_MODE", "1")
+    from seed_packs.t02_dynamic_storefronts.mcp_server import (
+        generate_hero_lifestyle_image,
+        render_storefront_preview,
+    )
+
+    hero_raw = generate_hero_lifestyle_image(
+        sku_id="SKU-0066",
+        segment_id="SEG-001",
+        style_theme="Nordic_Minimal",
+        scene_description="Sunlit London flat with oak desk",
+        aspect_ratio="16:9",
+    )
+    hero_res = json.loads(hero_raw)
+    assert hero_res["status"] == "SUCCESS"
+    ui_asset = Path(hero_res["render_job"]["ui_asset_path"])
+    assert ui_asset.exists()
+
+    prev_raw = render_storefront_preview(
+        segment_id="SEG-001",
+        featured_skus="SKU-0066,SKU-0001",
+        hero_headline="Nordic Comfort for London Living",
+        theme_style="Nordic_Minimal",
+        discount_pct=15,
+        banner_copy="Autumn Design Week — 15% Off Modular Living",
+    )
+    prev_res = json.loads(prev_raw)
+    assert prev_res["status"] == "SUCCESS"
+    html_doc = Path(prev_res["preview"]["ui_repo_path"]).read_text(encoding="utf-8")
+    assert "hero_SEG-001." in html_doc
+    if ui_asset.suffix == ".svg":
+        ui_asset.unlink(missing_ok=True)
+
+
 def test_t02_nocturne_ui_mockup_and_template_tokens(monkeypatch: pytest.MonkeyPatch) -> None:
     """Verify Nocturne UI design handoff mockup files and Nocturne tokens in template.html."""
     monkeypatch.setenv("SEED_OFFLINE_MODE", "1")

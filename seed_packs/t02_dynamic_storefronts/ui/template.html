@@ -160,12 +160,21 @@
       display: flex;
       flex-direction: column;
       justify-content: flex-end;
+      gap: 10px;
       padding: 20px;
       background:
         radial-gradient(420px 260px at 70% 30%, var(--color-section-ghost), transparent 70%),
         linear-gradient(160deg, var(--color-section), var(--color-neutral-900));
       color: var(--color-neutral-300);
       font-size: 12px;
+    }
+    .hero-visual img {
+      display: block;
+      width: 100%;
+      max-height: 240px;
+      object-fit: cover;
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-sm);
     }
     .hero-copy {
       display: flex;
@@ -290,6 +299,7 @@
 
         <div class="hero">
           <div class="hero-visual">
+            {{HERO_IMAGE_HTML}}
             <span>Hero lifestyle render · {{THEME_STYLE}} · {{SEGMENT_ID}}</span>
           </div>
           <div class="hero-copy">

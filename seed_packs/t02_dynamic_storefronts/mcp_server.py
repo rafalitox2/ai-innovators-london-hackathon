@@ -298,10 +298,21 @@ def generate_hero_lifestyle_image(
             svg_path.write_text(svg_markup, encoding="utf-8")
             asset_path = svg_path
 
+        ui_dir = _PACK_DIR / "ui"
+        ui_asset_path_str = str(asset_path)
+        ui_sync_warning: str | None = None
+        try:
+            ui_dir.mkdir(parents=True, exist_ok=True)
+            ui_asset_file = ui_dir / f"hero_{seg_clean}{asset_path.suffix}"
+            ui_asset_file.write_bytes(asset_path.read_bytes())
+            ui_asset_path_str = str(ui_asset_file)
+        except OSError as exc:
+            ui_sync_warning = f"Failed to sync hero image to ui/: {exc}"
+
         state = _load_state()
         queue = state.setdefault("render_queue", [])
         job_id = f"HERO-{2501 + len(queue)}"
-        record = {
+        record: dict[str, Any] = {
             "render_job_id": job_id,
             "sku_id": sku_clean,
             "product_name": product_name,
@@ -312,9 +323,12 @@ def generate_hero_lifestyle_image(
             "image_model": image_model,
             "generation_mode": generation_mode,
             "asset_path": str(asset_path),
+            "ui_asset_path": ui_asset_path_str,
             "rendered_at": datetime.now(timezone.utc).isoformat(),
             "status": "RENDERED",
         }
+        if ui_sync_warning:
+            record["ui_sync_warning"] = ui_sync_warning
         queue.append(record)
         backend = _save_state(state)
         return json.dumps({"status": "SUCCESS", "render_job": record, "state_backend": backend})
@@ -346,10 +360,10 @@ def render_storefront_preview(
     """
     try:
         disc = int(discount_pct)
-        if disc < 0 or disc > 30:
+        if disc < 0 or disc > MAX_DISCOUNT_PCT:
             return json.dumps({
                 "status": "REJECTED_POLICY_CAP",
-                "error": f"discount_pct={disc}% exceeds the 30% maximum automated merchandising discount policy.",
+                "error": f"discount_pct={disc}% exceeds the {MAX_DISCOUNT_PCT}% maximum automated merchandising discount policy.",
             })
 
         seg_clean = (segment_id or "SEG-001").strip()
@@ -361,6 +375,20 @@ def render_storefront_preview(
         catalog_map = {
             r.get("sku_id", "").strip().upper(): r for r in _read_csv_rows("products_catalog")
         }
+        for sku in sku_list:
+            cat_row = catalog_map.get(sku.upper())
+            if cat_row is not None:
+                row_margin = float(cat_row.get("margin_pct", 0.0) or 0.0)
+                safe_cap = compute_max_safe_discount_pct(row_margin)
+                if disc > safe_cap:
+                    return json.dumps({
+                        "status": "REJECTED_MARGIN_POLICY",
+                        "error": (
+                            f"discount_pct={disc}% would undercut {sku}'s real gross margin "
+                            f"({row_margin}%); the maximum safe discount at a {MARGIN_SAFETY_BUFFER_PCT}pt "
+                            f"margin buffer is {safe_cap}%."
+                        ),
+                    })
         seg_row = next(
             (r for r in _read_csv_rows("audience_segments") if r.get("segment_id", "").strip().upper() == seg_clean.upper()),
             {"segment_id": seg_clean, "segment_name": seg_clean, "region": "EU", "device_type": "all"},
@@ -401,6 +429,14 @@ def render_storefront_preview(
         ui_dir = _PACK_DIR / "ui"
         template_path = ui_dir / "template.html"
         region_str = str(seg_row.get("region", "EU"))
+        hero_image_html = ""
+        for ext in (".png", ".svg"):
+            candidate_hero = ui_dir / f"hero_{seg_clean}{ext}"
+            if candidate_hero.exists():
+                hero_image_html = (
+                    f'<img src="hero_{html.escape(seg_clean)}{ext}" alt="{html.escape(headline_clean)}" />'
+                )
+                break
         if template_path.exists():
             tpl = template_path.read_text(encoding="utf-8")
             doc = (
@@ -408,6 +444,7 @@ def render_storefront_preview(
                 .replace("{{REGION}}", html.escape(region_str))
                 .replace("{{THEME_STYLE}}", html.escape(theme_clean))
                 .replace("{{HERO_HEADLINE}}", html.escape(headline_clean))
+                .replace("{{HERO_IMAGE_HTML}}", hero_image_html)
                 .replace("{{BANNER_COPY}}", html.escape(banner_clean))
                 .replace("{{DISCOUNT_PCT}}", str(disc))
                 .replace("{{CARDS_HTML}}", "".join(cards_html))
