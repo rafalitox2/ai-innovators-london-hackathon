@@ -139,3 +139,23 @@ def test_find_catalog_products_sanitizes_injected_description_offline(
     assert "<!--" not in descriptions
     skus = {p["sku_id"] for p in res["products"]}
     assert "SKU-0017" in skus
+
+
+def test_render_storefront_preview_rejects_margin_violation_on_featured_sku(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("SEED_OFFLINE_MODE", "1")
+    from seed_packs.t02_dynamic_storefronts.mcp_server import render_storefront_preview
+
+    raw = render_storefront_preview(
+        segment_id="SEG-002",
+        featured_skus="SKU-0001,SKU-0085",
+        hero_headline="Low Margin Guardrail Check",
+        theme_style="Nordic_Minimal",
+        discount_pct=30,
+        banner_copy="30% Off Everything",
+    )
+    res = json.loads(raw)
+    assert res["status"] == "REJECTED_MARGIN_POLICY"
+    assert "SKU-0085" in res["error"]
+
