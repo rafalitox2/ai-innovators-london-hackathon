@@ -1,0 +1,59 @@
+rank,experiment_id,sku,product_name,segment_id,segment_label,views,purchases,revenue_eur,conversion_rate,bounce_rate,score_raw,rating,potential_add_revenue_eur,potential_add_margin_eur,status,published_date
+1,e78,ANV-1427,Orla Shelf,SEG-032,Paris · Mobile · Home-office buyer,11977,154,157696,0.01286,0.7817,6051430.08,100,187357.21,118266.53,pending_approval,
+2,e40,ANV-1273,Rhea Daybed,SEG-069,Lisbon · Desktop · Design enthusiast,13462,169,142636,0.01255,0.6109,3874583.85,64,177025.33,98820.73,published,2026-10-26
+3,e25,ANV-1560,Lumen Sofa,SEG-055,Amsterdam · Mobile · Gift shopper,10074,47,64343,0.00467,0.5968,2767468.79,46,323667.48,108824.7,published,2026-10-19
+4,e90,ANV-1098,Fenn Desk Lamp,SEG-020,London · Desktop · Gift shopper,10778,216,143424,0.02004,0.6825,2275308.5,38,57922.61,26983.41,published,2026-10-15
+5,e66,ANV-1035,Nord Sofa,SEG-001,Madrid · Mobile · Urban renter,5782,125,163000,0.02162,0.7853,1896738.35,31,49125.92,15736.77,pending_approval,
+6,e118,ANV-1637,Oslo Sofa,SEG-035,Paris · Mobile · Gift shopper,12859,206,219184,0.01602,0.3702,1519206.05,25,165750.55,49718.11,published,2026-10-25
+7,e31,ANV-1119,Hale Lounge Chair,SEG-051,Amsterdam · Mobile · Urban renter,7702,207,78453,0.02688,0.7726,1362951.15,23,3673.02,2219.83,pending_approval,
+8,e83,ANV-1049,Vela Sofa,SEG-013,London · Mobile · New homeowner,6109,115,109135,0.01882,0.3554,1297631.61,21,53972.68,33996.34,pending_approval,
+9,e70,ANV-1147,Orla Task Chair,SEG-014,London · Mobile · Design enthusiast,9664,146,88914,0.01511,0.4529,1029548.11,17,76667.68,29616.1,pending_approval,
+10,e49,ANV-1329,Vela Task Chair,SEG-008,Madrid · Desktop · New homeowner,11980,201,59094,0.01678,0.4704,842552.49,14,39998.83,20339.21,published,2026-10-13
+11,e81,ANV-1350,Mira Throw,SEG-070,Lisbon · Desktop · Gift shopper,11862,56,13104,0.00472,0.4631,826771.67,14,64988.95,41804.1,pending_approval,
+12,e53,ANV-1175,Nord Throw,SEG-019,London · Desktop · Design enthusiast,11305,231,52899,0.02043,0.7686,798499.58,13,19936.67,8001.05,published,2026-10-26
+13,e103,ANV-1602,Alba Desk,SEG-034,Paris · Mobile · Design enthusiast,6463,117,60138,0.0181,0.5315,758128.03,13,33324.06,14309.02,pending_approval,
+14,e0,ANV-1322,Alba Desk,SEG-071,Barcelona · Mobile · Urban renter,4227,97,58103,0.02295,0.7012,728881.57,12,13132.61,5391.8,pending_approval,
+15,e30,ANV-1105,Aria Planter,SEG-059,Amsterdam · Desktop · Design enthusiast,4163,114,54606,0.02738,0.7294,723008.03,12,1496.21,743.77,pending_approval,
+16,e95,ANV-1350,Mira Throw,SEG-011,London · Mobile · Urban renter,8641,241,56394,0.02789,0.5235,680858.33,11,493.64,317.53,published,2026-10-26
+17,e34,ANV-1231,Lido Sideboard,SEG-043,Berlin · Mobile · New homeowner,2643,21,14574,0.00795,0.7028,661640.27,11,37031.35,19006.51,pending_approval,
+18,e108,ANV-1056,Tessa Desk Lamp,SEG-031,Paris · Mobile · Urban renter,5667,66,26334,0.01165,0.4984,607248.53,10,37281.68,20090.05,pending_approval,
+19,e109,ANV-1658,Fenn Wall Print,SEG-017,London · Desktop · Home-office buyer,13891,350,48650,0.0252,0.4836,553549.87,9,5673.33,3363.44,pending_approval,
+20,e112,ANV-1497,Oslo Desk Lamp,SEG-035,Paris · Mobile · Gift shopper,4828,118,53572,0.02444,0.3928,479632.85,8,8096.19,4509.9,pending_approval,
+21,e92,ANV-1357,Oslo Pendant,SEG-012,London · Mobile · Home-office buyer,8085,111,27639,0.01373,0.7138,453169.99,7,29000.24,9145.11,pending_approval,
+22,e33,ANV-1462,Alba Desk Lamp,SEG-013,London · Mobile · New homeowner,5917,103,58607,0.01741,0.2867,443012.71,7,36115.23,16577.11,pending_approval,
+23,e5,ANV-1413,Rhea Table Lamp,SEG-043,Berlin · Mobile · New homeowner,8067,154,50666,0.01909,0.532,418214.62,7,24003.98,7110.08,pending_approval,
+24,e1,ANV-1245,Aria Floor Lamp,SEG-064,Lisbon · Mobile · Design enthusiast,12956,348,72732,0.02686,0.4528,409877.01,7,3450.51,1153.6,pending_approval,
+25,e110,ANV-1602,Alba Desk,SEG-013,London · Mobile · New homeowner,4325,25,12850,0.00578,0.4232,403931.4,7,49694.24,21338.21,pending_approval,
+26,e80,ANV-1343,Ruvo Carafe,SEG-012,London · Mobile · Home-office buyer,10544,205,21320,0.01944,0.5844,396464.34,7,9531.54,5896.99,pending_approval,
+27,e9,ANV-1644,Cava Desk,SEG-026,Milan · Desktop · Urban renter,3592,82,27798,0.02283,0.6259,395578.62,7,6460.95,3353.54,published,2026-10-22
+28,e117,ANV-1077,Oslo Throw,SEG-015,London · Mobile · Gift shopper,4840,99,33066,0.02045,0.4307,391427,6,12414.99,6979.44,pending_approval,
+29,e43,ANV-1371,Lido Bistro Set,SEG-041,Berlin · Mobile · Urban renter,3990,33,14982,0.00827,0.6135,386622.82,6,35982.39,12518.12,published,2026-10-15
+30,e51,ANV-1336,Tessa Mirror,SEG-068,Lisbon · Desktop · New homeowner,12550,126,23814,0.01004,0.5201,383189.87,6,42919.45,13331.28,pending_approval,
+31,e23,ANV-1196,Tessa Serving Bowl,SEG-011,London · Mobile · Urban renter,12475,216,26784,0.01731,0.3849,371242.43,6,16737.14,10435.96,published,2026-10-15
+32,e27,ANV-1420,Lumen Dinner Set,SEG-073,Barcelona · Mobile · New homeowner,13248,181,19729,0.01366,0.738,370015.62,6,20898.01,7255.66,pending_approval,
+33,e102,ANV-1511,Lido Wall Print,SEG-016,London · Desktop · Urban renter,13838,219,39201,0.01583,0.2836,345324.38,6,30488.03,14988.68,published,2026-10-14
+34,e96,ANV-1686,Isola Lounge Chair,SEG-064,Lisbon · Mobile · Design enthusiast,4490,123,50307,0.02739,0.4694,314453.33,5,1359.34,495.91,pending_approval,
+35,e32,ANV-1091,Lido Table Lamp,SEG-070,Lisbon · Desktop · Gift shopper,7436,156,19344,0.02098,0.7589,284231.81,5,6597.74,2679.87,pending_approval,
+36,e61,ANV-1392,Porto Mirror,SEG-061,Lisbon · Mobile · Urban renter,12384,115,14835,0.00929,0.2858,275889.8,5,30110.76,18191.72,published,2026-10-11
+37,e84,ANV-1651,Lido Cushion Cover,SEG-056,Amsterdam · Desktop · Urban renter,11588,289,70516,0.02494,0.3176,252032.33,4,9033.3,2535.17,published,2026-10-22
+38,e85,ANV-1546,Isola Wall Print,SEG-030,Milan · Desktop · Gift shopper,13262,77,3388,0.00581,0.6814,249883.88,4,13029.23,8188.71,pending_approval,
+39,e57,ANV-1210,Mira Rug,SEG-002,Madrid · Mobile · Home-office buyer,11068,59,5841,0.00533,0.6602,235903.45,4,24986.79,8148.15,pending_approval,
+40,e119,ANV-1091,Lido Table Lamp,SEG-052,Amsterdam · Mobile · Home-office buyer,10489,218,27032,0.02078,0.4388,231834.67,4,9560.65,3883.35,pending_approval,
+41,e24,ANV-1168,Sienna Lounge Chair,SEG-044,Berlin · Mobile · Design enthusiast,1083,20,12280,0.01847,0.572,227312.23,4,6428.32,3841.61,pending_approval,
+42,e4,ANV-1504,Cava Table Lamp,SEG-028,Milan · Desktop · New homeowner,7015,106,7314,0.01511,0.7493,223299.53,4,6304.05,3881.17,published,2026-10-27
+43,e15,ANV-1182,Alba Mirror,SEG-046,Berlin · Desktop · Urban renter,12631,205,13120,0.01623,0.5778,220983.1,4,9623.42,4553.01,pending_approval,
+44,e64,ANV-1406,Isola Mirror,SEG-017,London · Desktop · Home-office buyer,9263,196,28224,0.02116,0.3405,165899.83,3,9303.72,3398.48,pending_approval,
+45,e74,ANV-1357,Oslo Pendant,SEG-054,Amsterdam · Mobile · Design enthusiast,3077,12,2988,0.0039,0.6274,151574.78,3,18567.84,5855.29,published,2026-10-20
+46,e116,ANV-1651,Lido Cushion Cover,SEG-018,London · Desktop · New homeowner,3823,26,6344,0.0068,0.5717,149667.43,2,19900.13,5584.92,pending_approval,
+47,e21,ANV-1497,Oslo Desk Lamp,SEG-053,Amsterdam · Mobile · New homeowner,1543,15,6810,0.00972,0.343,133854.63,2,12898.78,7185.14,published,2026-10-25
+48,e68,ANV-1245,Aria Floor Lamp,SEG-077,Barcelona · Desktop · Home-office buyer,2421,63,13167,0.02602,0.7327,123954.48,2,1068.71,357.3,pending_approval,
+49,e56,ANV-1217,Oslo Dinner Set,SEG-044,Berlin · Mobile · Design enthusiast,9878,53,3127,0.00537,0.3159,111679.35,2,13269.8,8050.29,pending_approval,
+50,e55,ANV-1588,Sienna Throw,SEG-042,Berlin · Mobile · Home-office buyer,2912,73,5767,0.02507,0.7751,102762.04,2,705.27,406.44,pending_approval,
+51,e115,ANV-1336,Tessa Mirror,SEG-037,Paris · Desktop · Home-office buyer,3840,73,13797,0.01901,0.3487,78612.51,1,6621.84,2056.82,pending_approval,
+52,e79,ANV-1336,Tessa Mirror,SEG-018,London · Desktop · New homeowner,3104,45,8505,0.0145,0.3747,68286.13,1,8000.23,2484.96,pending_approval,
+53,e17,ANV-1588,Sienna Throw,SEG-032,Paris · Mobile · Home-office buyer,2167,50,3950,0.02307,0.6307,62221.41,1,866.42,499.3,pending_approval,
+54,e114,ANV-1518,Fenn Task Chair,SEG-011,London · Mobile · Urban renter,965,14,1736,0.01451,0.7013,53621.28,1,1630.57,1041.94,pending_approval,
+55,e48,ANV-1063,Ruvo Carafe,SEG-026,Milan · Desktop · Urban renter,2979,68,9792,0.02283,0.272,42857.09,1,2276.99,836.28,pending_approval,
+56,e37,ANV-1441,Kaito Carafe,SEG-048,Berlin · Desktop · New homeowner,1518,39,4836,0.02569,0.764,40723.91,1,459.8,130.21,published,2026-10-26
+57,e100,ANV-1392,Porto Mirror,SEG-055,Amsterdam · Mobile · Gift shopper,1169,17,2193,0.01454,0.3344,30464.6,1,2049.7,1238.35,published,2026-10-12
+58,e73,ANV-1504,Cava Table Lamp,SEG-025,Milan · Mobile · Gift shopper,1252,23,1587,0.01837,0.5637,29982.81,0,843.48,519.3,pending_approval,

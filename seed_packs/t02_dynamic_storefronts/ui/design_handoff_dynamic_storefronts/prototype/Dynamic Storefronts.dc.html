@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap">
+<link rel="stylesheet" href="_ds/nocturne-349c853b-37f4-40c6-80fa-ea6a45f3bf5f/styles.css">
+<script src="_ds/nocturne-349c853b-37f4-40c6-80fa-ea6a45f3bf5f/_ds_bundle.js"></script>
+<style>
+body { margin: 0; background: var(--color-bg); color: var(--color-text); font-family: var(--font-body); }
+a { color: var(--color-accent); } a:hover { color: var(--color-accent-300); }
+</style>
+</helmet>
+<div style="min-height: 100vh; background: radial-gradient(1200px 500px at 0% 0%, var(--color-accent-900), transparent 70%), var(--color-bg); font-family: var(--font-body); font-size: 14px;">
+  <header style="display: flex; align-items: center; gap: var(--space-6); flex-wrap: wrap; padding: var(--space-6) var(--space-8) 0; max-width: 1280px; margin: 0 auto;">
+    <div style="display: flex; flex-direction: column; gap: 2px; margin-right: auto;">
+      <span style="font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-accent);">AtelierNova Home &amp; Lifestyle</span>
+      <span style="font-size: 20px; font-weight: 500;">Dynamic Storefronts</span>
+    </div>
+    <button type="button" role="switch" aria-checked="{{autoApprove}}" onClick="{{toggleAuto}}" style="display: flex; align-items: center; gap: var(--space-3); background: transparent; border: 1px solid var(--color-divider); border-radius: var(--radius-md); padding: 6px 12px; color: var(--color-text); font: inherit; font-size: 13px; cursor: pointer;">
+      <span style="position: relative; width: 30px; height: 16px; border-radius: 8px; background: {{autoTrack}}; transition: background .2s;">
+        <span style="position: absolute; top: 2px; left: {{autoKnob}}; width: 12px; height: 12px; border-radius: 6px; background: var(--color-neutral-100); transition: left .2s;"></span>
+      </span>
+      <span>Auto-approve queue</span>
+    </button>
+  </header>
+
+  <nav class="nav" style="max-width: 1280px; margin: 0 auto; padding: var(--space-4) var(--space-8); gap: var(--space-8); flex-wrap: wrap;">
+    <sc-for list="{{tabs}}" as="t" hint-placeholder-count="5">
+      <a href="#" aria-current="{{t.current}}" onClick="{{t.go}}" style="display: flex; align-items: center; gap: 6px; padding: 6px 0; border-bottom: {{t.border}};">
+        <span>{{t.label}}</span>
+        <span style="font-size: 11px; color: var(--color-neutral-500);">{{t.count}}</span>
+      </a>
+    </sc-for>
+  </nav>
+
+  <main style="max-width: 1280px; margin: 0 auto; padding: var(--space-6) var(--space-8) 64px;">
+
+    <sc-if value="{{isHome}}" hint-placeholder-val="{{ true }}">
+      <section data-screen-label="01 Overview" style="display: flex; flex-direction: column; gap: 28px;">
+        <div style="display: flex; flex-direction: column; gap: 6px; max-width: 720px;">
+          <h1 style="margin: 0; font-size: 30px; font-weight: 500; line-height: 1.15; text-wrap: pretty;">One layout for every shopper is costing conversion.</h1>
+          <p style="margin: 0; color: var(--color-neutral-400); line-height: 1.5; text-wrap: pretty;">Baseline across {{expCount}} storefront experiments. Low-performance opportunities are SKU × segment pairs converting below the average rate.</p>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: var(--space-4);">
+          <span style="font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-neutral-500);">Catalog &amp; performance</span>
+          <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: var(--space-4);">
+            <sc-for list="{{kpis}}" as="k" hint-placeholder-count="8">
+              <div class="card" style="padding: var(--space-6); gap: var(--space-3);">
+                <span style="font-size: 12px; color: var(--color-neutral-400);">{{k.label}}</span>
+                <span style="font-size: 26px; font-weight: 500; font-variant-numeric: tabular-nums; letter-spacing: -0.01em;">{{k.value}}</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: var(--space-4);">
+          <span style="font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-accent);">Opportunity</span>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: var(--space-4); padding: var(--space-8); border-radius: var(--radius-lg); background: linear-gradient(135deg, var(--color-section), var(--color-accent-900)); box-shadow: inset 0 0 0 1px var(--color-section-ghost);">
+            <sc-for list="{{oppKpis}}" as="k" hint-placeholder-count="3">
+              <div style="display: flex; flex-direction: column; gap: var(--space-3);">
+                <span style="font-size: 12px; color: var(--color-accent-200);">{{k.label}}</span>
+                <span style="font-size: 40px; font-weight: 500; font-variant-numeric: tabular-nums; letter-spacing: -0.02em;">{{k.value}}</span>
+                <span style="font-size: 12px; color: var(--color-neutral-300); text-wrap: pretty;">{{k.note}}</span>
+              </div>
+            </sc-for>
+          </div>
+          <div style="display: flex; gap: var(--space-3);">
+            <button type="button" class="btn btn-primary" onClick="{{goQueue}}">Review opportunity queue</button>
+          </div>
+        </div>
+      </section>
+    </sc-if>
+
+    <sc-if value="{{isQueue}}" hint-placeholder-val="{{ false }}">
+      <section data-screen-label="02 Queue" style="display: flex; flex-direction: column; gap: var(--space-6);">
+        <div style="display: flex; align-items: end; gap: var(--space-6); flex-wrap: wrap;">
+          <div style="display: flex; flex-direction: column; gap: 4px; margin-right: auto;">
+            <h2 style="margin: 0; font-size: 22px; font-weight: 500;">Top opportunities</h2>
+            <span style="color: var(--color-neutral-400); font-size: 13px;">Sorted by rating = views × unit margin × bounce rate (indexed, top = 100)</span>
+          </div>
+          <span style="font-size: 13px; color: var(--color-neutral-400);">{{queuePendingLabel}}</span>
+          <button type="button" class="btn btn-secondary" onClick="{{approveAll}}" disabled="{{noPending}}">Approve all pending</button>
+        </div>
+        <div style="overflow-x: auto;">
+          <table class="table" style="font-variant-numeric: tabular-nums; min-width: 1060px;">
+            <thead>
+              <tr><th>#</th><th>SKU</th><th>Product</th><th>Segment</th><th style="text-align: right;">Views</th><th style="text-align: right;">Purchases</th><th style="text-align: right;">Revenue</th><th style="text-align: right;">CR</th><th style="text-align: right;">Bounce</th><th style="text-align: right;">Rating</th><th>Status</th><th></th></tr>
+            </thead>
+            <tbody>
+              <sc-for list="{{queueRows}}" as="r" hint-placeholder-count="10">
+                <tr>
+                  <td style="color: var(--color-neutral-500);">{{r.rank}}</td>
+                  <td style="color: var(--color-neutral-400); font-size: 12px;">{{r.sku}}</td>
+                  <td>{{r.name}}</td>
+                  <td style="color: var(--color-neutral-300); font-size: 13px;">{{r.segment}}</td>
+                  <td style="text-align: right;">{{r.views}}</td>
+                  <td style="text-align: right;">{{r.purchases}}</td>
+                  <td style="text-align: right;">{{r.revenue}}</td>
+                  <td style="text-align: right;">{{r.cr}}</td>
+                  <td style="text-align: right;">{{r.bounce}}</td>
+                  <td style="text-align: right;">
+                    <span style="display: inline-flex; align-items: center; gap: 8px;">
+                      <span style="width: 48px; height: 4px; border-radius: 2px; background: var(--color-neutral-800); overflow: hidden;"><span style="display: block; height: 100%; width: {{r.ratingPct}}; background: var(--color-accent);"></span></span>
+                      <span style="min-width: 22px;">{{r.rating}}</span>
+                    </span>
+                  </td>
+                  <td><span class="{{r.tagClass}}" style="white-space: nowrap;">{{r.status}}</span></td>
+                  <td style="text-align: right;"><button type="button" class="btn btn-primary" style="padding: 4px 12px; font-size: 13px;" disabled="{{r.locked}}" onClick="{{r.approve}}">Approve</button></td>
+                </tr>
+              </sc-for>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </sc-if>
+
+    <sc-if value="{{isWip}}" hint-placeholder-val="{{ false }}">
+      <section data-screen-label="03 Work in progress" style="display: flex; flex-direction: column; gap: var(--space-6);">
+        <div style="display: flex; flex-direction: column; gap: 4px;">
+          <h2 style="margin: 0; font-size: 22px; font-weight: 500;">Work in progress</h2>
+          <span style="color: var(--color-neutral-400); font-size: 13px;">Approved opportunities. Open a finished storefront to review it, then approve to publish.</span>
+        </div>
+        <sc-if value="{{wipEmpty}}" hint-placeholder-val="{{ false }}">
+          <div class="card" style="padding: var(--space-8); align-items: flex-start; gap: var(--space-4);">
+            <span style="color: var(--color-neutral-300);">Nothing in progress. Approve opportunities in the queue to start generating storefront variants.</span>
+            <button type="button" class="btn btn-secondary" onClick="{{goQueue}}">Go to queue</button>
+          </div>
+        </sc-if>
+        <sc-if value="{{wipHas}}" hint-placeholder-val="{{ true }}">
+          <div style="overflow-x: auto;">
+            <table class="table" style="font-variant-numeric: tabular-nums; min-width: 960px;">
+              <thead><tr><th>SKU</th><th>Product</th><th>Segment</th><th>Layout</th><th>Status</th><th></th></tr></thead>
+              <tbody>
+                <sc-for list="{{wipRows}}" as="r" hint-placeholder-count="4">
+                  <tr>
+                    <td style="color: var(--color-neutral-400); font-size: 12px;">{{r.sku}}</td>
+                    <td>{{r.name}}</td>
+                    <td style="color: var(--color-neutral-300); font-size: 13px;">{{r.segment}}</td>
+                    <td style="color: var(--color-neutral-300); font-size: 13px;">{{r.layout}}</td>
+                    <td style="min-width: 190px;">
+                      <div style="display: flex; flex-direction: column; gap: 6px;">
+                        <span class="{{r.tagClass}}" style="align-self: flex-start; white-space: nowrap;">{{r.status}}</span>
+                        <sc-if value="{{r.inProgress}}" hint-placeholder-val="{{ true }}">
+                          <div style="display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--color-neutral-400);">
+                            <span style="width: 110px; height: 4px; border-radius: 2px; background: var(--color-neutral-800); overflow: hidden;"><span style="display: block; height: 100%; width: {{r.progressPct}}; background: var(--color-accent); transition: width .9s linear;"></span></span>
+                            <span>{{r.step}}</span>
+                          </div>
+                        </sc-if>
+                      </div>
+                    </td>
+                    <td style="text-align: right;">
+                      <div style="display: flex; gap: var(--space-3); justify-content: flex-end;">
+                        <button type="button" class="btn btn-secondary" style="padding: 4px 12px; font-size: 13px;" disabled="{{r.cantOpen}}" onClick="{{r.open}}">Open storefront</button>
+                        <button type="button" class="btn btn-primary" style="padding: 4px 12px; font-size: 13px;" disabled="{{r.cantApprove}}" onClick="{{r.approve}}">Approve</button>
+                      </div>
+                    </td>
+                  </tr>
+                </sc-for>
+              </tbody>
+            </table>
+          </div>
+        </sc-if>
+      </section>
+    </sc-if>
+
+    <sc-if value="{{isPub}}" hint-placeholder-val="{{ false }}">
+      <section data-screen-label="04 Published" style="display: flex; flex-direction: column; gap: var(--space-6);">
+        <div style="display: flex; flex-direction: column; gap: 4px;">
+          <h2 style="margin: 0; font-size: 22px; font-weight: 500;">Published storefronts</h2>
+          <span style="color: var(--color-neutral-400); font-size: 13px;">{{pubSummary}}</span>
+        </div>
+        <div style="overflow-x: auto;">
+          <table class="table" style="font-variant-numeric: tabular-nums; min-width: 1120px;">
+            <thead>
+              <tr><th colspan="4"></th><th colspan="4" style="text-align: center; color: var(--color-neutral-500);">Previous</th><th colspan="4" style="text-align: center; color: var(--color-accent);">New</th></tr>
+              <tr><th>Published</th><th>SKU</th><th>Product</th><th>Segment</th><th style="text-align: right;">Rev / visit</th><th style="text-align: right;">Margin / visit</th><th style="text-align: right;">CR</th><th style="text-align: right;">BR</th><th style="text-align: right;">Rev / visit</th><th style="text-align: right;">Margin / visit</th><th style="text-align: right;">CR</th><th style="text-align: right;">BR</th></tr>
+            </thead>
+            <tbody>
+              <sc-for list="{{pubRows}}" as="r" hint-placeholder-count="8">
+                <tr>
+                  <td style="color: var(--color-neutral-400); font-size: 12px; white-space: nowrap;">{{r.date}}</td>
+                  <td style="color: var(--color-neutral-400); font-size: 12px;">{{r.sku}}</td>
+                  <td>{{r.name}}</td>
+                  <td style="color: var(--color-neutral-300); font-size: 13px;">{{r.segment}}</td>
+                  <td style="text-align: right; color: var(--color-neutral-400);">{{r.rpv0}}</td>
+                  <td style="text-align: right; color: var(--color-neutral-400);">{{r.mpv0}}</td>
+                  <td style="text-align: right; color: var(--color-neutral-400);">{{r.cr0}}</td>
+                  <td style="text-align: right; color: var(--color-neutral-400);">{{r.br0}}</td>
+                  <td style="text-align: right;">{{r.rpv1}}</td>
+                  <td style="text-align: right;">{{r.mpv1}}</td>
+                  <td style="text-align: right; color: var(--color-accent-300);">{{r.cr1}}</td>
+                  <td style="text-align: right; color: var(--color-accent-300);">{{r.br1}}</td>
+                </tr>
+              </sc-for>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </sc-if>
+
+    <sc-if value="{{isRes}}" hint-placeholder-val="{{ false }}">
+      <section data-screen-label="05 Results" style="display: flex; flex-direction: column; gap: var(--space-6);">
+        <div style="display: flex; flex-direction: column; gap: 4px;">
+          <h2 style="margin: 0; font-size: 22px; font-weight: 500;">Cumulative results</h2>
+          <span style="color: var(--color-neutral-400); font-size: 13px;">{{resRange}} · site-wide rates across all experiment traffic</span>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 380px), 1fr)); gap: var(--space-4);">
+          <sc-for list="{{charts}}" as="c" hint-placeholder-count="6">
+            <div class="card" style="padding: var(--space-6); gap: var(--space-4);">
+              <div style="display: flex; align-items: baseline; gap: var(--space-4); flex-wrap: wrap;">
+                <span style="font-size: 13px; color: var(--color-neutral-300); margin-right: auto;">{{c.title}}</span>
+                <span style="font-size: 12px; color: var(--color-accent-300);">{{c.delta}}</span>
+                <span style="font-size: 22px; font-weight: 500; font-variant-numeric: tabular-nums;">{{c.value}}</span>
+              </div>
+              <sc-if value="{{c.isBar}}" hint-placeholder-val="{{ false }}">
+                <div style="display: flex; align-items: flex-end; gap: 3px; height: 140px; padding-top: 8px; background: linear-gradient(to right, transparent, var(--color-divider) 48px, var(--color-divider) calc(100% - 48px), transparent) no-repeat bottom / 100% 1px;">
+                  <sc-for list="{{c.bars}}" as="b" hint-placeholder-count="21">
+                    <div title="{{b.tip}}" style="flex: 1; height: {{b.h}}; min-height: 2px; border-radius: 2px 2px 0 0; background: {{b.bg}};"></div>
+                  </sc-for>
+                </div>
+              </sc-if>
+              <sc-if value="{{c.isLine}}" hint-placeholder-val="{{ true }}">
+                <div style="position: relative; height: 140px;">
+                  <svg viewBox="0 0 300 100" preserveAspectRatio="none" style="position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible;">
+                    <path d="{{c.area}}" fill="var(--color-accent-900)" opacity="0.8"></path>
+                    <path d="{{c.path}}" fill="none" stroke="var(--color-accent)" stroke-width="1.5" vector-effect="non-scaling-stroke"></path>
+                  </svg>
+                  <span style="position: absolute; left: 0; top: 0; font-size: 10px; color: var(--color-neutral-500);">{{c.max}}</span>
+                  <span style="position: absolute; left: 0; bottom: 0; font-size: 10px; color: var(--color-neutral-500);">{{c.min}}</span>
+                </div>
+              </sc-if>
+              <div style="display: flex; justify-content: space-between; font-size: 10px; color: var(--color-neutral-500);">
+                <span>{{c.x0}}</span><span>{{c.x1}}</span><span>{{c.x2}}</span>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </section>
+    </sc-if>
+  </main>
+
+  <sc-if value="{{hasPreview}}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{closePreview}}" style="position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center; padding: var(--space-8); background: color-mix(in srgb, var(--color-bg) 78%, transparent);">
+      <div onClick="{{stop}}" style="width: min(860px, 100%); max-height: 92vh; overflow: auto; background: var(--color-surface); border-radius: var(--radius-lg); box-shadow: var(--shadow-lg); display: flex; flex-direction: column;">
+        <div style="display: flex; align-items: center; gap: var(--space-4); padding: var(--space-4) var(--space-6);">
+          <div style="display: flex; flex-direction: column; gap: 2px; margin-right: auto;">
+            <span style="font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-accent);">Storefront variant · {{pv.layout}}</span>
+            <span style="font-size: 15px; font-weight: 500;">{{pv.segment}}</span>
+          </div>
+          <button type="button" class="btn btn-ghost" onClick="{{closePreview}}">Close</button>
+          <button type="button" class="btn btn-primary" onClick="{{pv.approve}}">Approve &amp; publish</button>
+        </div>
+        <div style="margin: 0 var(--space-6) var(--space-6); border-radius: var(--radius-md); background: var(--color-bg); box-shadow: var(--shadow-sm); overflow: hidden;">
+          <div style="display: flex; align-items: center; gap: var(--space-6); padding: 10px 16px; font-size: 12px; color: var(--color-neutral-300);">
+            <span style="font-weight: 500; color: var(--color-text); margin-right: auto;">AtelierNova</span>
+            <span>{{pv.category}}</span><span>New in</span><span>Bag (0)</span>
+          </div>
+          <div style="padding: 8px 16px; text-align: center; font-size: 12px; background: var(--color-accent-900); color: var(--color-accent-200);">{{pv.promo}}</div>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));">
+            <div style="min-height: 260px; display: flex; align-items: flex-end; padding: 16px; background: radial-gradient(400px 260px at 70% 30%, var(--color-section-ghost), transparent 70%), linear-gradient(160deg, var(--color-section), var(--color-neutral-900)); color: var(--color-neutral-300); font-size: 11px;">Hero lifestyle render · {{pv.theme}} · {{pv.name}}</div>
+            <div style="display: flex; flex-direction: column; justify-content: center; gap: 12px; padding: 28px;">
+              <span style="font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-accent);">{{pv.theme}} edit</span>
+              <span style="font-size: 26px; font-weight: 500; line-height: 1.15; text-wrap: pretty;">{{pv.headline}}</span>
+              <span style="font-size: 13px; color: var(--color-neutral-400); line-height: 1.5;">{{pv.sub}}</span>
+              <div style="display: flex; align-items: center; gap: 12px;">
+                <span class="btn btn-primary">Shop {{pv.shortName}} · {{pv.price}}</span>
+              </div>
+            </div>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; padding: 16px;">
+            <sc-for list="{{pv.related}}" as="p" hint-placeholder-count="4">
+              <div style="display: flex; flex-direction: column; gap: 6px;">
+                <div style="aspect-ratio: 4 / 3; border-radius: var(--radius-sm); background: linear-gradient(160deg, var(--color-neutral-800), var(--color-neutral-900));"></div>
+                <span style="font-size: 12px;">{{p.name}}</span>
+                <span style="font-size: 11px; color: var(--color-neutral-400);">{{p.price}}</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+        <div style="display: flex; gap: var(--space-8); flex-wrap: wrap; padding: 0 var(--space-6) var(--space-6); font-size: 12px; color: var(--color-neutral-400);">
+          <span>SKU {{pv.sku}}</span><span>Margin {{pv.margin}}</span><span>Stock {{pv.stock}}</span><span>{{pv.guard}}</span>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;autoApproveDefault&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;},&quot;generationSeconds&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:8,&quot;min&quot;:2,&quot;max&quot;:60,&quot;unit&quot;:&quot;s&quot;,&quot;tsType&quot;:&quot;number&quot;},&quot;discountCap&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:30,&quot;min&quot;:5,&quot;max&quot;:50,&quot;unit&quot;:&quot;%&quot;,&quot;tsType&quot;:&quot;number&quot;}}">
+class Component extends DCLogic {
+  data = this.build();
+  state = { tab: 'home', auto: this.props.autoApproveDefault ?? false, items: this.data.initItems, preview: null };
+
+  build() {
+    let s = 20261029;
+    const rnd = () => { s |= 0; s = s + 0x6D2B79F5 | 0; let t = Math.imul(s ^ s >>> 15, 1 | s); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+    const pick = a => a[Math.floor(rnd() * a.length)];
+    const between = (a, b) => a + rnd() * (b - a);
+    const cats = {
+      Sofas: [['Sofa', 'Loveseat', 'Daybed'], 650, 1900], Lighting: [['Floor Lamp', 'Pendant', 'Table Lamp'], 70, 420],
+      Tableware: [['Dinner Set', 'Carafe', 'Serving Bowl'], 25, 160], Textiles: [['Throw', 'Rug', 'Cushion Cover'], 35, 480],
+      Storage: [['Sideboard', 'Shelf', 'Wall Cabinet'], 180, 1100], Office: [['Desk', 'Task Chair', 'Desk Lamp'], 90, 780],
+      Outdoor: [['Lounge Chair', 'Planter', 'Bistro Set'], 45, 890], Decor: [['Vase', 'Mirror', 'Wall Print'], 30, 260]
+    };
+    const prefixes = ['Lumen', 'Orla', 'Brera', 'Kaito', 'Sienna', 'Nord', 'Alba', 'Vela', 'Tessa', 'Ruvo', 'Mira', 'Oslo', 'Cava', 'Lido', 'Fenn', 'Aria', 'Porto', 'Hale', 'Isola', 'Rhea'];
+    const themes = ['Japandi', 'Mid-century', 'Industrial', 'Coastal', 'Warm minimal'];
+    const products = [];
+    for (let i = 0; i < 100; i++) {
+      const cat = pick(Object.keys(cats)); const [nouns, lo, hi] = cats[cat];
+      const noun = pick(nouns); const pre = prefixes[i % 20];
+      products.push({ sku: 'ANV-' + String(1000 + i * 7), name: pre + ' ' + noun, shortName: pre, cat, theme: pick(themes), price: Math.round(between(lo, hi) / 5) * 5 - 1, m: between(0.28, 0.66), stock: Math.round(between(12, 420)) });
+    }
+    const cities = ['Madrid', 'London', 'Milan', 'Paris', 'Berlin', 'Amsterdam', 'Lisbon', 'Barcelona'];
+    const devices = ['Mobile', 'Desktop'];
+    const personas = ['Urban renter', 'Home-office buyer', 'New homeowner', 'Design enthusiast', 'Gift shopper'];
+    const segments = [];
+    cities.forEach(c => devices.forEach(d => personas.forEach(p => segments.push({ city: c, device: d, persona: p, label: c + ' · ' + d + ' · ' + p }))));
+    const layouts = { Mobile: ['Stacked hero', 'Swipe carousel', 'Shop-the-look'], Desktop: ['Split hero', 'Editorial grid', 'Room scene'] };
+    const exps = [];
+    for (let i = 0; i < 120; i++) {
+      const p = products[Math.floor(rnd() * 100)]; const g = segments[Math.floor(rnd() * segments.length)];
+      const views = Math.round(between(900, 14000));
+      const cr = Math.max(0.004, between(0.004, 0.052) * (g.device === 'Mobile' ? 0.85 : 1.1));
+      const purchases = Math.max(1, Math.round(views * cr));
+      const bounce = between(0.26, 0.79);
+      exps.push({ id: 'e' + i, p, g, views, purchases, cr: purchases / views, bounce, revenue: purchases * p.price, margin: purchases * p.price * p.m, layout: pick(layouts[g.device]) });
+    }
+    const V = exps.reduce((a, e) => a + e.views, 0), P = exps.reduce((a, e) => a + e.purchases, 0);
+    const B = exps.reduce((a, e) => a + e.bounce * e.views, 0);
+    const Rev = exps.reduce((a, e) => a + e.revenue, 0), Mar = exps.reduce((a, e) => a + e.margin, 0);
+    const avgCR = P / V;
+    const low = exps.filter(e => e.cr < avgCR);
+    low.forEach(e => {
+      e.score = e.views * e.p.price * e.p.m * e.bounce;
+      e.potRev = (avgCR * e.views - e.purchases) * e.p.price; e.potMar = e.potRev * e.p.m;
+      const lift = between(0.55, 1.15);
+      e.newCR = e.cr + (avgCR - e.cr) * lift; e.newBR = Math.max(0.18, e.bounce - between(0.05, 0.16));
+    });
+    low.sort((a, b) => b.score - a.score);
+    const maxScore = low[0].score;
+    low.forEach(e => e.rating = Math.round(e.score / maxScore * 100));
+    const days = []; const end = new Date(2026, 9, 29);
+    for (let d = 20; d >= 0; d--) { const dt = new Date(end); dt.setDate(end.getDate() - d); days.push(dt.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })); }
+    const initItems = {};
+    const shuffled = low.slice().sort(() => rnd() - 0.5).slice(0, 18);
+    shuffled.forEach(e => { initItems[e.id] = { status: 'published', day: 2 + Math.floor(rnd() * 18) }; });
+    return { products, segments, exps, low, V, P, B, Rev, Mar, avgCR, maxCR: Math.max(...exps.map(e => e.cr)), days, initItems };
+  }
+
+  componentDidMount() {
+    this.timer = setInterval(() => this.tick(), 1000);
+  }
+  componentWillUnmount() { clearInterval(this.timer); }
+
+  tick() {
+    const genSec = this.props.generationSeconds ?? 8;
+    this.setState(st => {
+      const items = { ...st.items }; let changed = false;
+      Object.keys(items).forEach(id => {
+        const it = items[id];
+        if (it.status === 'generating') { changed = true; const p = it.progress + 1 / genSec; items[id] = p >= 1 ? { ...it, status: 'review', progress: 1 } : { ...it, progress: p }; }
+      });
+      if (st.auto) {
+        const next = this.data.low.find(e => !items[e.id]);
+        if (next) { items[next.id] = { status: 'generating', progress: 0 }; changed = true; }
+      }
+      return changed ? { items } : null;
+    });
+  }
+
+  approve(id) { this.setState(st => st.items[id] ? null : { items: { ...st.items, [id]: { status: 'generating', progress: 0 } } }); }
+  publish(id) { this.setState(st => ({ preview: null, items: { ...st.items, [id]: { status: 'published', day: 20 } } })); }
+
+  renderVals() {
+    const D = this.data, st = this.state, items = st.items;
+    const eur0 = new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 });
+    const eur2 = new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'EUR', minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const eurC = new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'EUR', notation: 'compact', maximumFractionDigits: 2 });
+    const num = new Intl.NumberFormat('en-GB');
+    const numC = new Intl.NumberFormat('en-GB', { notation: 'compact', maximumFractionDigits: 1 });
+    const pct = (v, d = 2) => (v * 100).toFixed(d) + '%';
+    const statusOf = id => items[id]?.status || 'pending';
+    const tagFor = { pending: 'tag tag-neutral', generating: 'tag tag-accent', review: 'tag tag-outline', published: 'tag tag-accent-2' };
+    const labelFor = { pending: 'Pending approval', generating: 'Generating', review: 'Pending review', published: 'Published' };
+
+    const queue = D.low.filter(e => statusOf(e.id) !== 'published' || (items[e.id].day === 20));
+    const pending = D.low.filter(e => statusOf(e.id) === 'pending');
+    const wip = D.low.filter(e => ['generating', 'review'].includes(statusOf(e.id)));
+    const pub = D.low.filter(e => statusOf(e.id) === 'published').sort((a, b) => items[b.id].day - items[a.id].day);
+
+    const go = tab => e => { e && e.preventDefault(); this.setState({ tab }); };
+    const tabDefs = [['home', 'Overview', ''], ['queue', 'Queue', pending.length], ['wip', 'Work in progress', wip.length || ''], ['pub', 'Published', pub.length], ['res', 'Results', '']];
+    const tabs = tabDefs.map(([k, l, c]) => ({ label: l, count: c, current: st.tab === k ? 'page' : undefined, border: st.tab === k ? '1px solid var(--color-accent)' : '1px solid transparent', go: go(k) }));
+
+    const potRev = D.low.reduce((a, e) => a + e.potRev, 0), potMar = D.low.reduce((a, e) => a + e.potMar, 0);
+    const kpis = [
+      ['Products', num.format(D.products.length)], ['Audience segments', num.format(D.segments.length)],
+      ['Average conversion rate', pct(D.avgCR)], ['Max conversion rate', pct(D.maxCR)],
+      ['Average bounce rate', pct(D.B / D.V, 1)], ['Total views', numC.format(D.V)],
+      ['Sales', eurC.format(D.Rev)], ['Margin', eurC.format(D.Mar)]
+    ].map(([label, value]) => ({ label, value }));
+    const oppKpis = [
+      { label: 'Low-performance opportunities', value: num.format(D.low.length), note: 'SKU × segment pairs below ' + pct(D.avgCR) + ' CR' },
+      { label: 'Potential additional revenue', value: eurC.format(potRev), note: 'If each pair converts at the average rate' },
+      { label: 'Potential additional margin', value: eurC.format(potMar), note: 'Revenue uplift × SKU gross margin' }
+    ];
+
+    const queueRows = D.low.filter(e => !(statusOf(e.id) === 'published' && items[e.id].day < 20)).map((e, i) => {
+      const s = statusOf(e.id);
+      return { rank: i + 1, sku: e.p.sku, name: e.p.name, segment: e.g.label, views: num.format(e.views), purchases: num.format(e.purchases), revenue: eur0.format(e.revenue), cr: pct(e.cr), bounce: pct(e.bounce, 1), rating: e.rating, ratingPct: e.rating + '%', status: labelFor[s], tagClass: tagFor[s], locked: s !== 'pending', approve: () => this.approve(e.id) };
+    });
+
+    const steps = ['Selecting SKUs', 'Queuing hero render', 'Composing layout', 'Drafting promo banner'];
+    const wipRows = wip.map(e => {
+      const it = items[e.id]; const review = it.status === 'review';
+      return { sku: e.p.sku, name: e.p.name, segment: e.g.label, layout: e.layout, status: review ? 'Pending review' : 'In progress', tagClass: review ? 'tag tag-outline' : 'tag tag-accent', inProgress: !review, progressPct: Math.round(it.progress * 100) + '%', step: steps[Math.min(3, Math.floor(it.progress * 4))], cantOpen: !review, cantApprove: !(review && it.opened), open: () => this.setState(s2 => ({ preview: e.id, items: { ...s2.items, [e.id]: { ...s2.items[e.id], opened: true } } })), approve: () => this.publish(e.id) };
+    });
+
+    const pubRows = pub.map(e => ({ date: D.days[items[e.id].day], sku: e.p.sku, name: e.p.name, segment: e.g.label,
+      rpv0: eur2.format(e.cr * e.p.price), mpv0: eur2.format(e.cr * e.p.price * e.p.m), cr0: pct(e.cr), br0: pct(e.bounce, 1),
+      rpv1: eur2.format(e.newCR * e.p.price), mpv1: eur2.format(e.newCR * e.p.price * e.p.m), cr1: pct(e.newCR), br1: pct(e.newBR, 1) }));
+    const liftRev = pub.reduce((a, e) => a + (e.newCR - e.cr) * e.views * e.p.price, 0);
+
+    // daily series
+    const n = D.days.length;
+    const daily = Array(n).fill(0); const acc = Array.from({ length: n }, () => ({ p: 0, b: 0, r: 0, m: 0 }));
+    pub.forEach(e => { const d = items[e.id].day; daily[d]++; const dp = (e.newCR - e.cr) * e.views; for (let k = d; k < n; k++) { acc[k].p += dp; acc[k].b += (e.newBR - e.bounce) * e.views; acc[k].r += dp * e.p.price; acc[k].m += dp * e.p.price * e.p.m; } });
+    let c = 0; const cum = daily.map(v => c += v);
+    const series = {
+      cr: acc.map(a => (D.P + a.p) / D.V), br: acc.map(a => (D.B + a.b) / D.V),
+      rpv: acc.map(a => (D.Rev + a.r) / D.V), mpv: acc.map(a => (D.Mar + a.m) / D.V)
+    };
+    const x = { x0: D.days[0], x1: D.days[10], x2: D.days[n - 1] };
+    const line = (title, arr, fmt, cumul) => {
+      const lo = Math.min(...arr), hi = Math.max(...arr), span = hi - lo || 1;
+      const pts = arr.map((v, i) => [i / (n - 1) * 300, 92 - (v - lo) / span * 82]);
+      const path = pts.map((p, i) => (i ? 'L' : 'M') + p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' ');
+      const d = arr[n - 1] - arr[0];
+      return { title, isLine: true, isBar: false, path, area: path + ' L300 100 L0 100 Z', value: fmt(arr[n - 1]), max: fmt(hi), min: fmt(lo), delta: cumul ? '' : (d >= 0 ? '+' : '−') + fmt(Math.abs(d)) + ' since ' + D.days[0], bars: [], ...x };
+    };
+    const maxDaily = Math.max(1, ...daily);
+    const charts = [
+      { title: 'Storefronts published daily', isBar: true, isLine: false, value: String(daily[n - 1]), delta: 'today', bars: daily.map((v, i) => ({ h: (v / maxDaily * 100) + '%', bg: i === n - 1 ? 'var(--color-accent)' : 'var(--color-accent-700)', tip: D.days[i] + ': ' + v })), ...x },
+      line('Storefront variants published (cumulative)', cum, v => String(Math.round(v)), true),
+      line('Conversion rate', series.cr, v => pct(v)),
+      line('Bounce rate', series.br, v => pct(v)),
+      line('Revenue per visit', series.rpv, v => eur2.format(v)),
+      line('Margin per visit', series.mpv, v => eur2.format(v))
+    ];
+
+    let pv = {};
+    if (st.preview) {
+      const e = D.low.find(z => z.id === st.preview); const cap = this.props.discountCap ?? 30;
+      const disc = Math.max(5, Math.min(cap, Math.floor(e.p.m * 100 * 0.4 / 5) * 5));
+      const headline = { 'Urban renter': 'Small-space ' + e.p.theme.toLowerCase() + ' for ' + e.g.city + ' flats', 'Home-office buyer': 'A calmer workday, ' + e.p.theme.toLowerCase() + ' style', 'New homeowner': 'Start your ' + e.g.city + ' home with ' + e.p.shortName, 'Design enthusiast': 'The ' + e.p.theme + ' edit, new this season', 'Gift shopper': 'Gifts with a ' + e.p.theme.toLowerCase() + ' touch' }[e.g.persona];
+      const related = D.products.filter(p => p.theme === e.p.theme && p.sku !== e.p.sku && p.stock > 40).slice(0, 4).map(p => ({ name: p.name, price: eur0.format(p.price) }));
+      pv = { layout: e.layout, segment: e.g.label, category: e.p.cat, theme: e.p.theme, name: e.p.name, shortName: e.p.shortName, price: eur0.format(e.p.price), headline, sub: e.p.name + ' and pieces picked for ' + e.g.persona.toLowerCase() + 's browsing on ' + e.g.device.toLowerCase() + '.', related, sku: e.p.sku, margin: pct(e.p.m, 0), stock: e.p.stock + ' units', promo: disc + '% off ' + e.p.cat.toLowerCase() + ' this week · code ' + e.g.city.slice(0, 3).toUpperCase() + disc, guard: 'Discount ' + disc + '% · within ' + cap + '% cap and SKU margin', approve: () => this.publish(e.id) };
+    }
+
+    return {
+      tabs, isHome: st.tab === 'home', isQueue: st.tab === 'queue', isWip: st.tab === 'wip', isPub: st.tab === 'pub', isRes: st.tab === 'res',
+      goQueue: go('queue'), expCount: D.exps.length, kpis, oppKpis,
+      autoApprove: st.auto, autoTrack: st.auto ? 'var(--color-accent-600)' : 'var(--color-neutral-700)', autoKnob: st.auto ? '16px' : '2px',
+      toggleAuto: () => this.setState(s2 => ({ auto: !s2.auto })),
+      queueRows, queuePendingLabel: pending.length + ' pending approval', noPending: pending.length === 0,
+      approveAll: () => this.setState(s2 => { const it = { ...s2.items }; D.low.forEach(e => { if (!it[e.id]) it[e.id] = { status: 'generating', progress: 0 }; }); return { items: it }; }),
+      wipRows, wipEmpty: wipRows.length === 0, wipHas: wipRows.length > 0,
+      pubRows, pubSummary: pub.length + ' storefront variants live · estimated added revenue ' + eurC.format(liftRev) + ' over the baseline window',
+      charts, resRange: D.days[0] + ' – ' + D.days[n - 1] + ' 2026',
+      hasPreview: !!st.preview, pv, closePreview: () => this.setState({ preview: null }), stop: e => e.stopPropagation()
+    };
+  }
+}
+</script>
+</body>
+</html>

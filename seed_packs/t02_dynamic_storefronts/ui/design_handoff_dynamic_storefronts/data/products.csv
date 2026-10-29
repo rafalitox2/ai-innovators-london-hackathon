@@ -1,0 +1,101 @@
+sku,product_name,category,theme,price_eur,gross_margin_pct,stock_units
+ANV-1000,Lumen Planter,Outdoor,Japandi,529,0.4399,23
+ANV-1007,Orla Mirror,Decor,Mid-century,194,0.5349,140
+ANV-1014,Brera Desk Lamp,Office,Warm minimal,714,0.5325,375
+ANV-1021,Kaito Table Lamp,Lighting,Japandi,189,0.3837,168
+ANV-1028,Sienna Shelf,Storage,Mid-century,979,0.5682,364
+ANV-1035,Nord Sofa,Sofas,Mid-century,1304,0.3203,25
+ANV-1042,Alba Wall Print,Decor,Coastal,79,0.4427,344
+ANV-1049,Vela Sofa,Sofas,Coastal,949,0.6299,63
+ANV-1056,Tessa Desk Lamp,Office,Warm minimal,399,0.5389,171
+ANV-1063,Ruvo Carafe,Tableware,Mid-century,144,0.3673,179
+ANV-1070,Mira Carafe,Tableware,Industrial,94,0.4915,140
+ANV-1077,Oslo Throw,Textiles,Warm minimal,334,0.5622,395
+ANV-1084,Cava Desk Lamp,Office,Coastal,259,0.3666,274
+ANV-1091,Lido Table Lamp,Lighting,Japandi,124,0.4062,146
+ANV-1098,Fenn Desk Lamp,Office,Industrial,664,0.4659,155
+ANV-1105,Aria Planter,Outdoor,Mid-century,479,0.4971,50
+ANV-1112,Porto Carafe,Tableware,Mid-century,94,0.517,340
+ANV-1119,Hale Lounge Chair,Outdoor,Mid-century,379,0.6044,124
+ANV-1126,Isola Cushion Cover,Textiles,Coastal,209,0.628,163
+ANV-1133,Rhea Floor Lamp,Lighting,Industrial,199,0.463,142
+ANV-1140,Lumen Wall Cabinet,Storage,Warm minimal,859,0.386,140
+ANV-1147,Orla Task Chair,Office,Japandi,609,0.3863,217
+ANV-1154,Brera Rug,Textiles,Japandi,59,0.4077,212
+ANV-1161,Kaito Floor Lamp,Lighting,Coastal,284,0.3465,153
+ANV-1168,Sienna Lounge Chair,Outdoor,Warm minimal,614,0.5976,327
+ANV-1175,Nord Throw,Textiles,Japandi,229,0.4013,352
+ANV-1182,Alba Mirror,Decor,Mid-century,64,0.4731,79
+ANV-1189,Vela Shelf,Storage,Warm minimal,924,0.5645,211
+ANV-1196,Tessa Serving Bowl,Tableware,Japandi,124,0.6235,243
+ANV-1203,Ruvo Throw,Textiles,Japandi,194,0.5581,44
+ANV-1210,Mira Rug,Textiles,Coastal,99,0.3261,362
+ANV-1217,Oslo Dinner Set,Tableware,Industrial,59,0.6067,347
+ANV-1224,Cava Wall Print,Decor,Industrial,54,0.3604,181
+ANV-1231,Lido Sideboard,Storage,Coastal,694,0.5133,383
+ANV-1238,Fenn Wall Cabinet,Storage,Mid-century,1009,0.3181,409
+ANV-1245,Aria Floor Lamp,Lighting,Industrial,209,0.3343,111
+ANV-1252,Porto Serving Bowl,Tableware,Coastal,149,0.6007,121
+ANV-1259,Hale Carafe,Tableware,Coastal,119,0.6273,174
+ANV-1266,Isola Task Chair,Office,Industrial,154,0.4823,40
+ANV-1273,Rhea Daybed,Sofas,Japandi,844,0.5582,59
+ANV-1280,Lumen Cushion Cover,Textiles,Industrial,409,0.5758,379
+ANV-1287,Orla Shelf,Storage,Coastal,739,0.4427,329
+ANV-1294,Brera Vase,Decor,Japandi,149,0.3703,173
+ANV-1301,Kaito Lounge Chair,Outdoor,Industrial,749,0.6294,161
+ANV-1308,Sienna Wall Cabinet,Storage,Japandi,334,0.595,102
+ANV-1315,Nord Rug,Textiles,Japandi,209,0.639,103
+ANV-1322,Alba Desk,Office,Coastal,599,0.4106,337
+ANV-1329,Vela Task Chair,Office,Mid-century,294,0.5085,18
+ANV-1336,Tessa Mirror,Decor,Coastal,189,0.3106,230
+ANV-1343,Ruvo Carafe,Tableware,Mid-century,104,0.6187,220
+ANV-1350,Mira Throw,Textiles,Mid-century,234,0.6432,167
+ANV-1357,Oslo Pendant,Lighting,Coastal,249,0.3153,229
+ANV-1364,Cava Table Lamp,Lighting,Mid-century,284,0.6023,417
+ANV-1371,Lido Bistro Set,Outdoor,Coastal,454,0.3479,127
+ANV-1378,Fenn Pendant,Lighting,Industrial,264,0.3911,418
+ANV-1385,Aria Sideboard,Storage,Mid-century,269,0.2844,236
+ANV-1392,Porto Mirror,Decor,Industrial,129,0.6042,255
+ANV-1399,Hale Mirror,Decor,Coastal,184,0.3032,344
+ANV-1406,Isola Mirror,Decor,Japandi,144,0.3653,101
+ANV-1413,Rhea Table Lamp,Lighting,Japandi,329,0.2962,397
+ANV-1420,Lumen Dinner Set,Tableware,Industrial,109,0.3472,297
+ANV-1427,Orla Shelf,Storage,Industrial,1024,0.6312,142
+ANV-1434,Brera Desk,Office,Warm minimal,349,0.6202,365
+ANV-1441,Kaito Carafe,Tableware,Japandi,124,0.2832,57
+ANV-1448,Sienna Task Chair,Office,Warm minimal,679,0.5241,295
+ANV-1455,Nord Serving Bowl,Tableware,Mid-century,79,0.5063,173
+ANV-1462,Alba Desk Lamp,Office,Mid-century,569,0.459,396
+ANV-1469,Vela Cushion Cover,Textiles,Mid-century,114,0.3588,354
+ANV-1476,Tessa Wall Print,Decor,Japandi,254,0.4042,328
+ANV-1483,Ruvo Serving Bowl,Tableware,Mid-century,154,0.469,33
+ANV-1490,Mira Mirror,Decor,Warm minimal,84,0.3522,240
+ANV-1497,Oslo Desk Lamp,Office,Japandi,454,0.557,346
+ANV-1504,Cava Table Lamp,Lighting,Mid-century,69,0.6157,253
+ANV-1511,Lido Wall Print,Decor,Japandi,179,0.4916,169
+ANV-1518,Fenn Task Chair,Office,Japandi,124,0.639,60
+ANV-1525,Aria Mirror,Decor,Warm minimal,64,0.3136,328
+ANV-1532,Porto Sideboard,Storage,Coastal,709,0.4294,344
+ANV-1539,Hale Cushion Cover,Textiles,Mid-century,454,0.5127,290
+ANV-1546,Isola Wall Print,Decor,Japandi,44,0.6285,329
+ANV-1553,Rhea Wall Cabinet,Storage,Mid-century,449,0.5905,38
+ANV-1560,Lumen Sofa,Sofas,Warm minimal,1369,0.3362,398
+ANV-1567,Orla Wall Print,Decor,Warm minimal,109,0.4146,30
+ANV-1574,Brera Task Chair,Office,Coastal,309,0.5675,217
+ANV-1581,Kaito Rug,Textiles,Mid-century,389,0.5288,416
+ANV-1588,Sienna Throw,Textiles,Warm minimal,79,0.5763,363
+ANV-1595,Nord Daybed,Sofas,Japandi,939,0.2957,390
+ANV-1602,Alba Desk,Office,Warm minimal,514,0.4294,42
+ANV-1609,Vela Cushion Cover,Textiles,Japandi,229,0.3185,24
+ANV-1616,Tessa Shelf,Storage,Industrial,269,0.5639,31
+ANV-1623,Ruvo Pendant,Lighting,Industrial,149,0.6485,42
+ANV-1630,Mira Floor Lamp,Lighting,Japandi,144,0.3098,229
+ANV-1637,Oslo Sofa,Sofas,Mid-century,1064,0.3,163
+ANV-1644,Cava Desk,Office,Mid-century,339,0.519,362
+ANV-1651,Lido Cushion Cover,Textiles,Mid-century,244,0.2806,93
+ANV-1658,Fenn Wall Print,Decor,Coastal,139,0.5929,125
+ANV-1665,Aria Mirror,Decor,Industrial,34,0.4352,23
+ANV-1672,Porto Mirror,Decor,Japandi,124,0.5834,143
+ANV-1679,Hale Daybed,Sofas,Warm minimal,949,0.4556,402
+ANV-1686,Isola Lounge Chair,Outdoor,Japandi,409,0.3648,399
+ANV-1693,Rhea Sofa,Sofas,Mid-century,914,0.3091,389
