@@ -180,8 +180,8 @@ a { color: var(--color-accent); } a:hover { color: var(--color-accent-300); }
         <div style="overflow-x: auto;">
           <table class="table" style="font-variant-numeric: tabular-nums; min-width: 1120px;">
             <thead>
-              <tr><th colspan="4"></th><th colspan="4" style="text-align: center; color: var(--color-neutral-500);">Previous</th><th colspan="4" style="text-align: center; color: var(--color-accent);">New</th></tr>
-              <tr><th>Published</th><th>SKU</th><th>Product</th><th>Segment</th><th style="text-align: right;">Rev / visit</th><th style="text-align: right;">Margin / visit</th><th style="text-align: right;">CR</th><th style="text-align: right;">BR</th><th style="text-align: right;">Rev / visit</th><th style="text-align: right;">Margin / visit</th><th style="text-align: right;">CR</th><th style="text-align: right;">BR</th></tr>
+              <tr><th colspan="4"></th><th colspan="4" style="text-align: center; color: var(--color-neutral-500);">Previous</th><th colspan="4" style="text-align: center; color: var(--color-accent);">New</th><th></th></tr>
+              <tr><th>Published</th><th>SKU</th><th>Product</th><th>Segment</th><th style="text-align: right;">Rev / visit</th><th style="text-align: right;">Margin / visit</th><th style="text-align: right;">CR</th><th style="text-align: right;">BR</th><th style="text-align: right;">Rev / visit</th><th style="text-align: right;">Margin / visit</th><th style="text-align: right;">CR</th><th style="text-align: right;">BR</th><th></th></tr>
             </thead>
             <tbody>
               <sc-for list="{{pubRows}}" as="r" hint-placeholder-count="8">
@@ -198,6 +198,7 @@ a { color: var(--color-accent); } a:hover { color: var(--color-accent-300); }
                   <td style="text-align: right;">{{r.mpv1}}</td>
                   <td style="text-align: right; color: var(--color-accent-300);">{{r.cr1}}</td>
                   <td style="text-align: right; color: var(--color-accent-300);">{{r.br1}}</td>
+                  <td style="text-align: right;"><button type="button" class="btn btn-secondary" style="padding: 4px 10px; font-size: 12px;" onClick="{{r.open}}">Preview</button></td>
                 </tr>
               </sc-for>
             </tbody>
@@ -249,12 +250,13 @@ a { color: var(--color-accent); } a:hover { color: var(--color-accent-300); }
 
   <sc-if value="{{hasPreview}}" hint-placeholder-val="{{ false }}">
     <div onClick="{{closePreview}}" style="position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center; padding: var(--space-8); background: color-mix(in srgb, var(--color-bg) 78%, transparent);">
-      <div onClick="{{stop}}" style="width: min(860px, 100%); max-height: 92vh; overflow: auto; background: var(--color-surface); border-radius: var(--radius-lg); box-shadow: var(--shadow-lg); display: flex; flex-direction: column;">
-        <div style="display: flex; align-items: center; gap: var(--space-4); padding: var(--space-4) var(--space-6);">
+      <div onClick="{{stop}}" style="width: min(920px, 100%); max-height: 92vh; overflow: auto; background: var(--color-surface); border-radius: var(--radius-lg); box-shadow: var(--shadow-lg); display: flex; flex-direction: column;">
+        <div style="display: flex; align-items: center; gap: var(--space-4); padding: var(--space-4) var(--space-6); flex-wrap: wrap;">
           <div style="display: flex; flex-direction: column; gap: 2px; margin-right: auto;">
             <span style="font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-accent);">Storefront variant · {{pv.layout}}</span>
             <span style="font-size: 15px; font-weight: 500;">{{pv.segment}}</span>
           </div>
+          <button type="button" class="btn btn-secondary" onClick="{{pv.recreateImage}}" disabled="{{pv.recreatingImg}}">{{pv.recreateLabel}}</button>
           <button type="button" class="btn btn-ghost" onClick="{{closePreview}}">Close</button>
           <button type="button" class="btn btn-primary" onClick="{{pv.approve}}">Approve &amp; publish</button>
         </div>
@@ -264,14 +266,26 @@ a { color: var(--color-accent); } a:hover { color: var(--color-accent-300); }
             <span>{{pv.category}}</span><span>New in</span><span>Bag (0)</span>
           </div>
           <div style="padding: 8px 16px; text-align: center; font-size: 12px; background: var(--color-accent-900); color: var(--color-accent-200);">{{pv.promo}}</div>
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));">
-            <div style="min-height: 260px; display: flex; align-items: flex-end; padding: 16px; background: radial-gradient(400px 260px at 70% 30%, var(--color-section-ghost), transparent 70%), linear-gradient(160deg, var(--color-section), var(--color-neutral-900)); color: var(--color-neutral-300); font-size: 11px;">Hero lifestyle render · {{pv.theme}} · {{pv.name}}</div>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));">
+            <div style="min-height: 300px; display: flex; flex-direction: column; justify-content: space-between; gap: 12px; padding: 16px; background: {{pv.heroBg}}; color: var(--color-neutral-300); font-size: 11px;">
+              <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap;">
+                <span class="tag tag-accent" style="font-size: 10px;">{{pv.heroBadge}}</span>
+                <button type="button" class="btn btn-secondary" style="padding: 4px 10px; font-size: 11px;" onClick="{{pv.recreateImage}}" disabled="{{pv.recreatingImg}}">Recreate image</button>
+              </div>
+              <img src="{{pv.heroImgSrc}}" alt="{{pv.name}}" style="width: 100%; height: 170px; object-fit: cover; border-radius: var(--radius-sm); box-shadow: var(--shadow-sm); opacity: {{pv.heroOpacity}}; transition: opacity .25s;" />
+              <div style="display: flex; flex-direction: column; gap: 4px; padding: 8px 10px; border-radius: var(--radius-sm); background: color-mix(in srgb, var(--color-bg) 78%, transparent); border: 1px solid var(--color-divider);">
+                <span style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--color-accent-300);">{{pv.audHeader}}</span>
+                <span style="font-size: 11px; color: var(--color-neutral-300);">{{pv.audSummary}}</span>
+                <span style="font-size: 10px; color: var(--color-neutral-400); line-height: 1.4;">{{pv.audiencePrompt}}</span>
+              </div>
+            </div>
             <div style="display: flex; flex-direction: column; justify-content: center; gap: 12px; padding: 28px;">
               <span style="font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-accent);">{{pv.theme}} edit</span>
               <span style="font-size: 26px; font-weight: 500; line-height: 1.15; text-wrap: pretty;">{{pv.headline}}</span>
               <span style="font-size: 13px; color: var(--color-neutral-400); line-height: 1.5;">{{pv.sub}}</span>
-              <div style="display: flex; align-items: center; gap: 12px;">
+              <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
                 <span class="btn btn-primary">Shop {{pv.shortName}} · {{pv.price}}</span>
+                <button type="button" class="btn btn-secondary" onClick="{{pv.recreateImage}}" disabled="{{pv.recreatingImg}}">{{pv.recreateLabel}}</button>
               </div>
             </div>
           </div>
@@ -360,7 +374,90 @@ class Component extends DCLogic {
   }
 
   approve(id) { this.setState(st => st.items[id] ? null : { items: { ...st.items, [id]: { status: 'generating', progress: 0 } } }); }
-  publish(id) { this.setState(st => ({ preview: null, items: { ...st.items, [id]: { status: 'published', day: 20 } } })); }
+  publish(id) { this.setState(st => ({ preview: null, items: { ...st.items, [id]: { ...st.items[id], status: 'published', day: 20 } } })); }
+
+  buildHeroSvg(e, ver) {
+    const palettes = [
+      ['#24201c', '#3d332a', '#c96a4a', '#e8d8c8', 'Warm Morning Daylight'],
+      ['#1a2421', '#2d4039', '#6b8f71', '#dce8e2', 'Biophilic Golden Hour'],
+      ['#1c2026', '#2e3642', '#7a93ac', '#d8e2ec', 'Architectural Nordic Studio'],
+      ['#2a1f1d', '#4a332d', '#d4845a', '#f2e2d8', 'Terracotta Evening Glow']
+    ];
+    const pal = palettes[ver % palettes.length];
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 360" width="100%" height="100%">
+      <defs>
+        <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="${pal[0]}"/>
+          <stop offset="55%" stop-color="${pal[1]}"/>
+          <stop offset="100%" stop-color="${pal[2]}"/>
+        </linearGradient>
+      </defs>
+      <rect width="800" height="360" fill="url(#bg)"/>
+      <circle cx="${620 - (ver % 3) * 80}" cy="${95 + (ver % 2) * 35}" r="110" fill="${pal[3]}" fill-opacity="0.12"/>
+      <rect x="52" y="42" width="320" height="240" rx="8" fill="none" stroke="${pal[3]}" stroke-opacity="0.22" stroke-width="1.5"/>
+      <rect x="${430 + (ver % 2) * 16}" y="70" width="290" height="205" rx="12" fill="${pal[0]}" fill-opacity="0.45" stroke="${pal[3]}" stroke-opacity="0.28"/>
+      <text x="454" y="108" fill="${pal[3]}" font-family="monospace" font-size="11" opacity="0.85">AUDIENCE-TAILORED RENDER · v${ver + 1}</text>
+      <text x="454" y="138" fill="#ffffff" font-family="Georgia, serif" font-size="19">${e.p.shortName}</text>
+      <text x="454" y="164" fill="${pal[3]}" font-family="sans-serif" font-size="12" opacity="0.9">${e.g.segmentName} (${e.g.id} · ${e.g.city})</text>
+      <text x="454" y="186" fill="${pal[3]}" font-family="sans-serif" font-size="12" opacity="0.85">Style: ${e.g.style.replace(/_/g, ' ')} · Device: ${e.g.device}</text>
+      <text x="454" y="208" fill="${pal[3]}" font-family="sans-serif" font-size="12" opacity="0.85">AOV: EUR ${e.g.aov.toFixed(0)} · Scene: ${pal[4]}</text>
+      <text x="454" y="246" fill="${pal[2]}" font-family="monospace" font-size="11">GEMINI_IMAGE_MODEL · ${e.p.sku}</text>
+    </svg>`;
+    return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
+  }
+
+  recreateImage(id) {
+    const e = this.data.low.find(z => z.id === id);
+    if (!e) return;
+    const curVer = (this.state.items[id]?.imgVer || 0) + 1;
+    const aspectRatio = e.g.device === 'Mobile' ? '9:16' : e.g.device === 'Tablet' ? '1:1' : '16:9';
+    const sceneDesc = `Editorial ${e.g.style.replace(/_/g, ' ')} interior in ${e.g.city} tailored for ${e.g.segmentName} (${e.g.id}) shoppers browsing on ${e.g.device} (avg basket EUR ${e.g.aov.toFixed(2)}), featuring ${e.p.name} (${e.p.sku}) — variation #${curVer + 1}`;
+    this.setState(st => ({
+      items: { ...st.items, [id]: { ...st.items[id], recreatingImg: true, imgVer: curVer, lastSceneDesc: sceneDesc, aspectRatio } }
+    }));
+    fetch('/api/recreate-hero-image', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        segment_id: e.g.id,
+        primary_sku: e.p.sku,
+        aspect_ratio: aspectRatio,
+        scene_description: sceneDesc
+      })
+    })
+      .then(r => r.ok ? r.json() : Promise.reject(new Error('HTTP ' + r.status)))
+      .then(data => {
+        const job = data.render_job || {};
+        this.setState(st => ({
+          items: {
+            ...st.items,
+            [id]: {
+              ...st.items[id],
+              recreatingImg: false,
+              imgDataUri: job.image_data_uri || this.buildHeroSvg(e, curVer),
+              imgStatus: job.status || 'MOCKUP_AUDIENCE_RENDER',
+              imgPrompt: job.prompt_text || sceneDesc
+            }
+          }
+        }));
+      })
+      .catch(() => {
+        setTimeout(() => {
+          this.setState(st => ({
+            items: {
+              ...st.items,
+              [id]: {
+                ...st.items[id],
+                recreatingImg: false,
+                imgDataUri: this.buildHeroSvg(e, curVer),
+                imgStatus: 'MOCKUP_AUDIENCE_RENDER',
+                imgPrompt: sceneDesc
+              }
+            }
+          }));
+        }, 450);
+      });
+  }
 
   renderVals() {
     const D = this.data, st = this.state, items = st.items;
@@ -409,7 +506,8 @@ class Component extends DCLogic {
 
     const pubRows = pub.map(e => ({ date: D.days[items[e.id].day], sku: e.p.sku, name: e.p.name, segment: e.g.label,
       rpv0: eur2.format(e.cr * e.p.price), mpv0: eur2.format(e.cr * e.p.price * e.p.m), cr0: pct(e.cr), br0: pct(e.bounce, 1),
-      rpv1: eur2.format(e.newCR * e.p.price), mpv1: eur2.format(e.newCR * e.p.price * e.p.m), cr1: pct(e.newCR), br1: pct(e.newBR, 1) }));
+      rpv1: eur2.format(e.newCR * e.p.price), mpv1: eur2.format(e.newCR * e.p.price * e.p.m), cr1: pct(e.newCR), br1: pct(e.newBR, 1),
+      open: () => this.setState({ preview: e.id }) }));
     const liftRev = pub.reduce((a, e) => a + (e.newCR - e.cr) * e.views * e.p.price, 0);
 
     // daily series
@@ -442,6 +540,11 @@ class Component extends DCLogic {
     let pv = {};
     if (st.preview) {
       const e = D.low.find(z => z.id === st.preview); const cap = this.props.discountCap ?? 30;
+      const it = items[e.id] || {};
+      const imgVer = it.imgVer || 0;
+      const recreatingImg = !!it.recreatingImg;
+      const aspectRatio = e.g.device === 'Mobile' ? '9:16' : e.g.device === 'Tablet' ? '1:1' : '16:9';
+      const defaultPrompt = `Editorial ${e.g.style.replace(/_/g, ' ')} interior in ${e.g.city} tailored for ${e.g.segmentName} (${e.g.id}) shoppers browsing on ${e.g.device} (avg basket EUR ${e.g.aov.toFixed(2)}), featuring ${e.p.name} (${e.p.sku}) — variation #${imgVer + 1}`;
       const maxSafeDisc = Math.max(0, Math.floor((e.p.m * 100 - 10) / 5) * 5);
       const disc = Math.max(5, Math.min(cap, maxSafeDisc, Math.floor(e.p.m * 100 * 0.4 / 5) * 5));
       const headline = {
@@ -452,7 +555,34 @@ class Component extends DCLogic {
         Neo_Bauhaus: 'Sculptural Neo-Bauhaus form for ' + e.g.city + ' interiors'
       }[e.p.theme] || ('Transform Your Space with ' + e.p.sku);
       const related = D.products.filter(p => p.theme === e.p.theme && p.sku !== e.p.sku && p.sku !== 'SKU-0017' && p.stock > 40).slice(0, 4).map(p => ({ name: p.sku + ' · ' + p.name, price: eur2.format(p.price) }));
-      pv = { layout: e.layout, segment: e.id + ' · ' + e.g.label, category: e.p.cat.replace(/_/g, ' '), theme: e.p.theme.replace(/_/g, ' '), name: e.p.name, shortName: e.p.shortName, price: eur2.format(e.p.price), headline, sub: e.p.name + ' (' + e.p.sku + ') and matching pieces curated for ' + e.g.segmentName + ' shoppers on ' + e.g.device + '.', related, sku: e.p.sku, margin: pct(e.p.m, 1), stock: e.p.stock + ' units', promo: disc + '% off ' + e.p.cat.replace(/_/g, ' ').toLowerCase() + ' this week · code ' + e.g.city.slice(0, 3).toUpperCase() + disc, guard: 'Discount ' + disc + '% · within ' + cap + '% cap and >=10% net margin floor', approve: () => this.publish(e.id) };
+      pv = {
+        layout: e.layout,
+        segment: e.id + ' · ' + e.g.label,
+        category: e.p.cat.replace(/_/g, ' '),
+        theme: e.p.theme.replace(/_/g, ' '),
+        name: e.p.name,
+        shortName: e.p.shortName,
+        price: eur2.format(e.p.price),
+        headline,
+        sub: e.p.name + ' (' + e.p.sku + ') and matching pieces curated for ' + e.g.segmentName + ' shoppers on ' + e.g.device + '.',
+        related,
+        sku: e.p.sku,
+        margin: pct(e.p.m, 1),
+        stock: e.p.stock + ' units',
+        promo: disc + '% off ' + e.p.cat.replace(/_/g, ' ').toLowerCase() + ' this week · code ' + e.g.city.slice(0, 3).toUpperCase() + disc,
+        guard: 'Discount ' + disc + '% · within ' + cap + '% cap and >=10% net margin floor',
+        recreatingImg,
+        recreateLabel: recreatingImg ? 'Generating via GEMINI_IMAGE_MODEL...' : 'Recreate image',
+        recreateImage: () => this.recreateImage(e.id),
+        heroBg: 'var(--color-neutral-800)',
+        heroImgSrc: it.imgDataUri || this.buildHeroSvg(e, imgVer),
+        heroOpacity: recreatingImg ? '0.45' : '0.88',
+        heroBadge: (it.imgStatus || 'GEMINI_IMAGE_MODEL') + ' · v' + (imgVer + 1) + ' · ' + aspectRatio + ' · ' + e.g.id,
+        audHeader: 'AUDIENCE CONTEXT READ FOR IMAGE GENERATION (' + e.g.id + ' · ' + e.g.segmentName + ')',
+        audSummary: 'Region: ' + e.g.city + ' · Style: ' + e.g.style.replace(/_/g, ' ') + ' · Device: ' + e.g.device + ' (' + aspectRatio + ') · Avg Basket: ' + eur2.format(e.g.aov) + ' · Segment CR: ' + pct(e.g.cr),
+        audiencePrompt: 'Prompt -> ' + (it.imgPrompt || defaultPrompt),
+        approve: () => this.publish(e.id)
+      };
     }
 
     return {

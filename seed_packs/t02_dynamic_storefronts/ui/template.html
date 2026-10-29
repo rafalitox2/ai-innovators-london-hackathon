@@ -279,9 +279,12 @@
       <div class="modal-header">
         <div class="brand-stack">
           <span class="kicker">Storefront variant · {{THEME_STYLE}}</span>
-          <span class="segment-title">{{SEGMENT_ID}} · {{REGION}}</span>
+          <span class="segment-title">{{SEGMENT_ID}} · {{SEGMENT_NAME}} ({{REGION}})</span>
         </div>
-        <span class="btn">Approve &amp; publish</span>
+        <div style="display: flex; gap: 8px; align-items: center;">
+          <button type="button" id="recreate-btn" class="btn" style="cursor: pointer;" onclick="recreateHeroImage()">Recreate image</button>
+          <span class="btn">Approve &amp; publish</span>
+        </div>
       </div>
 
       <div class="storefront-frame">
@@ -298,14 +301,20 @@
         </div>
 
         <div class="hero">
-          <div class="hero-visual">
-            {{HERO_IMAGE_HTML}}
-            <span>Hero lifestyle render · {{THEME_STYLE}} · {{SEGMENT_ID}}</span>
+          <div class="hero-visual" id="hero-visual-box">
+            <div id="hero-img-slot">{{HERO_IMAGE_HTML}}</div>
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap;">
+              <span id="hero-caption">Hero lifestyle render · {{THEME_STYLE}} · {{SEGMENT_ID}}</span>
+              <button type="button" class="btn" style="padding: 4px 10px; font-size: 11px; cursor: pointer;" onclick="recreateHeroImage()">Recreate image</button>
+            </div>
+            <div id="audience-prompt-box" style="font-size: 11px; color: var(--color-neutral-400); background: color-mix(in srgb, var(--color-bg) 70%, transparent); padding: 8px 10px; border-radius: var(--radius-sm); border: 1px solid var(--color-divider);">
+              <strong style="color: var(--color-accent-300);">Audience Context ({{SEGMENT_ID}}):</strong> {{SEGMENT_NAME}} · Region {{REGION}} · Style {{PREFERRED_STYLE}} · Device {{DEVICE_TYPE}} · AOV €{{AOV_EUR}}
+            </div>
           </div>
           <div class="hero-copy">
             <span class="kicker">{{THEME_STYLE}} edit</span>
             <h1>{{HERO_HEADLINE}}</h1>
-            <p>Curated pieces selected for segment {{SEGMENT_ID}} ({{REGION}}) with real-time margin protection.</p>
+            <p>Curated pieces selected for segment {{SEGMENT_ID}} ({{SEGMENT_NAME}}, {{REGION}}) with real-time margin protection.</p>
             <div>
               <span class="btn">Shop {{THEME_STYLE}} Edit</span>
             </div>
@@ -318,12 +327,58 @@
       </div>
 
       <div class="modal-footer">
-        <span>Segment {{SEGMENT_ID}}</span>
+        <span>Segment {{SEGMENT_ID}} ({{SEGMENT_NAME}})</span>
         <span>Region {{REGION}}</span>
+        <span>Device {{DEVICE_TYPE}} · AOV €{{AOV_EUR}}</span>
         <span>Theme {{THEME_STYLE}}</span>
         <span>Discount {{DISCOUNT_PCT}}% · Policy Guardrail Verified &le;30%</span>
       </div>
     </div>
   </div>
+  <script>
+    let variationIdx = 1;
+    const scenes = [
+      "Golden-hour architectural wide shot tailored to regional apartment aesthetic",
+      "Close-up artisanal material texture with warm ambient evening lighting",
+      "Sunlit morning minimalist editorial composition with natural shadows",
+      "Twilight gallery-style interior spotlight with city skyline backdrop"
+    ];
+    async function recreateHeroImage() {
+      const btn = document.getElementById("recreate-btn");
+      const caption = document.getElementById("hero-caption");
+      const promptBox = document.getElementById("audience-prompt-box");
+      const scene = scenes[variationIdx % scenes.length];
+      variationIdx += 1;
+      const aspect = "{{DEVICE_TYPE}}".toLowerCase().includes("mobile") ? "9:16" : ("{{DEVICE_TYPE}}".toLowerCase().includes("tablet") ? "1:1" : "16:9");
+      if (btn) btn.textContent = "Recreating image…";
+      if (caption) caption.textContent = "Calling Google Image endpoint (v" + variationIdx + " · " + aspect + ")…";
+      try {
+        const resp = await fetch("/api/recreate-hero-image", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            sku_id: "{{PRIMARY_SKU}}",
+            segment_id: "{{SEGMENT_ID}}",
+            style_theme: "{{THEME_STYLE}}",
+            scene_description: scene,
+            aspect_ratio: aspect
+          })
+        });
+        if (resp.ok) {
+          const data = await resp.json();
+          const job = data.render_job || {};
+          if (promptBox && job.prompt_text) {
+            promptBox.innerHTML = "<strong style='color: var(--color-accent-300);'>Google Image Endpoint (" + (job.image_model || "gemini-3.1-flash-image") + " · v" + variationIdx + "):</strong> " + job.prompt_text;
+          }
+        }
+      } catch (_) {
+        if (promptBox) {
+          promptBox.innerHTML = "<strong style='color: var(--color-accent-300);'>Audience-Adjusted Prompt (v" + variationIdx + " · " + aspect + "):</strong> AtelierNova hero render for {{SEGMENT_ID}} ({{SEGMENT_NAME}}, region={{REGION}}, style={{PREFERRED_STYLE}}, device={{DEVICE_TYPE}}, AOV=€{{AOV_EUR}}). Scene: " + scene;
+        }
+      }
+      if (caption) caption.textContent = "Hero lifestyle render (v" + variationIdx + " · " + aspect + ") · {{THEME_STYLE}} · {{SEGMENT_ID}}";
+      if (btn) btn.textContent = "Recreate image";
+    }
+  </script>
 </body>
 </html>

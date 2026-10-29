@@ -250,7 +250,10 @@ def test_t02_storefront_preview_recreate_image_reads_audience_and_calls_endpoint
     )
     ok = json.loads(ok_raw)
     assert ok["status"] == "SUCCESS"
-    rendered_html = Path(ok["preview"]["html_path"]).read_text(encoding="utf-8")
+    preview_path = Path(ok["preview"]["html_path"])
+    rendered_html = preview_path.read_text(encoding="utf-8")
+    preview_path.unlink(missing_ok=True)
+    (preview_path.parent / "hero_SEG-002.svg").unlink(missing_ok=True)
     assert "Recreate image" in rendered_html
     assert "ES_Madrid_Mediterranean_Warm_Mobile" in rendered_html
 
