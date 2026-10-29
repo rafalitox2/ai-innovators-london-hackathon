@@ -18,16 +18,17 @@ Over **2 days**, around **50 technical Participants** (founders, CTOs, VPs of En
 ### Live Scored Deployment — Table 2 (`expedition-dn26lon-5922`, `europe-west1`)
 | Component | Live Endpoint / Resource Identifier | Status |
 | :--- | :--- | :--- |
-| **Cloud Run FastMCP Server (Health & Tool Manifest)** | [`https://t02-dynamic-storefronts-mcp-d2lv3suxga-ew.a.run.app/healthz`](https://t02-dynamic-storefronts-mcp-d2lv3suxga-ew.a.run.app/healthz) | `ONLINE` (`200 OK`) |
+| **Nocturne Dynamic Storefront React UI (`/ui`)** | [`https://t02-dynamic-storefronts-mcp-d2lv3suxga-ew.a.run.app/ui`](https://t02-dynamic-storefronts-mcp-d2lv3suxga-ew.a.run.app/ui) ([Root SPA](https://t02-dynamic-storefronts-mcp-d2lv3suxga-ew.a.run.app/)) | `ONLINE` (`200 OK` · PR #33) |
+| **Cloud Run FastMCP Server (Health & Tool Manifest)** | [`https://t02-dynamic-storefronts-mcp-d2lv3suxga-ew.a.run.app/health`](https://t02-dynamic-storefronts-mcp-d2lv3suxga-ew.a.run.app/health) ([`/api/health`](https://t02-dynamic-storefronts-mcp-d2lv3suxga-ew.a.run.app/api/health)) | `ONLINE` (`200 OK`) |
 | **FastMCP SSE Endpoint (`JSONRPC`)** | [`https://t02-dynamic-storefronts-mcp-d2lv3suxga-ew.a.run.app/sse`](https://t02-dynamic-storefronts-mcp-d2lv3suxga-ew.a.run.app/sse) | `ONLINE` |
-| **A2A Agent Discovery Card (`.well-known/agent.json`)** | [`https://t02-dynamic-storefronts-mcp-d2lv3suxga-ew.a.run.app/.well-known/agent.json`](https://t02-dynamic-storefronts-mcp-d2lv3suxga-ew.a.run.app/.well-known/agent.json) | `200 OK` |
+| **A2A Agent Discovery Card (`.well-known/agent.json`)** | [`https://t02-dynamic-storefronts-mcp-d2lv3suxga-ew.a.run.app/.well-known/agent.json`](https://t02-dynamic-storefronts-mcp-d2lv3suxga-ew.a.run.app/.well-known/agent.json) | `200 OK` (`HTTPS` + `ReasoningEngine`) |
 | **Live Storefront UI Preview (`SEG-001`)** | [`https://t02-dynamic-storefronts-mcp-d2lv3suxga-ew.a.run.app/preview/SEG-001`](https://t02-dynamic-storefronts-mcp-d2lv3suxga-ew.a.run.app/preview/SEG-001) | `200 OK` |
-| **Vertex AI Agent Runtime (`ReasoningEngine`)** | `projects/633924037012/locations/europe-west1/reasoningEngines/5876565294532526080` ([REST API Endpoint](https://europe-west1-aiplatform.googleapis.com/v1/projects/633924037012/locations/europe-west1/reasoningEngines/5876565294532526080)) | Deployed & Verified (`make test-remote`) |
+| **Vertex AI Agent Runtime (`ReasoningEngine`)** | `projects/633924037012/locations/europe-west1/reasoningEngines/5876565294532526080` ([REST API Endpoint](https://europe-west1-aiplatform.googleapis.com/v1/projects/633924037012/locations/europe-west1/reasoningEngines/5876565294532526080)) | Authenticated REST API (OAuth2 Bearer) · verified via `make test-remote` |
 | **Agent Registry — MCP Server Service** | `projects/expedition-dn26lon-5922/locations/europe-west1/services/t02-dynamic-storefronts-mcp` (`projects/633924037012/locations/europe-west1/mcpServers/agentregistry-00000000-0000-0000-53aa-f9cc4d6a1d28`) | Registered |
 | **Agent Registry — MCP Server URN (`mcpServerId`)** | `urn:mcp:projects-633924037012:projects:633924037012:locations:europe-west1:agentregistry:services:t02-dynamic-storefronts-mcp` | Registered |
 | **Agent Registry — ADK Agent Service** | `projects/expedition-dn26lon-5922/locations/europe-west1/services/t02-dynamic-storefronts-agent` (`projects/633924037012/locations/europe-west1/agents/agentregistry-00000000-0000-0000-fdb9-ee664e383f84`) | Registered |
 | **Agent Registry — ADK Agent URN (`agentId`)** | `urn:agent:projects-633924037012:projects:633924037012:locations:europe-west1:agentregistry:services:t02-dynamic-storefronts-agent` | Registered |
-| **GCS Staging & State Sync Bucket** | `gs://expedition-dn26lon-5922-hackathon-staging` (`gs://expedition-dn26lon-5922-hackathon-staging/.deployed_agent.json`) | Active |
+| **GCS Staging & State Sync Bucket** | `gs://expedition-dn26lon-5922-hackathon-staging` (`gs://expedition-dn26lon-5922-hackathon-staging/state/.deployed_agent.json`) | Active |
 
 ---
 
@@ -246,14 +247,15 @@ This fork runs **Table 2 — Visual Content Creator & Dynamic Storefronts** (`SE
 If GitHub doesn't animate the diagram in your viewer, open `docs/diagrams/t02_architecture.svg` directly in a browser — it's a self-contained animated SVG (dashed, moving strokes trace a live call; faint dotted strokes trace the offline/fallback path).
 
 ### Live Endpoints & Cloud Resources (T02 Scored Deployment)
-- **Cloud Run FastMCP Server**: [`https://t02-dynamic-storefronts-mcp-d2lv3suxga-ew.a.run.app`](https://t02-dynamic-storefronts-mcp-d2lv3suxga-ew.a.run.app)
-  - Health & Registered Tool Manifest: [`https://t02-dynamic-storefronts-mcp-d2lv3suxga-ew.a.run.app/healthz`](https://t02-dynamic-storefronts-mcp-d2lv3suxga-ew.a.run.app/healthz)
+- **Cloud Run FastMCP Server & Nocturne UI**: [`https://t02-dynamic-storefronts-mcp-d2lv3suxga-ew.a.run.app`](https://t02-dynamic-storefronts-mcp-d2lv3suxga-ew.a.run.app)
+  - Nocturne Dynamic Storefront React UI (`/ui`): [`https://t02-dynamic-storefronts-mcp-d2lv3suxga-ew.a.run.app/ui`](https://t02-dynamic-storefronts-mcp-d2lv3suxga-ew.a.run.app/ui)
+  - Health & Registered Tool Manifest: [`https://t02-dynamic-storefronts-mcp-d2lv3suxga-ew.a.run.app/health`](https://t02-dynamic-storefronts-mcp-d2lv3suxga-ew.a.run.app/health) (and [`/api/health`](https://t02-dynamic-storefronts-mcp-d2lv3suxga-ew.a.run.app/api/health))
   - FastMCP SSE Endpoint: [`https://t02-dynamic-storefronts-mcp-d2lv3suxga-ew.a.run.app/sse`](https://t02-dynamic-storefronts-mcp-d2lv3suxga-ew.a.run.app/sse)
   - A2A Agent Discovery Card: [`https://t02-dynamic-storefronts-mcp-d2lv3suxga-ew.a.run.app/.well-known/agent.json`](https://t02-dynamic-storefronts-mcp-d2lv3suxga-ew.a.run.app/.well-known/agent.json)
   - Live Storefront UI Preview (`SEG-001`): [`https://t02-dynamic-storefronts-mcp-d2lv3suxga-ew.a.run.app/preview/SEG-001`](https://t02-dynamic-storefronts-mcp-d2lv3suxga-ew.a.run.app/preview/SEG-001)
 - **Vertex AI Agent Runtime (`ReasoningEngine`)**:
   - Resource Name: `projects/633924037012/locations/europe-west1/reasoningEngines/5876565294532526080`
-  - REST Endpoint: `https://europe-west1-aiplatform.googleapis.com/v1/projects/633924037012/locations/europe-west1/reasoningEngines/5876565294532526080`
+  - REST Endpoint (Authenticated OAuth2 Bearer API · verified via `make test-remote`): `https://europe-west1-aiplatform.googleapis.com/v1/projects/633924037012/locations/europe-west1/reasoningEngines/5876565294532526080`
 - **Google Cloud Agent Registry (`agentregistry.googleapis.com/v1alpha`)**:
   - MCP Server Service: `projects/expedition-dn26lon-5922/locations/europe-west1/services/t02-dynamic-storefronts-mcp`
   - MCP Server Registry Resource: `projects/633924037012/locations/europe-west1/mcpServers/agentregistry-00000000-0000-0000-53aa-f9cc4d6a1d28`
