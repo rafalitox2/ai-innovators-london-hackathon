@@ -7,12 +7,13 @@ import os
 from pathlib import Path
 from typing import Any
 
-from starlette.applications import Starlette
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from starlette.requests import Request
-from starlette.responses import HTMLResponse, JSONResponse
-from starlette.routing import Route
+from starlette.responses import HTMLResponse, JSONResponse, Response
 import uvicorn
 
+from app.ui_server import UI_DIST_DIR, register_ui_routes
 from seed_packs.t02_dynamic_storefronts.mcp_server import (
     MCP_TOOLS,
     mcp,
@@ -96,7 +97,9 @@ async def healthz_endpoint(request: Request) -> JSONResponse:
             "mcp_tools": [fn.__name__ for fn in MCP_TOOLS],
             "adk_tools": [fn.__name__ for fn in ADK_TOOLS if hasattr(fn, "__name__")],
             "endpoints": {
+                "nocturne_ui": f"{base_url}/ui",
                 "healthz": f"{base_url}/healthz",
+                "api_dashboard": f"{base_url}/api/dashboard",
                 "mcp_sse": f"{base_url}/sse",
                 "mcp_messages": f"{base_url}/messages",
                 "a2a_agent_card": f"{base_url}/.well-known/agent.json",
@@ -104,6 +107,14 @@ async def healthz_endpoint(request: Request) -> JSONResponse:
             },
         }
     )
+
+
+async def root_ui_or_health_endpoint(request: Request) -> Response:
+    """Serve the compiled Nocturne React SPA at / when ui/dist/index.html is present."""
+    index_file = UI_DIST_DIR / "index.html"
+    if index_file.exists():
+        return HTMLResponse(index_file.read_text(encoding="utf-8"))
+    return await healthz_endpoint(request)
 
 
 async def agent_card_endpoint(request: Request) -> JSONResponse:
@@ -138,16 +149,31 @@ async def storefront_preview_endpoint(request: Request) -> HTMLResponse:
     return HTMLResponse(target.read_text(encoding="utf-8"))
 
 
-def build_mcp_cloudrun_app() -> Starlette:
-    """Build the composite Starlette ASGI app combining FastMCP SSE routes and HTTP endpoints."""
+def build_mcp_cloudrun_app() -> FastAPI:
+    """Build the composite FastAPI/Starlette ASGI app combining Nocturne React UI, ADK APIs, and FastMCP SSE."""
+    cloud_app = FastAPI(
+        title="AtelierNova Dynamic Storefronts — Cloud Run UI + FastMCP + ADK Server",
+        version="1.0.0",
+    )
+    cloud_app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+    register_ui_routes(cloud_app)
+
+    cloud_app.add_route("/", root_ui_or_health_endpoint, methods=["GET"])
+    cloud_app.add_route("/healthz", healthz_endpoint, methods=["GET"])
+    cloud_app.add_route("/.well-known/agent.json", agent_card_endpoint, methods=["GET"])
+    cloud_app.add_route("/preview/{segment_id}", storefront_preview_endpoint, methods=["GET"])
+
     sse_starlette = mcp.sse_app()
-    custom_routes = [
-        Route("/", endpoint=healthz_endpoint, methods=["GET"]),
-        Route("/healthz", endpoint=healthz_endpoint, methods=["GET"]),
-        Route("/.well-known/agent.json", endpoint=agent_card_endpoint, methods=["GET"]),
-        Route("/preview/{segment_id}", endpoint=storefront_preview_endpoint, methods=["GET"]),
-    ]
-    return Starlette(routes=[*custom_routes, *sse_starlette.routes])
+    for route in sse_starlette.routes:
+        cloud_app.router.routes.append(route)
+
+    return cloud_app
 
 
 app = build_mcp_cloudrun_app()

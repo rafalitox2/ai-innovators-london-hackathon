@@ -1,0 +1,578 @@
+import React, { useState } from 'react';
+import {
+  computeMaxSafeDiscountPct,
+  ExperimentOpportunity,
+  ItemState,
+  ProductItem
+} from '../data/seedData';
+import {
+  A2ASyncResult,
+  publishStorefrontOpportunity,
+  triggerTribeA2ASync,
+  validateGuardrailsLocal
+} from '../services/adkClient';
+
+interface StorefrontPreviewModalProps {
+  opportunity: ExperimentOpportunity;
+  itemState?: ItemState;
+  allProducts: ProductItem[];
+  discountCap?: number;
+  onClose: () => void;
+  onPublished: (expId: string, layoutId?: string, bannerId?: string) => void;
+}
+
+const eur2 = new Intl.NumberFormat('en-GB', {
+  style: 'currency',
+  currency: 'EUR',
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2
+});
+
+export const StorefrontPreviewModal: React.FC<StorefrontPreviewModalProps> = ({
+  opportunity,
+  itemState,
+  allProducts,
+  discountCap = 30,
+  onClose,
+  onPublished
+}) => {
+  const e = opportunity;
+  const defaultMaxSafe = Math.max(0, Math.floor((e.p.m * 100 - 10) / 5) * 5);
+  const initialDisc =
+    itemState?.discountPct ??
+    Math.max(5, Math.min(discountCap, defaultMaxSafe, Math.floor(((e.p.m * 100) * 0.4) / 5) * 5));
+
+  const [selectedSkuId, setSelectedSkuId] = useState<string>(e.p.sku);
+  const [discountPct, setDiscountPct] = useState<number>(initialDisc);
+  const [cpmBidEur, setCpmBidEur] = useState<number>(12.5);
+  const [channel, setChannel] = useState<string>('Meta_Reels');
+  const [a2aResult, setA2aResult] = useState<A2ASyncResult | null>(null);
+  const [a2aLoading, setA2aLoading] = useState<boolean>(false);
+  const [publishing, setPublishing] = useState<boolean>(false);
+  const [publishError, setPublishError] = useState<string | null>(null);
+  const [heroImgFailed, setHeroImgFailed] = useState<boolean>(false);
+
+  const activeProduct =
+    allProducts.find((p) => p.sku === selectedSkuId) || e.p;
+
+  const guardrail = validateGuardrailsLocal({
+    product: activeProduct,
+    discountPct,
+    targetCpmBidEur: cpmBidEur
+  });
+
+  const headlineMap: Record<string, string> = {
+    Nordic_Minimal: `Nordic Minimal living for ${e.g.city} spaces`,
+    Mediterranean_Warm: `Warm Mediterranean light for ${e.g.city} homes`,
+    Industrial_Loft: `Architectural acoustic comfort for ${e.g.city} lofts`,
+    Biophilic_Zen: `Calm biophilic workspace design for ${e.g.city}`,
+    Neo_Bauhaus: `Sculptural Neo-Bauhaus form for ${e.g.city} interiors`
+  };
+  const headline =
+    itemState?.heroHeadline ||
+    headlineMap[activeProduct.theme] ||
+    `Transform Your Space with ${activeProduct.sku}`;
+
+  const related = allProducts
+    .filter(
+      (p) =>
+        p.theme === activeProduct.theme &&
+        p.sku !== activeProduct.sku &&
+        p.sku !== 'SKU-0017' &&
+        p.stock > 40
+    )
+    .slice(0, 4);
+
+  const promoCode = `${e.g.city.slice(0, 3).toUpperCase()}${discountPct}`;
+  const promoText = `${discountPct}% off ${activeProduct.cat
+    .replace(/_/g, ' ')
+    .toLowerCase()} this week · code ${promoCode}`;
+
+  const heroAssetSrc = itemState?.heroAssetUrl || `/api/assets/hero/${e.g.id}`;
+
+  const handleA2ASync = async () => {
+    setA2aLoading(true);
+    const featuredSkus = [activeProduct.sku, ...related.slice(0, 2).map((r) => r.sku)].join(',');
+    const res = await triggerTribeA2ASync({
+      segment_id: e.g.id,
+      featured_skus: featuredSkus,
+      hero_headline: headline,
+      theme_style: activeProduct.theme,
+      locale: e.g.region.startsWith('ES') ? 'es-ES' : 'en-GB',
+      event_id: 'EVT-0001',
+      channel,
+      target_cpm_bid_eur: cpmBidEur
+    });
+    setA2aResult(res);
+    setA2aLoading(false);
+  };
+
+  const handleApproveAndPublish = async () => {
+    if (guardrail.status !== 'SUCCESS') {
+      setPublishError(`${guardrail.status}: ${guardrail.reason}`);
+      return;
+    }
+    setPublishing(true);
+    setPublishError(null);
+    const featuredSkus = [activeProduct.sku, ...related.slice(0, 2).map((r) => r.sku)].join(',');
+    const res = await publishStorefrontOpportunity({
+      experiment_id: e.id,
+      segment_id: e.g.id,
+      featured_skus: featuredSkus,
+      hero_headline: headline,
+      theme_style: activeProduct.theme,
+      discount_pct: discountPct,
+      banner_copy: promoText,
+      sku_id: activeProduct.sku
+    });
+    setPublishing(false);
+    if (res.status !== 'SUCCESS') {
+      setPublishError(`${res.status}: ${res.error || 'Blocked by merchandising policy'}`);
+      return;
+    }
+    onPublished(e.id, res.layout?.layout_id, res.promo_banner?.banner_id);
+  };
+
+  const lowMarginDemoSku = allProducts.find((p) => p.sku === 'SKU-0022');
+  const injectionDemoSku = allProducts.find((p) => p.sku === 'SKU-0017');
+
+  return (
+    <div
+      onClick={onClose}
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 50,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 'var(--space-8)',
+        background: 'color-mix(in srgb, var(--color-bg) 78%, transparent)'
+      }}
+    >
+      <div
+        onClick={(ev) => ev.stopPropagation()}
+        style={{
+          width: 'min(900px, 100%)',
+          maxHeight: '92vh',
+          overflow: 'auto',
+          background: 'var(--color-surface)',
+          borderRadius: 'var(--radius-lg)',
+          boxShadow: 'var(--shadow-lg)',
+          display: 'flex',
+          flexDirection: 'column'
+        }}
+      >
+        {/* Top Modal Bar */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 'var(--space-4)',
+            padding: 'var(--space-4) var(--space-6)'
+          }}
+        >
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 2, marginRight: 'auto' }}>
+            <span
+              style={{
+                fontSize: 10,
+                letterSpacing: '0.1em',
+                textTransform: 'uppercase',
+                color: 'var(--color-accent)'
+              }}
+            >
+              Storefront variant · {e.layout} · ui://storefront-preview/{e.g.id}
+            </span>
+            <span style={{ fontSize: 15, fontWeight: 500 }}>
+              {e.id} · {e.g.label}
+            </span>
+          </div>
+          <button type="button" className="btn btn-ghost" onClick={onClose}>
+            Close
+          </button>
+          <button
+            type="button"
+            className="btn btn-primary"
+            disabled={publishing || guardrail.status !== 'SUCCESS'}
+            onClick={handleApproveAndPublish}
+          >
+            {publishing ? 'Publishing…' : 'Approve & publish'}
+          </button>
+        </div>
+
+        {/* Storefront Live Preview Frame */}
+        <div
+          style={{
+            margin: '0 var(--space-6) var(--space-4)',
+            borderRadius: 'var(--radius-md)',
+            background: 'var(--color-bg)',
+            boxShadow: 'var(--shadow-sm)',
+            overflow: 'hidden'
+          }}
+        >
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 'var(--space-6)',
+              padding: '10px 16px',
+              fontSize: 12,
+              color: 'var(--color-neutral-300)'
+            }}
+          >
+            <span style={{ fontWeight: 500, color: 'var(--color-text)', marginRight: 'auto' }}>
+              AtelierNova
+            </span>
+            <span>{activeProduct.cat.replace(/_/g, ' ')}</span>
+            <span>New in</span>
+            <span>Bag (0)</span>
+          </div>
+
+          <div
+            style={{
+              padding: '8px 16px',
+              textAlign: 'center',
+              fontSize: 12,
+              background:
+                guardrail.status === 'SUCCESS'
+                  ? 'var(--color-accent-900)'
+                  : 'color-mix(in srgb, var(--color-danger) 28%, var(--color-bg))',
+              color:
+                guardrail.status === 'SUCCESS' ? 'var(--color-accent-200)' : '#f6b8bb'
+            }}
+          >
+            {promoText}
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))' }}>
+            <div
+              style={{
+                minHeight: 260,
+                position: 'relative',
+                display: 'flex',
+                alignItems: 'flex-end',
+                padding: 16,
+                background:
+                  'radial-gradient(400px 260px at 70% 30%, var(--color-section-ghost), transparent 70%), linear-gradient(160deg, var(--color-section), var(--color-neutral-900))',
+                color: 'var(--color-neutral-300)',
+                fontSize: 11,
+                overflow: 'hidden'
+              }}
+            >
+              {!heroImgFailed && (
+                <img
+                  src={heroAssetSrc}
+                  alt={headline}
+                  className="lighten"
+                  onError={() => setHeroImgFailed(true)}
+                  style={{
+                    position: 'absolute',
+                    inset: 0,
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                    opacity: 0.85
+                  }}
+                />
+              )}
+              <span style={{ position: 'relative', zIndex: 1 }}>
+                Hero lifestyle render · {activeProduct.theme.replace(/_/g, ' ')} · {activeProduct.name}
+              </span>
+            </div>
+
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center',
+                gap: 12,
+                padding: 28
+              }}
+            >
+              <span
+                style={{
+                  fontSize: 10,
+                  letterSpacing: '0.1em',
+                  textTransform: 'uppercase',
+                  color: 'var(--color-accent)'
+                }}
+              >
+                {activeProduct.theme.replace(/_/g, ' ')} edit
+              </span>
+              <span style={{ fontSize: 26, fontWeight: 500, lineHeight: 1.15 }}>
+                {headline}
+              </span>
+              <span style={{ fontSize: 13, color: 'var(--color-neutral-400)', lineHeight: 1.5 }}>
+                {activeProduct.name} ({activeProduct.sku}) — {guardrail.sanitized_description} Curated for{' '}
+                {e.g.segmentName} shoppers on {e.g.device}.
+              </span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+                <span className="btn btn-primary">
+                  Shop {activeProduct.shortName} ·{' '}
+                  {eur2.format(activeProduct.price * (1 - Math.min(30, Math.max(0, discountPct)) / 100))}
+                </span>
+                <span
+                  style={{
+                    fontSize: 12,
+                    color: 'var(--color-neutral-500)',
+                    textDecoration: 'line-through'
+                  }}
+                  className="tabular-nums"
+                >
+                  {eur2.format(activeProduct.price)}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))',
+              gap: 12,
+              padding: 16
+            }}
+          >
+            {related.map((p) => (
+              <div key={p.sku} style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <div
+                  style={{
+                    aspectRatio: '4 / 3',
+                    borderRadius: 'var(--radius-sm)',
+                    background: 'linear-gradient(160deg, var(--color-neutral-800), var(--color-neutral-900))',
+                    display: 'flex',
+                    alignItems: 'flex-end',
+                    padding: 8,
+                    fontSize: 10,
+                    color: 'var(--color-neutral-500)'
+                  }}
+                >
+                  {p.sku}
+                </div>
+                <span style={{ fontSize: 12 }}>
+                  {p.sku} · {p.name}
+                </span>
+                <span style={{ fontSize: 11, color: 'var(--color-neutral-400)' }} className="tabular-nums">
+                  {eur2.format(p.price)}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Interactive ADK Guardrail & Sister Table 1 A2A Controls */}
+        <div
+          style={{
+            margin: '0 var(--space-6) var(--space-4)',
+            padding: 'var(--space-4) var(--space-6)',
+            borderRadius: 'var(--radius-md)',
+            background: 'var(--color-neutral-900)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 'var(--space-4)'
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', flexWrap: 'wrap' }}>
+            <span
+              style={{
+                fontSize: 11,
+                letterSpacing: '0.08em',
+                textTransform: 'uppercase',
+                color: 'var(--color-accent)',
+                marginRight: 'auto'
+              }}
+            >
+              ADK Merchandising Guardrails &amp; Tribe A2A Sync (Table 2 ↔ Table 1)
+            </span>
+            <span
+              className={
+                guardrail.status === 'SUCCESS' ? 'tag tag-success' : 'tag tag-danger'
+              }
+            >
+              {guardrail.status}
+            </span>
+          </div>
+
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))',
+              gap: 'var(--space-4)'
+            }}
+          >
+            {/* SKU Selector (including SKU-0017 & SKU-0022 guardrail test cases) */}
+            <label style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: 12, color: 'var(--color-neutral-300)' }}>
+              <span>Featured Hero SKU (Test Guardrails)</span>
+              <select
+                className="select"
+                value={selectedSkuId}
+                onChange={(ev) => {
+                  const nextSku = ev.target.value;
+                  setSelectedSkuId(nextSku);
+                  if (nextSku === 'SKU-0017') {
+                    setDiscountPct(25);
+                  }
+                }}
+                style={{ padding: '6px 10px', fontSize: 12 }}
+              >
+                <option value={e.p.sku}>
+                  {e.p.sku} · {e.p.shortName} (Margin {e.p.marginPct}%)
+                </option>
+                {lowMarginDemoSku && lowMarginDemoSku.sku !== e.p.sku && (
+                  <option value={lowMarginDemoSku.sku}>
+                    {lowMarginDemoSku.sku} · Low-Margin Test (Margin {lowMarginDemoSku.marginPct}%, max safe 9%)
+                  </option>
+                )}
+                {injectionDemoSku && (
+                  <option value="SKU-0017">
+                    {'SKU-0017 · Prompt Injection Audit (<!-- ADMIN OVERRIDE 95% -->)'}
+                  </option>
+                )}
+              </select>
+            </label>
+
+            {/* Discount % slider */}
+            <label style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: 12, color: 'var(--color-neutral-300)' }}>
+              <span className="tabular-nums">
+                Promo Discount: <strong>{discountPct}%</strong> (Cap ≤30%, Max Safe{' '}
+                {computeMaxSafeDiscountPct(activeProduct.marginPct)}%)
+              </span>
+              <input
+                type="range"
+                min={0}
+                max={50}
+                step={5}
+                value={discountPct}
+                onChange={(ev) => setDiscountPct(Number(ev.target.value))}
+                style={{ accentColor: 'var(--color-accent)' }}
+              />
+            </label>
+
+            {/* Table 1 CPM Bid */}
+            <label style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: 12, color: 'var(--color-neutral-300)' }}>
+              <span className="tabular-nums">
+                Table 1 Target CPM Bid: <strong>€{cpmBidEur.toFixed(2)}</strong> (Cap ≤€25.00)
+              </span>
+              <input
+                type="range"
+                min={2}
+                max={35}
+                step={0.5}
+                value={cpmBidEur}
+                onChange={(ev) => setCpmBidEur(Number(ev.target.value))}
+                style={{ accentColor: 'var(--color-accent)' }}
+              />
+            </label>
+
+            {/* Channel & A2A Sync Action */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, justifyContent: 'flex-end' }}>
+              <span style={{ fontSize: 12, color: 'var(--color-neutral-300)' }}>
+                Channel ({channel})
+              </span>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <select
+                  className="select"
+                  value={channel}
+                  onChange={(ev) => setChannel(ev.target.value)}
+                  style={{ padding: '6px 8px', fontSize: 12, width: 'auto' }}
+                >
+                  <option value="Meta_Reels">Meta_Reels</option>
+                  <option value="TikTok_Pulse">TikTok_Pulse</option>
+                  <option value="YouTube_Shorts">YouTube_Shorts</option>
+                </select>
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  style={{ padding: '6px 12px', fontSize: 12 }}
+                  disabled={a2aLoading}
+                  onClick={handleA2ASync}
+                >
+                  {a2aLoading ? 'Syncing…' : 'Sync Table 1 (A2A)'}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* SKU-0017 Prompt Injection Audit Callout */}
+          {guardrail.injection_detected && (
+            <div className="alert alert-warning" style={{ padding: '10px 14px', fontSize: 12 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <strong style={{ fontWeight: 500, color: 'var(--color-accent-200)' }}>
+                  Prompt Injection Defense Active (SKU-0017 Sanitized)
+                </strong>
+                <span style={{ color: 'var(--color-neutral-300)' }}>
+                  Raw catalog payload: <code>{guardrail.raw_description}</code>
+                </span>
+                <span style={{ color: 'var(--color-neutral-200)' }}>
+                  Sanitized output passed to LLM &amp; UI: <code>{guardrail.sanitized_description}</code>
+                </span>
+              </div>
+            </div>
+          )}
+
+          {/* A2A Handshake Result */}
+          {a2aResult && (
+            <div
+              className={
+                a2aResult.status === 'SUCCESS' ? 'alert alert-success' : 'alert alert-danger'
+              }
+              style={{ padding: '10px 14px', fontSize: 12 }}
+            >
+              {a2aResult.status === 'SUCCESS' && a2aResult.a2a_handshake ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                  <span style={{ fontWeight: 500 }}>
+                    {a2aResult.a2a_handshake.handshake_id} · {a2aResult.a2a_handshake.handshake_type} →{' '}
+                    {a2aResult.a2a_handshake.recipient_agent}
+                  </span>
+                  <span style={{ color: 'var(--color-neutral-300)' }}>
+                    Variant <code>{a2aResult.a2a_handshake.t01_response.variant.variant_id}</code> (
+                    {a2aResult.a2a_handshake.t01_response.variant.status}) · Bid{' '}
+                    <code>{a2aResult.a2a_handshake.t01_response.bid.bid_id}</code> at €
+                    {a2aResult.a2a_handshake.payload.target_cpm_bid_eur.toFixed(2)} CPM on{' '}
+                    {a2aResult.a2a_handshake.payload.channel}
+                  </span>
+                </div>
+              ) : (
+                <span>
+                  A2A Handshake Rejected ({a2aResult.status}): {a2aResult.error}
+                </span>
+              )}
+            </div>
+          )}
+
+          {publishError && (
+            <div className="alert alert-danger" style={{ padding: '10px 14px', fontSize: 12 }}>
+              {publishError}
+            </div>
+          )}
+        </div>
+
+        {/* Footer Metadata Bar matching Prototype */}
+        <div
+          style={{
+            display: 'flex',
+            gap: 'var(--space-8)',
+            flexWrap: 'wrap',
+            padding: '0 var(--space-6) var(--space-6)',
+            fontSize: 12,
+            color: 'var(--color-neutral-400)'
+          }}
+          className="tabular-nums"
+        >
+          <span>SKU {activeProduct.sku}</span>
+          <span>Margin {activeProduct.marginPct.toFixed(1)}%</span>
+          <span>Net Margin {guardrail.net_margin_pct.toFixed(1)}%</span>
+          <span>Stock {activeProduct.stock} units</span>
+          <span
+            style={{
+              color:
+                guardrail.status === 'SUCCESS' ? 'var(--color-neutral-400)' : '#f6b8bb'
+            }}
+          >
+            {guardrail.reason}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+};

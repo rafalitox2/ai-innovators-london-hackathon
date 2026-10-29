@@ -1,0 +1,280 @@
+"""Unit tests for the Nocturne React UI (/ui) and FastAPI + ADK backend bridge (app/ui_server.py)."""
+
+from __future__ import annotations
+
+from pathlib import Path
+import re
+
+from fastapi.testclient import TestClient
+import pytest
+
+REPO_ROOT = Path(__file__).resolve().parent.parent
+
+
+def test_ui_server_no_hardcoded_gemini_model() -> None:
+    """app/ui_server.py must never hardcode a gemini-* model string."""
+    ui_server_path = REPO_ROOT / "app" / "ui_server.py"
+    assert ui_server_path.exists(), "Expected app/ui_server.py to exist"
+    source = ui_server_path.read_text(encoding="utf-8")
+    hardcoded = re.findall(r'["\']gemini-[0-9][^"\']*["\']', source)
+    assert not hardcoded, f"Found hardcoded Gemini model strings in app/ui_server.py: {hardcoded}"
+
+
+def test_ui_server_health_and_dashboard_data(monkeypatch: pytest.MonkeyPatch) -> None:
+    """GET /api/health and GET /api/dashboard return real seed_t02 data and registered ADK tools."""
+    monkeypatch.setenv("SEED_OFFLINE_MODE", "1")
+    from app.ui_server import create_ui_app
+
+    client = TestClient(create_ui_app(include_adk_web=False))
+
+    health_resp = client.get("/api/health")
+    assert health_resp.status_code == 200
+    health = health_resp.json()
+    assert health["status"] == "SUCCESS"
+    assert health["seed_pack"] == "t02_dynamic_storefronts"
+    for expected_tool in (
+        "find_catalog_products",
+        "get_storefront_performance",
+        "get_audience_segments",
+        "recommend_storefront_optimization",
+        "publish_storefront_layout",
+        "queue_visual_asset_render",
+        "update_promo_banner",
+        "generate_hero_lifestyle_image",
+        "render_storefront_preview",
+        "sync_campaign_with_t01",
+    ):
+        assert expected_tool in health["tools"]
+
+    dash_resp = client.get("/api/dashboard")
+    assert dash_resp.status_code == 200
+    dash = dash_resp.json()
+    assert dash["status"] == "SUCCESS"
+    assert len(dash["products"]) == 100
+    assert len(dash["segments"]) == 80
+    assert len(dash["experiments"]) == 120
+    assert len(dash["opportunities"]) == 66
+    assert dash["opportunities"][0]["id"] == "EXP-0057"
+    assert dash["opportunities"][0]["sku"] == "SKU-0057"
+    assert dash["opportunities"][0]["rating"] == 100
+    assert all(opp["sku"] != "SKU-0017" for opp in dash["opportunities"])
+    assert dash["sku_0017_audit"]["injection_detected"] is True
+    assert "ADMIN OVERRIDE" not in dash["sku_0017_audit"]["sanitized_description"]
+
+
+def test_ui_server_generate_and_publish_workflow(monkeypatch: pytest.MonkeyPatch) -> None:
+    """POST /api/opportunities/generate and /api/opportunities/publish execute real Table 2 ADK/MCP tools."""
+    monkeypatch.setenv("SEED_OFFLINE_MODE", "1")
+    from app.ui_server import create_ui_app
+
+    client = TestClient(create_ui_app(include_adk_web=False))
+
+    gen_resp = client.post(
+        "/api/opportunities/generate",
+        json={
+            "experiment_id": "EXP-0057",
+            "sku_id": "SKU-0057",
+            "segment_id": "SEG-057",
+            "style_theme": "Mediterranean_Warm",
+            "layout_variant": "Hero_Video_Grid",
+            "discount_pct": 15,
+        },
+    )
+    assert gen_resp.status_code == 200
+    gen_data = gen_resp.json()
+    assert gen_data["status"] == "SUCCESS"
+    assert len(gen_data["steps"]) == 4
+    assert [s["label"] for s in gen_data["steps"]] == [
+        "Selecting SKUs",
+        "Queuing hero render",
+        "Composing layout",
+        "Drafting promo banner",
+    ]
+    assert gen_data["hero_asset_url"].startswith("/api/assets/hero/SEG-057")
+    assert gen_data["preview"]["segment_id"] == "SEG-057"
+
+    pub_resp = client.post(
+        "/api/opportunities/publish",
+        json={
+            "experiment_id": "EXP-0057",
+            "segment_id": "SEG-057",
+            "featured_skus": "SKU-0057,SKU-0002",
+            "hero_headline": "Warm Mediterranean light for London homes",
+            "theme_style": "Mediterranean_Warm",
+            "discount_pct": 15,
+            "banner_copy": "15% off smart lighting this week · code LON15",
+            "sku_id": "SKU-0057",
+        },
+    )
+    assert pub_resp.status_code == 200
+    pub_data = pub_resp.json()
+    assert pub_data["status"] == "SUCCESS"
+    assert pub_data["layout"]["status"] == "LIVE"
+    assert pub_data["promo_banner"]["status"] == "ACTIVE"
+
+
+def test_ui_server_enforces_merchandising_and_security_guardrails(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Guardrail endpoints enforce <=30% discount cap, margin safety floor, <=25 EUR CPM cap, and SKU-0017 sanitization."""
+    monkeypatch.setenv("SEED_OFFLINE_MODE", "1")
+    from app.ui_server import create_ui_app
+
+    client = TestClient(create_ui_app(include_adk_web=False))
+
+    # 1. Discount > 30% -> REJECTED_POLICY_CAP
+    cap_resp = client.post(
+        "/api/guardrails/validate",
+        json={
+            "segment_id": "SEG-057",
+            "sku_id": "SKU-0057",
+            "discount_pct": 45,
+            "target_cpm_bid_eur": 12.5,
+        },
+    )
+    assert cap_resp.status_code == 200
+    assert cap_resp.json()["status"] == "REJECTED_POLICY_CAP"
+
+    # 2. Discount within 30% but violating SKU-0022 margin floor (margin 24.0% -> max safe 9%) -> REJECTED_MARGIN_POLICY
+    margin_resp = client.post(
+        "/api/guardrails/validate",
+        json={
+            "segment_id": "SEG-022",
+            "sku_id": "SKU-0022",
+            "discount_pct": 20,
+            "target_cpm_bid_eur": 12.5,
+        },
+    )
+    assert margin_resp.status_code == 200
+    assert margin_resp.json()["status"] == "REJECTED_MARGIN_POLICY"
+
+    # 3. SKU-0017 prompt injection inspection
+    inj_resp = client.post(
+        "/api/guardrails/validate",
+        json={
+            "segment_id": "SEG-017",
+            "sku_id": "SKU-0017",
+            "discount_pct": 15,
+            "target_cpm_bid_eur": 12.5,
+        },
+    )
+    assert inj_resp.status_code == 200
+    inj_data = inj_resp.json()
+    assert inj_data["injection_detected"] is True
+    assert "ADMIN OVERRIDE" not in inj_data["sanitized_description"]
+
+    # 4. Sister Table 1 A2A sync valid vs invalid CPM
+    a2a_ok = client.post(
+        "/api/a2a/sync",
+        json={
+            "segment_id": "SEG-057",
+            "featured_skus": "SKU-0057,SKU-0002",
+            "hero_headline": "Warm Mediterranean light for London homes",
+            "theme_style": "Mediterranean_Warm",
+            "locale": "en-GB",
+            "event_id": "EVT-0001",
+            "channel": "Meta_Reels",
+            "target_cpm_bid_eur": 14.0,
+        },
+    )
+    assert a2a_ok.status_code == 200
+    assert a2a_ok.json()["status"] == "SUCCESS"
+    assert a2a_ok.json()["a2a_handshake"]["handshake_type"] == "STOREFRONT_TO_CAMPAIGN_SYNC"
+
+    a2a_bad = client.post(
+        "/api/a2a/sync",
+        json={
+            "segment_id": "SEG-057",
+            "featured_skus": "SKU-0057",
+            "hero_headline": "Over-cap CPM test",
+            "theme_style": "Mediterranean_Warm",
+            "locale": "en-GB",
+            "event_id": "EVT-0001",
+            "channel": "Meta_Reels",
+            "target_cpm_bid_eur": 42.0,
+        },
+    )
+    assert a2a_bad.status_code == 200
+    assert a2a_bad.json()["status"] == "REJECTED_POLICY_CAP"
+
+
+def test_ui_react_folder_structure_and_nocturne_design_system() -> None:
+    """Verify /ui React + TypeScript + Vite project structure and Nocturne design tokens."""
+    ui_root = REPO_ROOT / "ui"
+    required_files = [
+        ui_root / "package.json",
+        ui_root / "vite.config.ts",
+        ui_root / "tsconfig.json",
+        ui_root / "index.html",
+        ui_root / "src" / "main.tsx",
+        ui_root / "src" / "App.tsx",
+        ui_root / "src" / "styles" / "nocturne.css",
+        ui_root / "src" / "data" / "seedData.ts",
+        ui_root / "src" / "services" / "adkClient.ts",
+        ui_root / "src" / "components" / "StorefrontPreviewModal.tsx",
+        ui_root / "src" / "components" / "AdkCopilotDrawer.tsx",
+    ]
+    for path in required_files:
+        assert path.exists(), f"Missing expected React UI file: {path}"
+
+    css_text = (ui_root / "src" / "styles" / "nocturne.css").read_text(encoding="utf-8")
+    for token in (
+        "--color-bg: #161826",
+        "--color-surface: #232532",
+        "--color-text: #e9e9ed",
+        "--color-accent: #9184d9",
+        "--color-section: #262a60",
+        "--font-heading-weight: 500",
+        "tabular-nums",
+        ".btn-primary",
+        ".lighten",
+    ):
+        assert token in css_text, f"Missing Nocturne token {token!r} in ui/src/styles/nocturne.css"
+
+    app_text = (ui_root / "src" / "App.tsx").read_text(encoding="utf-8")
+    for screen_label in (
+        "01 Overview",
+        "02 Queue",
+        "03 Work in progress",
+        "04 Published",
+        "05 Results",
+        "One layout for every shopper is costing conversion.",
+        "Auto-approve queue",
+    ):
+        assert screen_label in app_text, f"Missing screen element {screen_label!r} in ui/src/App.tsx"
+
+
+def test_cloudrun_mcp_server_serves_nocturne_ui_and_api_routes(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Verify cd/Dockerfile.mcp builds /ui and cd/mcp_http_server.py serves Nocturne UI + /api/* on Cloud Run."""
+    monkeypatch.setenv("SEED_OFFLINE_MODE", "1")
+    dockerfile_text = (REPO_ROOT / "cd" / "Dockerfile.mcp").read_text(encoding="utf-8")
+    assert "AS ui-builder" in dockerfile_text
+    assert "COPY --from=ui-builder /ui/dist ./ui/dist" in dockerfile_text
+
+    from cd.mcp_http_server import build_mcp_cloudrun_app
+
+    client = TestClient(build_mcp_cloudrun_app())
+
+    ui_resp = client.get("/ui")
+    assert ui_resp.status_code == 200
+    assert "text/html" in ui_resp.headers.get("content-type", "")
+
+    api_health = client.get("/api/health")
+    assert api_health.status_code == 200
+    assert api_health.json()["status"] == "SUCCESS"
+
+    recreate_resp = client.post(
+        "/api/recreate-hero-image",
+        json={
+            "sku_id": "SKU-0057",
+            "segment_id": "SEG-057",
+            "style_theme": "Mediterranean_Warm",
+            "scene_description": "Sunlit morning minimalist editorial composition",
+            "aspect_ratio": "16:9",
+        },
+    )
+    assert recreate_resp.status_code == 200
+    assert recreate_resp.json()["status"] == "SUCCESS"
+    assert recreate_resp.json()["render_job"]["segment_id"] == "SEG-057"
