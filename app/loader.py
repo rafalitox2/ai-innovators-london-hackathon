@@ -132,6 +132,7 @@ class LoadedSeedPack:
     pack_dir: Path | None
     tools: list[Any] = field(default_factory=list)
     mcp_stdio_attached: bool = False
+    before_tool_callback: Any = None
 
 
 def resolve_pack_directory(pack_id: str, seed_packs_dir: Path = SEED_PACKS_DIR) -> Path:
@@ -297,6 +298,7 @@ def load_seed_pack(
     module_prefix = f"seed_packs.{pack_dir.name}"
     tools_mod = importlib.import_module(f"{module_prefix}.tools")
     raw_tools = list(vars(tools_mod).get("TOOLS", []))
+    pack_before_tool_callback = vars(tools_mod).get("BEFORE_TOOL_CALLBACK")
 
     mcp_server_mod = raw_cfg.get("mcp_server")
     mcp_server_str = str(mcp_server_mod).strip() if mcp_server_mod else None
@@ -339,4 +341,5 @@ def load_seed_pack(
         pack_dir=pack_dir,
         tools=final_tools,
         mcp_stdio_attached=mcp_attached,
+        before_tool_callback=pack_before_tool_callback,
     )
