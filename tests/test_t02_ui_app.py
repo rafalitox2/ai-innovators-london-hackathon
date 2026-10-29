@@ -296,3 +296,131 @@ def test_cloudrun_mcp_server_serves_nocturne_ui_and_api_routes(
 
     hero_file_resp = client.get(f"/ui/{recreate_json['ui_filename']}")
     assert hero_file_resp.status_code == 200
+
+
+def test_published_storefront_hero_asset_resolves_actual_sku_and_theme_not_hardcoded_sku0057(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Issue #39 (RC1 & RC3): GET /api/assets/hero/{segment_id} uses the segment's real SKU/theme (or query params) and prefers newer assets by mtime."""
+    monkeypatch.setenv("SEED_OFFLINE_MODE", "1")
+    from app.ui_server import create_ui_app, T02_UI_DIR
+
+    # Ensure no pre-existing hero_SEG-074 asset masks the fallback generation
+    for ext in (".png", ".svg"):
+        (T02_UI_DIR / f"hero_SEG-074{ext}").unlink(missing_ok=True)
+
+    client = TestClient(create_ui_app())
+    try:
+        # 1. Pre-published segment SEG-074 (EXP-0074 -> SKU-0074, Biophilic_Zen) without query params
+        resp = client.get("/api/assets/hero/SEG-074")
+        assert resp.status_code == 200
+        svg_body = resp.text
+        assert "SKU-0074" in svg_body
+        assert "BIOPHILIC_ZEN" in svg_body
+        assert "SKU-0057" not in svg_body
+
+        # 2. Explicit sku_id & style_theme query parameters override any stale segment asset
+        resp_override = client.get(
+            "/api/assets/hero/SEG-074?sku_id=SKU-0005&style_theme=Neo_Bauhaus"
+        )
+        assert resp_override.status_code == 200
+        assert "SKU-0005" in resp_override.text
+        assert "NEO_BAUHAUS" in resp_override.text
+    finally:
+        for f in T02_UI_DIR.glob("hero_SEG-074*"):
+            f.unlink(missing_ok=True)
+
+
+def test_hero_asset_prefers_newest_file_when_both_png_and_svg_exist(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Issue #39 (RC3): Recreating a hero image (.svg) is not shadowed by an older pre-existing .png file."""
+    import json
+    import os
+    import time
+    monkeypatch.setenv("SEED_OFFLINE_MODE", "1")
+    from app.ui_server import create_ui_app, T02_UI_DIR
+    from seed_packs.t02_dynamic_storefronts.mcp_server import render_storefront_preview
+
+    seg_id = "SEG-099"
+    png_path = T02_UI_DIR / f"hero_{seg_id}.png"
+    svg_path = T02_UI_DIR / f"hero_{seg_id}.svg"
+    try:
+        T02_UI_DIR.mkdir(parents=True, exist_ok=True)
+        png_path.write_bytes(b"\x89PNG\r\n\x1a\nOLD_PNG")
+        svg_path.write_text("<svg><text>NEW_RECREATED_SVG (SKU-0001)</text></svg>", encoding="utf-8")
+        now = time.time()
+        os.utime(png_path, (now - 120, now - 120))
+        os.utime(svg_path, (now, now))
+
+        client = TestClient(create_ui_app())
+        resp = client.get(f"/api/assets/hero/{seg_id}")
+        assert resp.status_code == 200
+        assert "image/svg+xml" in resp.headers.get("content-type", "")
+        assert "NEW_RECREATED_SVG" in resp.text
+
+        prev_raw = render_storefront_preview(
+            segment_id=seg_id,
+            featured_skus="SKU-0001",
+            hero_headline="Newest Hero Asset Test",
+            theme_style="Nordic_Minimal",
+            discount_pct=10,
+            banner_copy="Test Banner",
+        )
+        prev_res = json.loads(prev_raw)
+        assert prev_res["status"] == "SUCCESS"
+        preview_file = Path(prev_res["preview"]["ui_repo_path"])
+        html_doc = preview_file.read_text(encoding="utf-8")
+        assert f"hero_{seg_id}.svg" in html_doc
+    finally:
+        png_path.unlink(missing_ok=True)
+        svg_path.unlink(missing_ok=True)
+        (T02_UI_DIR / f"preview_{seg_id}.html").unlink(missing_ok=True)
+        Path(f"/tmp/storefront_preview_{seg_id}.html").unlink(missing_ok=True)
+
+
+def test_publish_and_template_and_frontend_persist_hero_and_product_images(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Issue #39 (RC2, RC4, RC5, RC6): Verify publish persists hero_asset_url, template.html supports standalone & UI server, adkClient fallback includes hero_asset_url, and StorefrontPreviewModal renders product visuals."""
+    monkeypatch.setenv("SEED_OFFLINE_MODE", "1")
+    from app.ui_server import create_ui_app
+
+    client = TestClient(create_ui_app())
+    pub_resp = client.post(
+        "/api/opportunities/publish",
+        json={
+            "experiment_id": "EXP-0057",
+            "segment_id": "SEG-057",
+            "featured_skus": "SKU-0057,SKU-0002",
+            "hero_headline": "Mediterranean Warm living for London spaces",
+            "theme_style": "Mediterranean_Warm",
+            "discount_pct": 15,
+            "banner_copy": "15% off smart lighting this week · code LON15",
+            "sku_id": "SKU-0057",
+            "hero_asset_url": "/api/assets/hero/SEG-057?sku_id=SKU-0057&style_theme=Mediterranean_Warm&t=12345",
+        },
+    )
+    assert pub_resp.status_code == 200
+    pub_data = pub_resp.json()
+    assert pub_data["status"] == "SUCCESS"
+    assert "SKU-0057" in pub_data.get("hero_asset_url", "")
+    assert pub_data.get("sku_id") == "SKU-0057"
+
+    template_text = (
+        REPO_ROOT / "seed_packs" / "t02_dynamic_storefronts" / "ui" / "template.html"
+    ).read_text(encoding="utf-8")
+    assert "data.hero_asset_url" in template_text
+
+    adk_client_text = (
+        REPO_ROOT / "ui" / "src" / "services" / "adkClient.ts"
+    ).read_text(encoding="utf-8")
+    assert "hero_asset_url: `/api/assets/hero/${params.segment_id}" in adk_client_text
+
+    modal_text = (
+        REPO_ROOT / "ui" / "src" / "components" / "StorefrontPreviewModal.tsx"
+    ).read_text(encoding="utf-8")
+    assert "onUpdateItemState" in modal_text
+    assert "sku_id=${encodeURIComponent(activeProduct.sku)}" in modal_text
+    assert "sku_id=${encodeURIComponent(p.sku)}" in modal_text
+

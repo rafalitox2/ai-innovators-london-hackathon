@@ -85,6 +85,7 @@ class PublishOpportunityRequest(BaseModel):
     discount_pct: int = Field(default=15)
     banner_copy: str = Field(default="15% off smart lighting this week")
     sku_id: str = Field(default="SKU-0057")
+    hero_asset_url: str = Field(default="")
 
 
 class GuardrailValidateRequest(BaseModel):
@@ -610,7 +611,7 @@ def register_ui_routes(app: FastAPI) -> None:
             "max_safe_discount_pct": max_safe_disc,
             "banner_copy": banner_copy,
             "hero_headline": headline,
-            "hero_asset_url": f"/api/assets/hero/{g['id']}",
+            "hero_asset_url": f"/api/assets/hero/{g['id']}?sku_id={p['sku']}&style_theme={p['theme']}",
             "hero_render": hero_res.get("render_job", {}),
             "preview": preview_res.get("preview", {}),
         }
@@ -636,9 +637,15 @@ def register_ui_routes(app: FastAPI) -> None:
                 theme_style=req.theme_style,
             )
         )
+        resolved_hero_url = (
+            req.hero_asset_url.strip()
+            or f"/api/assets/hero/{req.segment_id}?sku_id={req.sku_id}&style_theme={req.theme_style}"
+        )
         return {
             "status": "SUCCESS",
             "experiment_id": req.experiment_id,
+            "sku_id": req.sku_id,
+            "hero_asset_url": resolved_hero_url,
             "layout": layout_res.get("layout", {}),
             "promo_banner": banner_res.get("promo_banner", {}),
         }
@@ -711,20 +718,79 @@ def register_ui_routes(app: FastAPI) -> None:
         return json.loads(raw)
 
     @app.get("/api/assets/hero/{segment_id}")
-    def api_hero_asset(segment_id: str) -> Response:
+    def api_hero_asset(segment_id: str, sku_id: str = "", style_theme: str = "") -> Response:
         seg_clean = "".join(c for c in segment_id if c.isalnum() or c in "-_")
-        for ext, media in ((".png", "image/png"), (".svg", "image/svg+xml")):
-            candidate = T02_UI_DIR / f"hero_{seg_clean}{ext}"
-            if candidate.exists():
-                return FileResponse(candidate, media_type=media)
+        sku_clean = "".join(c for c in sku_id if c.isalnum() or c in "-_").strip()
+        theme_clean = "".join(c for c in style_theme if c.isalnum() or c in "-_").strip()
 
-        # Generate on-demand fallback SVG if not yet rendered
+        existing_candidates = [
+            T02_UI_DIR / f"hero_{seg_clean}{ext}"
+            for ext in (".png", ".svg")
+            if (T02_UI_DIR / f"hero_{seg_clean}{ext}").exists()
+        ]
+        if existing_candidates:
+            newest = max(existing_candidates, key=lambda p: p.stat().st_mtime)
+            media = "image/png" if newest.suffix.lower() == ".png" else "image/svg+xml"
+            if not sku_clean:
+                return FileResponse(newest, media_type=media)
+            if (
+                newest.suffix.lower() == ".svg"
+                and sku_clean.upper() in newest.read_text(encoding="utf-8", errors="ignore").upper()
+            ):
+                return FileResponse(newest, media_type=media)
+
+        raw_products = _read_csv("products_catalog")
+        raw_segments = _read_csv("audience_segments")
+        raw_experiments = _read_csv("storefront_experiments")
+        prod_by_sku = {r["sku_id"].strip().upper(): r for r in raw_products}
+        seg_row = next(
+            (r for r in raw_segments if r["segment_id"].strip().upper() == seg_clean.upper()),
+            None,
+        )
+
+        resolved_sku = sku_clean.upper() if sku_clean else ""
+        if not resolved_sku or resolved_sku == "SKU-0017":
+            matching_exps = [
+                e
+                for e in raw_experiments
+                if e.get("segment_id", "").strip().upper() == seg_clean.upper()
+                and e.get("sku_id", "").strip().upper() != "SKU-0017"
+            ]
+            pub_exp = next(
+                (e for e in matching_exps if e.get("experiment_id", "").strip() in INITIAL_PUBLISHED_ITEMS),
+                matching_exps[0] if matching_exps else None,
+            )
+            if pub_exp is not None:
+                resolved_sku = pub_exp["sku_id"].strip().upper()
+            elif seg_row is not None:
+                pref_style = seg_row.get("preferred_style", "Nordic_Minimal").strip()
+                style_prod = next(
+                    (
+                        r
+                        for r in raw_products
+                        if r.get("style_theme", "").strip() == pref_style
+                        and r.get("sku_id", "").strip().upper() != "SKU-0017"
+                    ),
+                    None,
+                )
+                resolved_sku = style_prod["sku_id"].strip().upper() if style_prod else "SKU-0001"
+            else:
+                resolved_sku = "SKU-0001"
+
+        prod_row = prod_by_sku.get(resolved_sku)
+        resolved_theme = (
+            theme_clean
+            or (prod_row.get("style_theme", "").strip() if prod_row else "")
+            or (seg_row.get("preferred_style", "").strip() if seg_row else "")
+            or "Nordic_Minimal"
+        )
+
         res = json.loads(
             generate_hero_lifestyle_image(
-                sku_id="SKU-0057",
+                sku_id=resolved_sku,
                 segment_id=seg_clean,
-                style_theme="Mediterranean_Warm",
-                scene_description="Editorial European interior",
+                style_theme=resolved_theme,
+                scene_description=f"Editorial {resolved_theme.replace('_', ' ')} European interior featuring {resolved_sku}",
                 aspect_ratio="16:9",
             )
         )

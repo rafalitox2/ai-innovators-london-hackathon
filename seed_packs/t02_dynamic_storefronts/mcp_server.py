@@ -430,7 +430,14 @@ def generate_hero_lifestyle_image(
             record["ui_sync_warning"] = ui_sync_warning
         queue.append(record)
         backend = _save_state(state)
-        return json.dumps({"status": "SUCCESS", "render_job": record, "state_backend": backend})
+        ui_filename = f"hero_{seg_clean}{asset_path.suffix}"
+        return json.dumps({
+            "status": "SUCCESS",
+            "ui_filename": ui_filename,
+            "hero_asset_url": f"/api/assets/hero/{seg_clean}?sku_id={sku_clean}&style_theme={theme_clean}",
+            "render_job": record,
+            "state_backend": backend,
+        })
     except Exception as exc:
         return json.dumps({"status": "ERROR", "error": str(exc)})
 
@@ -534,13 +541,16 @@ def render_storefront_preview(
         aov_eur_str = str(seg_row.get("avg_order_value_eur", "450.00"))
         primary_sku_str = sku_list[0] if sku_list else "SKU-0001"
         hero_image_html = ""
-        for ext in (".png", ".svg"):
-            candidate_hero = ui_dir / f"hero_{seg_clean}{ext}"
-            if candidate_hero.exists():
-                hero_image_html = (
-                    f'<img src="/ui/hero_{html.escape(seg_clean)}{ext}" alt="{html.escape(headline_clean)}" />'
-                )
-                break
+        existing_heroes = [
+            ui_dir / f"hero_{seg_clean}{ext}"
+            for ext in (".png", ".svg")
+            if (ui_dir / f"hero_{seg_clean}{ext}").exists()
+        ]
+        if existing_heroes:
+            newest_hero = max(existing_heroes, key=lambda p: p.stat().st_mtime)
+            hero_image_html = (
+                f'<img src="/ui/{html.escape(newest_hero.name)}" alt="{html.escape(headline_clean)}" />'
+            )
         if template_path.exists():
             tpl = template_path.read_text(encoding="utf-8")
             doc = (
