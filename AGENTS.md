@@ -106,6 +106,9 @@ Our team repository is configured for **Table 2 — Dynamic Storefront Engine** 
   - `generate_hero_lifestyle_image`: Generates a hero lifestyle visual via `GEMINI_IMAGE_MODEL` (`gemini-3.1-flash-image`).
   - `render_storefront_preview`: Renders an interactive MCP App UI preview (`ui://storefront-preview/<segment_id>`) from `seed_packs/t02_dynamic_storefronts/ui/template.html` and enforces the `<= 30%` discount cap.
   - `sync_campaign_with_t01`: Executes the `STOREFRONT_TO_CAMPAIGN_SYNC` A2A handshake with Table 1 (`expedition_t01_campaign_orchestrator`), enforcing the `<= 25.0 EUR` CPM bid guardrail.
+  - `save_merchandising_memory`: Persists sanitized cross-session merchandising notes (`MEM-6001+`) per `(segment_id, memory_key)` with revision tracking (`gcs` + local state).
+  - `recall_merchandising_memory`: Retrieves persisted cross-session merchandising memory notes filtered by `segment_id` and keyword `query`.
+  - `route_merchandising_task`: Dynamically routes merchandising tasks (`seed_packs/t02_dynamic_storefronts/model_router.py`) across open-weights `GEMMA_MODEL` (`gemma-3-27b-it`, `ultra_low` latency / `low` cost), `GEMINI_MODEL` (`multi_table_reasoning`), and `GEMINI_IMAGE_MODEL` (`hero_image_generation`).
 
 ### Workspace Rules & Antigravity Skills (`.agents/`)
 - **Domain & Security Rules**:

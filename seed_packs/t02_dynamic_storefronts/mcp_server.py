@@ -17,6 +17,7 @@ from seed_packs.t02_dynamic_storefronts.guardrails import (
     MARGIN_SAFETY_BUFFER_PCT,
     MAX_DISCOUNT_PCT,
     compute_max_safe_discount_pct,
+    contains_injection_marker,
     sanitize_description,
 )
 
@@ -26,6 +27,7 @@ _PACK_DIR = Path(__file__).resolve().parent
 _DATA_DIR = _PACK_DIR / "data"
 _DEFAULT_STATE_PATH = _PACK_DIR / ".state.json"
 _FALLBACK_STATE_PATH = Path("/tmp/t02_dynamic_storefronts_state.json")
+_GCS_STATE_BLOB_PATH = "t02_dynamic_storefronts/state.json"
 _sanitize_text = sanitize_description
 
 
@@ -37,6 +39,27 @@ def _read_csv_rows(name: str) -> list[dict[str, Any]]:
         return list(csv.DictReader(fp))
 
 
+def _resolve_gcs_bucket_name() -> tuple[str, str]:
+    """Return `(project_id, bucket_name)` when GCS state sync is active, or `('', '')`."""
+    use_offline = os.environ.get("SEED_OFFLINE_MODE", "").lower() in {"1", "true", "yes"}
+    sync_enabled = (
+        os.environ.get("AGENT_RUNTIME_DEPLOY") == "1"
+        or os.environ.get("T02_ENABLE_GCS_STATE") == "1"
+    )
+    if use_offline or not sync_enabled:
+        return "", ""
+    project = (
+        os.environ.get("GOOGLE_CLOUD_PROJECT")
+        or os.environ.get("AGENT_ENGINE_PROJECT")
+        or ""
+    ).strip()
+    raw_bucket = (os.environ.get("STAGING_BUCKET") or "").strip()
+    if not raw_bucket and project:
+        raw_bucket = f"{project}-hackathon-staging"
+    bucket_name = raw_bucket.removeprefix("gs://").strip("/")
+    return project, bucket_name
+
+
 def _load_state() -> dict[str, Any]:
     for path in (_DEFAULT_STATE_PATH, _FALLBACK_STATE_PATH):
         if path.exists():
@@ -44,6 +67,17 @@ def _load_state() -> dict[str, Any]:
                 return json.loads(path.read_text(encoding="utf-8"))
             except Exception:
                 continue
+    project, bucket_name = _resolve_gcs_bucket_name()
+    if bucket_name:
+        try:
+            from google.cloud import storage
+
+            client = storage.Client(project=project or None)
+            blob = client.bucket(bucket_name).blob(_GCS_STATE_BLOB_PATH)
+            if blob.exists():
+                return json.loads(blob.download_as_text(encoding="utf-8"))
+        except Exception:
+            pass
     return {
         "published_layouts": [],
         "render_queue": [],
@@ -54,13 +88,27 @@ def _load_state() -> dict[str, Any]:
 
 def _save_state(state: dict[str, Any]) -> str:
     payload = json.dumps(state, indent=2)
+    local_written = ""
     for path in (_DEFAULT_STATE_PATH, _FALLBACK_STATE_PATH):
         try:
             path.write_text(payload, encoding="utf-8")
-            return str(path)
+            local_written = str(path)
+            break
         except OSError:
             continue
-    return "memory-only"
+    project, bucket_name = _resolve_gcs_bucket_name()
+    if bucket_name:
+        try:
+            from google.cloud import storage
+
+            client = storage.Client(project=project or None)
+            blob = client.bucket(bucket_name).blob(_GCS_STATE_BLOB_PATH)
+            blob.upload_from_string(payload, content_type="application/json")
+            gcs_uri = f"gs://{bucket_name}/{_GCS_STATE_BLOB_PATH}"
+            return f"{gcs_uri}+{local_written}" if local_written else gcs_uri
+        except Exception:
+            pass
+    return local_written or "memory-only"
 
 
 @mcp.tool()
@@ -612,6 +660,218 @@ def sync_campaign_with_t01(
         return json.dumps({"status": "ERROR", "error": str(exc)})
 
 
+@mcp.tool()
+def save_merchandising_memory(
+    segment_id: str,
+    memory_key: str,
+    memory_note: str,
+    author: str = "Marco Bellini",
+) -> str:
+    """Persist a cross-session merchandising memory note for an audience segment.
+
+    Args:
+        segment_id: Target audience segment ID (e.g. 'SEG-001').
+        memory_key: Short identifier key for the memory (e.g. 'preferred_hero_sku', 'promo_policy').
+        memory_note: Merchandising decision, rule, or preference to remember across sessions.
+        author: Merchandising author recording the note (default 'Marco Bellini').
+
+    Returns:
+        JSON string confirming the sanitized memory record (`MEM-6001+`) and storage backend.
+    """
+    try:
+        seg_clean = _sanitize_text(segment_id or "").strip()
+        key_clean = _sanitize_text(memory_key or "").strip()
+        note_clean = _sanitize_text(memory_note or "").strip()
+        author_clean = _sanitize_text(author or "Marco Bellini").strip() or "Marco Bellini"
+
+        if not seg_clean or not key_clean or not note_clean:
+            return json.dumps({
+                "status": "REJECTED",
+                "error": "segment_id, memory_key, and memory_note must all be non-empty.",
+            })
+
+        if any(contains_injection_marker(v) for v in (seg_clean, key_clean, note_clean, author_clean)):
+            return json.dumps({
+                "status": "REJECTED",
+                "error": "Memory rejected: input contains an untrusted prompt-injection marker.",
+            })
+
+        state = _load_state()
+        memories: list[dict[str, Any]] = state.setdefault("memories", [])
+        now_iso = datetime.now(timezone.utc).isoformat()
+
+        existing = next(
+            (
+                m
+                for m in memories
+                if str(m.get("segment_id", "")).upper() == seg_clean.upper()
+                and str(m.get("memory_key", "")).lower() == key_clean.lower()
+            ),
+            None,
+        )
+        if existing is not None:
+            existing["memory_note"] = note_clean
+            existing["author"] = author_clean
+            existing["revision"] = int(existing.get("revision", 1)) + 1
+            existing["saved_at"] = now_iso
+            existing["status"] = "STORED"
+            record = existing
+        else:
+            record = {
+                "memory_id": f"MEM-{6001 + len(memories)}",
+                "segment_id": seg_clean,
+                "memory_key": key_clean,
+                "memory_note": note_clean,
+                "author": author_clean,
+                "revision": 1,
+                "saved_at": now_iso,
+                "status": "STORED",
+            }
+            memories.append(record)
+
+        backend = _save_state(state)
+        return json.dumps({
+            "status": "STORED",
+            "memory": record,
+            "state_backend": backend,
+        })
+    except Exception as exc:
+        return json.dumps({"status": "ERROR", "error": str(exc)})
+
+
+@mcp.tool()
+def recall_merchandising_memory(
+    segment_id: str = "all",
+    query: str = "",
+) -> str:
+    """Recall persisted cross-session merchandising memory notes filtered by segment and keyword.
+
+    Args:
+        segment_id: Segment ID to filter by (e.g. 'SEG-001'), or 'all' for all segments.
+        query: Optional case-insensitive keyword filter across memory keys and notes.
+
+    Returns:
+        JSON string containing matching merchandising memories sorted most-recent first.
+    """
+    try:
+        seg_clean = (segment_id or "all").strip()
+        query_clean = (query or "").strip().lower()
+
+        state = _load_state()
+        memories: list[dict[str, Any]] = list(state.get("memories", []))
+
+        filtered: list[dict[str, Any]] = []
+        for item in memories:
+            if seg_clean and seg_clean.lower() != "all":
+                if str(item.get("segment_id", "")).upper() != seg_clean.upper():
+                    continue
+            if query_clean:
+                haystack = " ".join([
+                    str(item.get("memory_id", "")),
+                    str(item.get("segment_id", "")),
+                    str(item.get("memory_key", "")),
+                    str(item.get("memory_note", "")),
+                    str(item.get("author", "")),
+                ]).lower()
+                if query_clean not in haystack:
+                    continue
+            filtered.append(item)
+
+        filtered.sort(key=lambda r: str(r.get("saved_at", "")), reverse=True)
+        return json.dumps({
+            "status": "SUCCESS",
+            "segment_id": seg_clean or "all",
+            "query": query_clean,
+            "count": len(filtered),
+            "memories": filtered,
+        })
+    except Exception as exc:
+        return json.dumps({"status": "ERROR", "error": str(exc)})
+
+
+@mcp.tool()
+def route_merchandising_task(
+    task_type: str,
+    prompt_text: str,
+    segment_id: str = "SEG-001",
+    style_theme: str = "Nordic_Minimal",
+) -> str:
+    """Dynamically route a merchandising task to Gemma or Gemini based on task complexity and latency tier.
+
+    Args:
+        task_type: Task category ('fast_copy', 'tag_classification', 'banner_tagline', 'multi_table_reasoning', 'campaign_strategy', 'a2a_orchestration', 'hero_image_generation', or 'visual_render').
+        prompt_text: Merchandising prompt or instruction to execute on the selected model tier.
+        segment_id: Target audience segment ID (default 'SEG-001').
+        style_theme: Target visual style theme (default 'Nordic_Minimal').
+
+    Returns:
+        JSON string containing the model routing decision, latency/cost tier metadata, and generated output.
+    """
+    try:
+        from seed_packs.t02_dynamic_storefronts.model_router import (
+            SUPPORTED_TASK_TYPES,
+            execute_routed_task,
+            select_model_for_task,
+        )
+
+        clean_prompt = _sanitize_text(prompt_text or "").strip()
+        if not clean_prompt:
+            return json.dumps({
+                "status": "REJECTED",
+                "error": "prompt_text must be non-empty.",
+                "supported_task_types": SUPPORTED_TASK_TYPES,
+            })
+
+        if contains_injection_marker(clean_prompt):
+            return json.dumps({
+                "status": "REJECTED",
+                "error": "Routing rejected: prompt_text contains an untrusted prompt-injection marker.",
+                "supported_task_types": SUPPORTED_TASK_TYPES,
+            })
+
+        decision = select_model_for_task(task_type)
+        if decision is None:
+            return json.dumps({
+                "status": "REJECTED",
+                "error": f"Unsupported task_type '{task_type}'.",
+                "supported_task_types": SUPPORTED_TASK_TYPES,
+            })
+
+        seg_clean = _sanitize_text(segment_id or "SEG-001").strip() or "SEG-001"
+        theme_clean = _sanitize_text(style_theme or "Nordic_Minimal").strip() or "Nordic_Minimal"
+        output_text, exec_mode, fallback_reason = execute_routed_task(
+            decision=decision,
+            prompt_text=clean_prompt,
+            segment_id=seg_clean,
+            style_theme=theme_clean,
+        )
+
+        state = _load_state()
+        routings = state.setdefault("model_routings", [])
+        routing_id = f"RTE-{7001 + len(routings)}"
+        routing_record: dict[str, Any] = {
+            "routing_id": routing_id,
+            **decision,
+            "segment_id": seg_clean,
+            "style_theme": theme_clean,
+            "execution_mode": exec_mode,
+            "routed_at": datetime.now(timezone.utc).isoformat(),
+        }
+        if fallback_reason:
+            routing_record["fallback_reason"] = fallback_reason
+        routings.append(routing_record)
+        backend = _save_state(state)
+
+        return json.dumps({
+            "status": "SUCCESS",
+            "routing_decision": routing_record,
+            "output_text": output_text,
+            "state_backend": backend,
+        })
+    except Exception as exc:
+        return json.dumps({"status": "ERROR", "error": str(exc)})
+
+
 ACTION_TOOLS = [
     publish_storefront_layout,
     queue_visual_asset_render,
@@ -619,6 +879,9 @@ ACTION_TOOLS = [
     generate_hero_lifestyle_image,
     render_storefront_preview,
     sync_campaign_with_t01,
+    save_merchandising_memory,
+    recall_merchandising_memory,
+    route_merchandising_task,
 ]
 MCP_TOOLS = ACTION_TOOLS
 

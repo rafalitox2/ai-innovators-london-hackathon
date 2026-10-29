@@ -125,6 +125,8 @@ def deploy_agent(
     runtime_location = resolve_env_config("AGENT_RUNTIME_LOCATION", default="europe-west1")
     gemini_location = resolve_env_config("GOOGLE_CLOUD_LOCATION", default="global")
     model_name = resolve_env_config("GEMINI_MODEL")
+    image_model_name = resolve_env_config("GEMINI_IMAGE_MODEL")
+    gemma_model_name = resolve_env_config("GEMMA_MODEL")
     staging_bucket = resolve_env_config(
         "STAGING_BUCKET",
         default=f"gs://{project_id}-hackathon-staging",
@@ -164,7 +166,10 @@ def deploy_agent(
         "GOOGLE_CLOUD_AGENT_ENGINE_ENABLE_TELEMETRY": "true",
         "AGENT_ENGINE_PROJECT": project_id,
         "GEMINI_MODEL": model_name,
+        "GEMINI_IMAGE_MODEL": image_model_name,
+        "GEMMA_MODEL": gemma_model_name,
         "GEMINI_LOCATION": gemini_location,
+        "STAGING_BUCKET": staging_bucket,
         "SEED_PACK": pack.pack_id if pack.pack_id != "hello_fallback" else "",
         "SEED_BQ_DATASET": pack.bigquery_dataset or "",
         "ENABLE_MCP_STDIO": "0",
