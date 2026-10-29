@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any
 
 from google.cloud import bigquery
+from seed_packs.t02_dynamic_storefronts.guardrails import sanitize_description
 from seed_packs.t02_dynamic_storefronts.mcp_server import (
     ACTION_TOOLS,
     generate_hero_lifestyle_image,
@@ -101,6 +102,8 @@ def find_catalog_products(
             )
             cfg = bigquery.QueryJobConfig(query_parameters=params)
             rows = [dict(r.items()) for r in client.query(sql, job_config=cfg).result()]
+            for row in rows:
+                row["description"] = sanitize_description(row.get("description"))
             return json.dumps({
                 "status": "SUCCESS",
                 "source": f"bigquery:{project}.{dataset}.products_catalog",
@@ -119,12 +122,15 @@ def find_catalog_products(
         and (style_clean.lower() == "all" or r["style_theme"].lower() == style_clean.lower())
     ]
     rows.sort(key=lambda r: float(r["margin_pct"]), reverse=True)
+    top_rows = rows[:15]
+    for row in top_rows:
+        row["description"] = sanitize_description(row.get("description"))
     return json.dumps({
         "status": "SUCCESS",
         "source": "local_csv_fallback",
         "fallback_reason": fallback_error,
-        "count": len(rows[:15]),
-        "products": rows[:15],
+        "count": len(top_rows),
+        "products": top_rows,
     })
 
 
