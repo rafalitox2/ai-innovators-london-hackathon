@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import re
 import unicodedata
 from typing import Any
@@ -60,6 +61,54 @@ def scan_args_for_injection(args: dict[str, Any]) -> str | None:
     return None
 
 
+QUARANTINED_SKU_IDS = ("SKU-0017",)
+SKU_ACTION_NAMES = frozenset({
+    "publish_storefront_layout", "queue_visual_asset_render", "update_promo_banner",
+    "generate_hero_lifestyle_image", "render_storefront_preview", "sync_campaign_with_t01",
+})
+
+
+def is_quarantined_product(row: dict[str, Any]) -> bool:
+    """Inspect raw catalog fields before any lossy projection or sanitation."""
+    sku = str(row.get("sku_id", row.get("recommended_sku_id", ""))).strip().upper()
+    if sku in QUARANTINED_SKU_IDS or scan_args_for_injection(row) is not None:
+        return True
+    # BQ recommendation joins carry the complete raw product, not just display fields.
+    raw = row.get("catalog_security_record")
+    if raw is not None:
+        try:
+            record = json.loads(raw)
+            return not isinstance(record, dict) or is_quarantined_product(record)
+        except (TypeError, ValueError):
+            return True
+    return False
+
+
+def quarantine_action_args(args: dict[str, Any]) -> dict[str, Any] | None:
+    """Use the same bundled catalog as actions; no remote reads in the callback."""
+    from seed_packs.t02_dynamic_storefronts.mcp_server import _read_csv_rows
+
+    skus = {
+        sku.strip().upper()
+        for key in ("sku_id", "featured_skus")
+        for sku in str(args.get(key) or "").split(",") if sku.strip()
+    }
+    blocked = skus.intersection(QUARANTINED_SKU_IDS)
+    if skus and not blocked:
+        try:
+            blocked.update(
+                str(row.get("sku_id", "")).strip().upper()
+                for row in _read_csv_rows("products_catalog")
+                if str(row.get("sku_id", "")).strip().upper() in skus
+                and is_quarantined_product(row)
+            )
+        except Exception:
+            return {"status": "REJECTED_QUARANTINED_SKU", "error": "Catalog safety check unavailable."}
+    if blocked:
+        return {"status": "REJECTED_QUARANTINED_SKU", "error": "Catalog SKU is quarantined.", "sku_ids": sorted(blocked)}
+    return None
+
+
 def before_tool_security_callback(
     tool: Any,
     args: dict[str, Any],
@@ -74,6 +123,11 @@ def before_tool_security_callback(
                 "embedded instruction marker from untrusted data."
             ),
         }
+
+    if tool.name in SKU_ACTION_NAMES:
+        rejection = quarantine_action_args(args)
+        if rejection is not None:
+            return rejection
 
     if tool.name == "update_promo_banner":
         discount_pct = args.get("discount_pct")

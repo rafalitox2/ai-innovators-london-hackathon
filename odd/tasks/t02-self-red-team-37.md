@@ -6,7 +6,7 @@ GitHub existing credential read/push/PR/labels authorized; cloud evaluation, dep
 Raw textual arguments rejected before sanitation at all read/action entry points; normalized bounded marker detection. Catalog IDs and poisoned records quarantined in six actions, callback and CSV/BQ/KG reads. Discount/CPM accept finite non-bool values only within bounds; no truncation bypass, exception or rejected-call side effect. Legitimate controls remain functional. No claim of universal prompt-injection prevention.
 ## Plan and routing
 - [x] T1: Normalize marker detection; reject raw textual inputs; read entry parity.
-- [ ] T2: Quarantine six actions, callback and catalog/KG outputs.
+- [x] T2: Quarantine six actions, callback and catalog/KG outputs.
 - [ ] T3: Validate finite non-bool discount/CPM values.
 Each task route: delegated bounded writer (this agent). Parent mapping trigger 4+ files completed; writer trigger 2+ non-trivial files satisfied by parent delegation. No further preparatory delegation.
 TDD ON: issue #37 and .agents/rules/pull-requests.md. Python 3.12 runner: .venv/bin/python -m pytest -q tests/test_t02_self_red_team.py. Observe RED then GREEN per unit, tests and implementation in Conventional work-unit commits.
@@ -21,3 +21,7 @@ Failed/skipped checks: cloud eval/deploy/test-remote intentionally skipped (not 
 T1 evidence: new suite RED 60 failed/27 passed; GREEN with guardrail and memory/router suites 118 passed (1 ADK warning). Legacy sanitize-and-accept tests intentionally changed to reject; clean upsert remains tested.
 Unrelated concurrent ui/src/styles/nocturne.css edit detected and preserved/excluded.
 Next step: T2 quarantine. Initial mirror saved/read back (#1577).
+
+T1 commit ce91223: 214 authored lines; initial RDD assessment required untracked inventory. Preflight inventory verified; rerun excluding unrelated files: medium/under_budget (214 lines), no consent requested.
+T2 evidence: RED 53 failed/87 passed (KG assertion initially used wrong response shape, corrected); GREEN 174 passed including existing KG/guardrail suites (1 ADK warning). Six action boundaries and callback, every catalog textual field, CSV/BQ recommendation/search and KG share quarantine. BQ carries full raw catalog record before projection.
+Next step: T2 commit and T3 numeric RED.

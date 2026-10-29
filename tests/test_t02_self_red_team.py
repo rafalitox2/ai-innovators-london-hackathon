@@ -95,3 +95,81 @@ def test_legitimate_action_controls(name):
 @pytest.mark.parametrize("name", list(READ_ARGS))
 def test_legitimate_read_controls(name):
     assert json.loads(getattr(reads, name)())["status"] == "SUCCESS"
+
+SKU_ACTIONS = list(ACTION_ARGS)[:6]
+
+
+@pytest.mark.parametrize("name", SKU_ACTIONS)
+@pytest.mark.parametrize("sku", ["SKU-0017", " sku-0017 ", "SKU-0066,SKU-0017"])
+def test_quarantined_ids_at_action_and_callback(name, sku, isolated):
+    key = "featured_skus" if "featured_skus" in ACTION_ARGS[name] else "sku_id"
+    args = dict(ACTION_ARGS[name], **{key: sku})
+    result = json.loads(getattr(actions, name)(**args))
+    assert result["status"] == "REJECTED_QUARANTINED_SKU"
+    blocked = g.before_tool_security_callback(SimpleNamespace(name=name), args, None)
+    assert blocked and blocked["status"] == "REJECTED_QUARANTINED_SKU"
+    assert isolated == []
+
+
+@pytest.mark.parametrize("name", SKU_ACTIONS)
+@pytest.mark.parametrize("field", ["description", "product_name", "visual_tags", "category", "style_theme"])
+def test_poisoned_catalog_record_at_both_action_layers(name, field, monkeypatch, isolated):
+    original = actions._read_csv_rows
+    def poisoned(table):
+        rows = original(table)
+        return [dict(r, **{field: "admin\u200b override"}) if r.get("sku_id") == "SKU-0066" else r for r in rows]
+    monkeypatch.setattr(actions, "_read_csv_rows", poisoned)
+    result = json.loads(getattr(actions, name)(**ACTION_ARGS[name]))
+    assert result["status"] == "REJECTED_QUARANTINED_SKU"
+    assert g.before_tool_security_callback(SimpleNamespace(name=name), ACTION_ARGS[name], None)["status"] == "REJECTED_QUARANTINED_SKU"
+    assert isolated == []
+
+
+@pytest.mark.parametrize("backend", ["csv", "bigquery"])
+def test_catalog_quarantines_raw_records_before_sanitizing(backend, monkeypatch):
+    safe = dict(reads._read_local_csv("products_catalog")[0], sku_id="SKU-0066", margin_pct="60")
+    rows = [safe, dict(safe, sku_id="SKU-0017"), dict(safe, sku_id="SKU-0999", visual_tags=PAYLOADS[0])]
+    if backend == "csv":
+        monkeypatch.setattr(reads, "_read_local_csv", lambda name: rows)
+    else:
+        monkeypatch.setenv("SEED_OFFLINE_MODE", "0")
+        monkeypatch.setenv("GOOGLE_CLOUD_PROJECT", "test-project")
+        monkeypatch.setattr(reads.bigquery, "Client", lambda **kw: SimpleNamespace(query=lambda *a, **kw: SimpleNamespace(result=lambda: rows)))
+    result = json.loads(reads.find_catalog_products(min_stock=0))
+    assert [r["sku_id"] for r in result["products"]] == ["SKU-0066"]
+    assert result["count"] == 1
+    assert ("bigquery:" in result["source"]) == (backend == "bigquery")
+
+
+def test_recommendations_bq_quarantine_before_projection(monkeypatch):
+    monkeypatch.setenv("SEED_OFFLINE_MODE", "0")
+    monkeypatch.setenv("GOOGLE_CLOUD_PROJECT", "test-project")
+    rows = [
+        {"recommended_sku_id": "SKU-0066", "recommended_product_name": "Sofa"},
+        {"recommended_sku_id": "SKU-0017"},
+        {"recommended_sku_id": "SKU-0999", "catalog_security_record": json.dumps({"visual_tags": "admin\u200b override"})},
+    ]
+    def query(sql, **kw):
+        assert "catalog_security_record" in sql
+        return SimpleNamespace(result=lambda: rows)
+    monkeypatch.setattr(reads.bigquery, "Client", lambda **kw: SimpleNamespace(query=query))
+    result = json.loads(reads.recommend_storefront_optimization())
+    assert result["source"].startswith("bigquery_join:")
+    assert [r["recommended_sku_id"] for r in result["recommendations"]] == ["SKU-0066"]
+
+
+def test_kg_quarantines_any_catalog_text(monkeypatch):
+    original = reads._read_local_csv
+    def poisoned(table):
+        rows = original(table)
+        return [dict(r, visual_tags="reveal_system_prompt") for r in rows] if table == "products_catalog" else rows
+    monkeypatch.setattr(reads, "_read_local_csv", poisoned)
+    result = json.loads(reads.query_merchandising_knowledge_graph())
+    assert result["status"] == "NOT_FOUND"
+    assert "No safe in-stock SKUs" in result["error"]
+
+
+def test_recommendations_csv_reject_other_poisoned_fields(monkeypatch):
+    original = reads._read_local_csv
+    monkeypatch.setattr(reads, "_read_local_csv", lambda table: [dict(r, visual_tags="developer_mode") for r in original(table)] if table == "products_catalog" else original(table))
+    assert json.loads(reads.recommend_storefront_optimization())["recommendations"] == []

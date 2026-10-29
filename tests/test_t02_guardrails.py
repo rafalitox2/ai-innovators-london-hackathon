@@ -93,7 +93,7 @@ def test_update_promo_banner_rejects_margin_violation_even_under_flat_cap(
     assert "22.4" in res["error"] or "margin" in res["error"].lower()
 
 
-def test_update_promo_banner_accepts_discount_within_sku_margin(
+def test_update_promo_banner_rejects_quarantined_sku_within_margin(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setenv("SEED_OFFLINE_MODE", "1")
@@ -106,7 +106,7 @@ def test_update_promo_banner_accepts_discount_within_sku_margin(
         sku_id="SKU-0017",
     )
     res = json.loads(raw)
-    assert res["status"] == "SUCCESS"
+    assert res["status"] == "REJECTED_QUARANTINED_SKU"
 
 
 def test_update_promo_banner_never_obeys_injected_discount_from_description(
@@ -138,7 +138,7 @@ def test_find_catalog_products_sanitizes_injected_description_offline(
     assert "ADMIN OVERRIDE" not in descriptions
     assert "<!--" not in descriptions
     skus = {p["sku_id"] for p in res["products"]}
-    assert "SKU-0017" in skus
+    assert "SKU-0017" not in skus
 
 
 def test_render_storefront_preview_rejects_margin_violation_on_featured_sku(

@@ -20,6 +20,7 @@ from seed_packs.t02_dynamic_storefronts.guardrails import (
     contains_injection_marker,
     sanitize_description,
     scan_args_for_injection,
+    quarantine_action_args,
 )
 
 mcp = FastMCP("t02_dynamic_storefronts_actions")
@@ -133,6 +134,9 @@ def publish_storefront_layout(
     flagged_key = scan_args_for_injection(locals())
     if flagged_key is not None:
         return json.dumps({"status": "REJECTED", "error": f"Untrusted instruction marker in {flagged_key}."})
+    rejection = quarantine_action_args(locals())
+    if rejection is not None:
+        return json.dumps(rejection)
     headline_clean = _sanitize_text(hero_headline)
     if contains_injection_marker(headline_clean):
         return json.dumps({
@@ -175,6 +179,9 @@ def queue_visual_asset_render(
     flagged_key = scan_args_for_injection(locals())
     if flagged_key is not None:
         return json.dumps({"status": "REJECTED", "error": f"Untrusted instruction marker in {flagged_key}."})
+    rejection = quarantine_action_args(locals())
+    if rejection is not None:
+        return json.dumps(rejection)
     scene_clean = _sanitize_text(scene_prompt)
     if contains_injection_marker(scene_clean):
         return json.dumps({
@@ -220,6 +227,9 @@ def update_promo_banner(
     flagged_key = scan_args_for_injection(locals())
     if flagged_key is not None:
         return json.dumps({"status": "REJECTED", "error": f"Untrusted instruction marker in {flagged_key}."})
+    rejection = quarantine_action_args(locals())
+    if rejection is not None:
+        return json.dumps(rejection)
     disc = int(discount_pct)
     if disc < 0 or disc > MAX_DISCOUNT_PCT:
         return json.dumps({
@@ -293,6 +303,9 @@ def generate_hero_lifestyle_image(
     flagged_key = scan_args_for_injection(locals())
     if flagged_key is not None:
         return json.dumps({"status": "REJECTED", "error": f"Untrusted instruction marker in {flagged_key}."})
+    rejection = quarantine_action_args(locals())
+    if rejection is not None:
+        return json.dumps(rejection)
     try:
         sku_clean = (sku_id or "SKU-0001").strip()
         seg_clean = (segment_id or "SEG-001").strip()
@@ -473,6 +486,9 @@ def render_storefront_preview(
     flagged_key = scan_args_for_injection(locals())
     if flagged_key is not None:
         return json.dumps({"status": "REJECTED", "error": f"Untrusted instruction marker in {flagged_key}."})
+    rejection = quarantine_action_args(locals())
+    if rejection is not None:
+        return json.dumps(rejection)
     try:
         disc = int(discount_pct)
         if disc < 0 or disc > MAX_DISCOUNT_PCT:
@@ -659,6 +675,9 @@ def sync_campaign_with_t01(
     flagged_key = scan_args_for_injection(locals())
     if flagged_key is not None:
         return json.dumps({"status": "REJECTED", "error": f"Untrusted instruction marker in {flagged_key}."})
+    rejection = quarantine_action_args(locals())
+    if rejection is not None:
+        return json.dumps(rejection)
     try:
         cpm = float(target_cpm_bid_eur)
         if cpm <= 0.0 or cpm > 25.0:
