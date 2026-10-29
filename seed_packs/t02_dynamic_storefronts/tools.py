@@ -19,7 +19,10 @@ from seed_packs.t02_dynamic_storefronts.mcp_server import (
     generate_hero_lifestyle_image,
     publish_storefront_layout,
     queue_visual_asset_render,
+    recall_merchandising_memory,
     render_storefront_preview,
+    route_merchandising_task,
+    save_merchandising_memory,
     sync_campaign_with_t01,
     update_promo_banner,
 )
@@ -448,4 +451,7 @@ __all__ = [
     "generate_hero_lifestyle_image",
     "render_storefront_preview",
     "sync_campaign_with_t01",
+    "save_merchandising_memory",
+    "recall_merchandising_memory",
+    "route_merchandising_task",
 ]

@@ -612,6 +612,203 @@ def sync_campaign_with_t01(
         return json.dumps({"status": "ERROR", "error": str(exc)})
 
 
+@mcp.tool()
+def save_merchandising_memory(
+    segment_id: str,
+    memory_key: str,
+    memory_note: str,
+    author: str = "Marco Bellini",
+) -> str:
+    """Persist a cross-session merchandising memory note for an audience segment.
+
+    Args:
+        segment_id: Target audience segment ID (e.g. 'SEG-001').
+        memory_key: Short identifier key for the memory (e.g. 'preferred_hero_sku', 'promo_policy').
+        memory_note: Merchandising decision, rule, or preference to remember across sessions.
+        author: Merchandising author recording the note (default 'Marco Bellini').
+
+    Returns:
+        JSON string confirming the sanitized memory record (`MEM-6001+`) and storage backend.
+    """
+    try:
+        seg_clean = _sanitize_text(segment_id or "").strip()
+        key_clean = _sanitize_text(memory_key or "").strip()
+        note_clean = _sanitize_text(memory_note or "").strip()
+        author_clean = _sanitize_text(author or "Marco Bellini").strip() or "Marco Bellini"
+
+        if not seg_clean or not key_clean or not note_clean:
+            return json.dumps({
+                "status": "REJECTED",
+                "error": "segment_id, memory_key, and memory_note must all be non-empty.",
+            })
+
+        state = _load_state()
+        memories: list[dict[str, Any]] = state.setdefault("memories", [])
+        now_iso = datetime.now(timezone.utc).isoformat()
+
+        existing = next(
+            (
+                m
+                for m in memories
+                if str(m.get("segment_id", "")).upper() == seg_clean.upper()
+                and str(m.get("memory_key", "")).lower() == key_clean.lower()
+            ),
+            None,
+        )
+        if existing is not None:
+            existing["memory_note"] = note_clean
+            existing["author"] = author_clean
+            existing["revision"] = int(existing.get("revision", 1)) + 1
+            existing["saved_at"] = now_iso
+            existing["status"] = "STORED"
+            record = existing
+        else:
+            record = {
+                "memory_id": f"MEM-{6001 + len(memories)}",
+                "segment_id": seg_clean,
+                "memory_key": key_clean,
+                "memory_note": note_clean,
+                "author": author_clean,
+                "revision": 1,
+                "saved_at": now_iso,
+                "status": "STORED",
+            }
+            memories.append(record)
+
+        backend = _save_state(state)
+        return json.dumps({
+            "status": "STORED",
+            "memory": record,
+            "state_backend": backend,
+        })
+    except Exception as exc:
+        return json.dumps({"status": "ERROR", "error": str(exc)})
+
+
+@mcp.tool()
+def recall_merchandising_memory(
+    segment_id: str = "all",
+    query: str = "",
+) -> str:
+    """Recall persisted cross-session merchandising memory notes filtered by segment and keyword.
+
+    Args:
+        segment_id: Segment ID to filter by (e.g. 'SEG-001'), or 'all' for all segments.
+        query: Optional case-insensitive keyword filter across memory keys and notes.
+
+    Returns:
+        JSON string containing matching merchandising memories sorted most-recent first.
+    """
+    try:
+        seg_clean = (segment_id or "all").strip()
+        query_clean = (query or "").strip().lower()
+
+        state = _load_state()
+        memories: list[dict[str, Any]] = list(state.get("memories", []))
+
+        filtered: list[dict[str, Any]] = []
+        for item in memories:
+            if seg_clean and seg_clean.lower() != "all":
+                if str(item.get("segment_id", "")).upper() != seg_clean.upper():
+                    continue
+            if query_clean:
+                haystack = " ".join([
+                    str(item.get("memory_id", "")),
+                    str(item.get("segment_id", "")),
+                    str(item.get("memory_key", "")),
+                    str(item.get("memory_note", "")),
+                    str(item.get("author", "")),
+                ]).lower()
+                if query_clean not in haystack:
+                    continue
+            filtered.append(item)
+
+        filtered.sort(key=lambda r: str(r.get("saved_at", "")), reverse=True)
+        return json.dumps({
+            "status": "SUCCESS",
+            "segment_id": seg_clean or "all",
+            "query": query_clean,
+            "count": len(filtered),
+            "memories": filtered,
+        })
+    except Exception as exc:
+        return json.dumps({"status": "ERROR", "error": str(exc)})
+
+
+@mcp.tool()
+def route_merchandising_task(
+    task_type: str,
+    prompt_text: str,
+    segment_id: str = "SEG-001",
+    style_theme: str = "Nordic_Minimal",
+) -> str:
+    """Dynamically route a merchandising task to Gemma or Gemini based on task complexity and latency tier.
+
+    Args:
+        task_type: Task category ('fast_copy', 'tag_classification', 'banner_tagline', 'multi_table_reasoning', 'campaign_strategy', 'a2a_orchestration', 'hero_image_generation', or 'visual_render').
+        prompt_text: Merchandising prompt or instruction to execute on the selected model tier.
+        segment_id: Target audience segment ID (default 'SEG-001').
+        style_theme: Target visual style theme (default 'Nordic_Minimal').
+
+    Returns:
+        JSON string containing the model routing decision, latency/cost tier metadata, and generated output.
+    """
+    try:
+        from seed_packs.t02_dynamic_storefronts.model_router import (
+            SUPPORTED_TASK_TYPES,
+            execute_routed_task,
+            select_model_for_task,
+        )
+
+        clean_prompt = _sanitize_text(prompt_text or "").strip()
+        if not clean_prompt:
+            return json.dumps({
+                "status": "REJECTED",
+                "error": "prompt_text must be non-empty.",
+                "supported_task_types": SUPPORTED_TASK_TYPES,
+            })
+
+        decision = select_model_for_task(task_type)
+        if decision is None:
+            return json.dumps({
+                "status": "REJECTED",
+                "error": f"Unsupported task_type '{task_type}'.",
+                "supported_task_types": SUPPORTED_TASK_TYPES,
+            })
+
+        seg_clean = _sanitize_text(segment_id or "SEG-001").strip() or "SEG-001"
+        theme_clean = _sanitize_text(style_theme or "Nordic_Minimal").strip() or "Nordic_Minimal"
+        output_text, exec_mode = execute_routed_task(
+            decision=decision,
+            prompt_text=clean_prompt,
+            segment_id=seg_clean,
+            style_theme=theme_clean,
+        )
+
+        state = _load_state()
+        routings = state.setdefault("model_routings", [])
+        routing_id = f"RTE-{7001 + len(routings)}"
+        routing_record = {
+            "routing_id": routing_id,
+            **decision,
+            "segment_id": seg_clean,
+            "style_theme": theme_clean,
+            "execution_mode": exec_mode,
+            "routed_at": datetime.now(timezone.utc).isoformat(),
+        }
+        routings.append(routing_record)
+        backend = _save_state(state)
+
+        return json.dumps({
+            "status": "SUCCESS",
+            "routing_decision": routing_record,
+            "output_text": output_text,
+            "state_backend": backend,
+        })
+    except Exception as exc:
+        return json.dumps({"status": "ERROR", "error": str(exc)})
+
+
 ACTION_TOOLS = [
     publish_storefront_layout,
     queue_visual_asset_render,
@@ -619,6 +816,9 @@ ACTION_TOOLS = [
     generate_hero_lifestyle_image,
     render_storefront_preview,
     sync_campaign_with_t01,
+    save_merchandising_memory,
+    recall_merchandising_memory,
+    route_merchandising_task,
 ]
 MCP_TOOLS = ACTION_TOOLS
 
