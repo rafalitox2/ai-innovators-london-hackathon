@@ -136,7 +136,7 @@ def publish_storefront_layout(
         "layout_id": layout_id,
         "segment_id": segment_id.strip(),
         "featured_skus": [s.strip() for s in featured_skus.split(",") if s.strip()],
-        "hero_headline": hero_headline.strip(),
+        "hero_headline": _sanitize_text(hero_headline),
         "theme_style": theme_style.strip(),
         "published_at": datetime.now(timezone.utc).isoformat(),
         "status": "LIVE",
@@ -168,7 +168,7 @@ def queue_visual_asset_render(
     record = {
         "render_job_id": job_id,
         "sku_id": sku_id.strip(),
-        "scene_prompt": scene_prompt.strip(),
+        "scene_prompt": _sanitize_text(scene_prompt),
         "aspect_ratio": aspect_ratio.strip(),
         "queued_at": datetime.now(timezone.utc).isoformat(),
         "status": "QUEUED",
@@ -232,7 +232,7 @@ def update_promo_banner(
         "segment_id": segment_id.strip(),
         "sku_id": sku_clean,
         "discount_pct": disc,
-        "banner_copy": banner_copy.strip(),
+        "banner_copy": _sanitize_text(banner_copy),
         "updated_at": datetime.now(timezone.utc).isoformat(),
         "status": "ACTIVE",
     }
