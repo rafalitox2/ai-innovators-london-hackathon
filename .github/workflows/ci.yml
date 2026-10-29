@@ -30,5 +30,8 @@ jobs:
       - name: Run offline unit tests
         run: make test
 
+      - name: Run security & margin guardrail tests
+        run: .venv/bin/python -m pytest tests/test_t02_guardrails.py -v
+
       - name: Validate golden evaluation cases
         run: make eval-validate PACK=t02

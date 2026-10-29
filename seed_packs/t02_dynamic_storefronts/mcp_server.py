@@ -13,18 +13,20 @@ from typing import Any
 
 from mcp.server.fastmcp import FastMCP
 
+from seed_packs.t02_dynamic_storefronts.guardrails import (
+    MARGIN_SAFETY_BUFFER_PCT,
+    MAX_DISCOUNT_PCT,
+    compute_max_safe_discount_pct,
+    sanitize_description,
+)
+
 mcp = FastMCP("t02_dynamic_storefronts_actions")
 
 _PACK_DIR = Path(__file__).resolve().parent
 _DATA_DIR = _PACK_DIR / "data"
 _DEFAULT_STATE_PATH = _PACK_DIR / ".state.json"
 _FALLBACK_STATE_PATH = Path("/tmp/t02_dynamic_storefronts_state.json")
-_HTML_COMMENT_RE = re.compile(r"<!--.*?-->", re.DOTALL)
-
-
-def _sanitize_text(text: str) -> str:
-    """Strip embedded HTML comments (prompt-injection defence) and whitespace."""
-    return _HTML_COMMENT_RE.sub("", text or "").strip()
+_sanitize_text = sanitize_description
 
 
 def _read_csv_rows(name: str) -> list[dict[str, Any]]:
@@ -133,29 +135,54 @@ def update_promo_banner(
     segment_id: str,
     discount_pct: int,
     banner_copy: str,
+    sku_id: str = "",
 ) -> str:
-    """Update the promotional discount banner for an audience segment (max 30% discount policy).
+    """Update the promotional discount banner for an audience segment (max 30% discount policy, margin-protected).
 
     Args:
         segment_id: Target audience segment ID (e.g. 'SEG-002').
-        discount_pct: Promotional discount percentage (must be between 5 and 30).
+        discount_pct: Promotional discount percentage (must be between 0 and 30).
         banner_copy: Promotional banner text shown to shoppers.
+        sku_id: Optional catalog SKU ID (e.g. 'SKU-0017') to cross-check the discount
+            against that SKU's real gross margin. When provided, a discount within the
+            30% policy cap can still be rejected if it would undercut the SKU's margin.
 
     Returns:
-        JSON string confirming the banner activation or policy rejection if discount > 30%.
+        JSON string confirming the banner activation, or a policy/margin rejection.
     """
     disc = int(discount_pct)
-    if disc < 0 or disc > 30:
+    if disc < 0 or disc > MAX_DISCOUNT_PCT:
         return json.dumps({
             "status": "REJECTED_POLICY_CAP",
-            "error": f"discount_pct={disc}% exceeds the 30% maximum automated merchandising discount policy.",
+            "error": f"discount_pct={disc}% exceeds the {MAX_DISCOUNT_PCT}% maximum automated merchandising discount policy.",
         })
+
+    sku_clean = sku_id.strip()
+    if sku_clean:
+        sku_row = next(
+            (r for r in _read_csv_rows("products_catalog") if r.get("sku_id", "").strip().upper() == sku_clean.upper()),
+            None,
+        )
+        if sku_row is not None:
+            margin_pct = float(sku_row.get("margin_pct", 0.0) or 0.0)
+            safe_cap = compute_max_safe_discount_pct(margin_pct)
+            if disc > safe_cap:
+                return json.dumps({
+                    "status": "REJECTED_MARGIN_POLICY",
+                    "error": (
+                        f"discount_pct={disc}% would undercut {sku_clean}'s real gross margin "
+                        f"({margin_pct}%); the maximum safe discount at a {MARGIN_SAFETY_BUFFER_PCT}pt "
+                        f"margin buffer is {safe_cap}%."
+                    ),
+                })
+
     state = _load_state()
     banners = state.setdefault("promo_banners", [])
     banner_id = f"PROMO-{3001 + len(banners)}"
     record = {
         "banner_id": banner_id,
         "segment_id": segment_id.strip(),
+        "sku_id": sku_clean,
         "discount_pct": disc,
         "banner_copy": banner_copy.strip(),
         "updated_at": datetime.now(timezone.utc).isoformat(),
