@@ -199,9 +199,10 @@ export const StorefrontPreviewModal: React.FC<StorefrontPreviewModalProps> = ({
           width: 'min(900px, 100%)',
           maxHeight: '92vh',
           overflow: 'auto',
-          background: 'var(--color-surface)',
+          background: 'var(--color-panel)',
+          border: '1px solid var(--color-border)',
           borderRadius: 'var(--radius-lg)',
-          boxShadow: 'var(--shadow-lg)',
+          boxShadow: 'var(--shadow-modal)',
           display: 'flex',
           flexDirection: 'column'
         }}
@@ -212,18 +213,12 @@ export const StorefrontPreviewModal: React.FC<StorefrontPreviewModalProps> = ({
             display: 'flex',
             alignItems: 'center',
             gap: 'var(--space-4)',
-            padding: 'var(--space-4) var(--space-6)'
+            padding: 'var(--space-4) var(--space-6)',
+            borderBottom: '1px solid var(--color-border)'
           }}
         >
           <div style={{ display: 'flex', flexDirection: 'column', gap: 2, marginRight: 'auto' }}>
-            <span
-              style={{
-                fontSize: 10,
-                letterSpacing: '0.1em',
-                textTransform: 'uppercase',
-                color: 'var(--color-accent)'
-              }}
-            >
+            <span className="muted" style={{ fontSize: 12 }}>
               Storefront variant · {e.layout} · ui://storefront-preview/{e.g.id}
             </span>
             <span style={{ fontSize: 15, fontWeight: 500 }}>
@@ -257,7 +252,7 @@ export const StorefrontPreviewModal: React.FC<StorefrontPreviewModalProps> = ({
             margin: '0 var(--space-6) var(--space-4)',
             borderRadius: 'var(--radius-md)',
             background: 'var(--color-bg)',
-            boxShadow: 'var(--shadow-sm)',
+            border: '1px solid var(--color-border)',
             overflow: 'hidden'
           }}
         >
@@ -268,7 +263,8 @@ export const StorefrontPreviewModal: React.FC<StorefrontPreviewModalProps> = ({
               gap: 'var(--space-6)',
               padding: '10px 16px',
               fontSize: 12,
-              color: 'var(--color-neutral-300)'
+              color: 'var(--color-text-muted)',
+              borderBottom: '1px solid var(--color-border)'
             }}
           >
             <span style={{ fontWeight: 500, color: 'var(--color-text)', marginRight: 'auto' }}>
@@ -303,9 +299,8 @@ export const StorefrontPreviewModal: React.FC<StorefrontPreviewModalProps> = ({
                 display: 'flex',
                 alignItems: 'flex-end',
                 padding: 16,
-                background:
-                  'radial-gradient(400px 260px at 70% 30%, var(--color-section-ghost), transparent 70%), linear-gradient(160deg, var(--color-section), var(--color-neutral-900))',
-                color: 'var(--color-neutral-300)',
+                background: 'var(--color-neutral-800)',
+                color: 'var(--color-text-muted)',
                 fontSize: 11,
                 overflow: 'hidden'
               }}
@@ -355,7 +350,7 @@ export const StorefrontPreviewModal: React.FC<StorefrontPreviewModalProps> = ({
                   <span
                     style={{
                       fontSize: 10,
-                      color: 'var(--color-neutral-300)',
+                      color: 'var(--color-text-muted)',
                       background: 'color-mix(in srgb, var(--color-bg) 82%, transparent)',
                       padding: '6px 8px',
                       borderRadius: 'var(--radius-sm)'
@@ -376,20 +371,13 @@ export const StorefrontPreviewModal: React.FC<StorefrontPreviewModalProps> = ({
                 padding: 28
               }}
             >
-              <span
-                style={{
-                  fontSize: 10,
-                  letterSpacing: '0.1em',
-                  textTransform: 'uppercase',
-                  color: 'var(--color-accent)'
-                }}
-              >
+              <span className="muted" style={{ fontSize: 12 }}>
                 {activeProduct.theme.replace(/_/g, ' ')} edit
               </span>
               <span style={{ fontSize: 26, fontWeight: 500, lineHeight: 1.15 }}>
                 {headline}
               </span>
-              <span style={{ fontSize: 13, color: 'var(--color-neutral-400)', lineHeight: 1.5 }}>
+              <span style={{ fontSize: 13, color: 'var(--color-text-muted)', lineHeight: 1.5 }}>
                 {activeProduct.name} ({activeProduct.sku}) — {guardrail.sanitized_description} Curated for{' '}
                 {e.g.segmentName} shoppers on {e.g.device}.
               </span>
@@ -401,7 +389,7 @@ export const StorefrontPreviewModal: React.FC<StorefrontPreviewModalProps> = ({
                 <span
                   style={{
                     fontSize: 12,
-                    color: 'var(--color-neutral-500)',
+                    color: 'var(--color-text-subtle)',
                     textDecoration: 'line-through'
                   }}
                   className="tabular-nums"
@@ -426,12 +414,12 @@ export const StorefrontPreviewModal: React.FC<StorefrontPreviewModalProps> = ({
                   style={{
                     aspectRatio: '4 / 3',
                     borderRadius: 'var(--radius-sm)',
-                    background: 'linear-gradient(160deg, var(--color-neutral-800), var(--color-neutral-900))',
+                    background: 'var(--color-neutral-800)',
                     display: 'flex',
                     alignItems: 'flex-end',
                     padding: 8,
                     fontSize: 10,
-                    color: 'var(--color-neutral-500)'
+                    color: 'var(--color-text-subtle)'
                   }}
                 >
                   {p.sku}
@@ -439,7 +427,10 @@ export const StorefrontPreviewModal: React.FC<StorefrontPreviewModalProps> = ({
                 <span style={{ fontSize: 12 }}>
                   {p.sku} · {p.name}
                 </span>
-                <span style={{ fontSize: 11, color: 'var(--color-neutral-400)' }} className="tabular-nums">
+                <span
+                  style={{ fontSize: 11, color: 'var(--color-text-muted)', textAlign: 'right' }}
+                  className="tabular-nums"
+                >
                   {eur2.format(p.price)}
                 </span>
               </div>
@@ -453,22 +444,15 @@ export const StorefrontPreviewModal: React.FC<StorefrontPreviewModalProps> = ({
             margin: '0 var(--space-6) var(--space-4)',
             padding: 'var(--space-4) var(--space-6)',
             borderRadius: 'var(--radius-md)',
-            background: 'var(--color-neutral-900)',
+            background: 'var(--color-panel-2)',
+            border: '1px solid var(--color-border)',
             display: 'flex',
             flexDirection: 'column',
             gap: 'var(--space-4)'
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', flexWrap: 'wrap' }}>
-            <span
-              style={{
-                fontSize: 11,
-                letterSpacing: '0.08em',
-                textTransform: 'uppercase',
-                color: 'var(--color-accent)',
-                marginRight: 'auto'
-              }}
-            >
+            <span style={{ fontSize: 13, fontWeight: 500, marginRight: 'auto' }}>
               ADK Merchandising Guardrails &amp; Tribe A2A Sync (Table 2 ↔ Table 1)
             </span>
             <span
@@ -488,7 +472,7 @@ export const StorefrontPreviewModal: React.FC<StorefrontPreviewModalProps> = ({
             }}
           >
             {/* SKU Selector (including SKU-0017 & SKU-0022 guardrail test cases) */}
-            <label style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: 12, color: 'var(--color-neutral-300)' }}>
+            <label style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: 12, color: 'var(--color-text-muted)' }}>
               <span>Featured Hero SKU (Test Guardrails)</span>
               <select
                 className="select"
@@ -519,7 +503,7 @@ export const StorefrontPreviewModal: React.FC<StorefrontPreviewModalProps> = ({
             </label>
 
             {/* Discount % slider */}
-            <label style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: 12, color: 'var(--color-neutral-300)' }}>
+            <label style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: 12, color: 'var(--color-text-muted)' }}>
               <span className="tabular-nums">
                 Promo Discount: <strong>{discountPct}%</strong> (Cap ≤30%, Max Safe{' '}
                 {computeMaxSafeDiscountPct(activeProduct.marginPct)}%)
@@ -536,7 +520,7 @@ export const StorefrontPreviewModal: React.FC<StorefrontPreviewModalProps> = ({
             </label>
 
             {/* Table 1 CPM Bid */}
-            <label style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: 12, color: 'var(--color-neutral-300)' }}>
+            <label style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: 12, color: 'var(--color-text-muted)' }}>
               <span className="tabular-nums">
                 Table 1 Target CPM Bid: <strong>€{cpmBidEur.toFixed(2)}</strong> (Cap ≤€25.00)
               </span>
@@ -553,7 +537,7 @@ export const StorefrontPreviewModal: React.FC<StorefrontPreviewModalProps> = ({
 
             {/* Channel & A2A Sync Action */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6, justifyContent: 'flex-end' }}>
-              <span style={{ fontSize: 12, color: 'var(--color-neutral-300)' }}>
+              <span style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>
                 Channel ({channel})
               </span>
               <div style={{ display: 'flex', gap: 8 }}>
@@ -587,10 +571,10 @@ export const StorefrontPreviewModal: React.FC<StorefrontPreviewModalProps> = ({
                 <strong style={{ fontWeight: 500, color: 'var(--color-accent-200)' }}>
                   Prompt Injection Defense Active (SKU-0017 Sanitized)
                 </strong>
-                <span style={{ color: 'var(--color-neutral-300)' }}>
+                <span style={{ color: 'var(--color-text-muted)' }}>
                   Raw catalog payload: <code>{guardrail.raw_description}</code>
                 </span>
-                <span style={{ color: 'var(--color-neutral-200)' }}>
+                <span style={{ color: 'var(--color-text)' }}>
                   Sanitized output passed to LLM &amp; UI: <code>{guardrail.sanitized_description}</code>
                 </span>
               </div>
@@ -611,7 +595,7 @@ export const StorefrontPreviewModal: React.FC<StorefrontPreviewModalProps> = ({
                     {a2aResult.a2a_handshake.handshake_id} · {a2aResult.a2a_handshake.handshake_type} →{' '}
                     {a2aResult.a2a_handshake.recipient_agent}
                   </span>
-                  <span style={{ color: 'var(--color-neutral-300)' }}>
+                  <span style={{ color: 'var(--color-text-muted)' }}>
                     Variant <code>{a2aResult.a2a_handshake.t01_response.variant.variant_id}</code> (
                     {a2aResult.a2a_handshake.t01_response.variant.status}) · Bid{' '}
                     <code>{a2aResult.a2a_handshake.t01_response.bid.bid_id}</code> at €
@@ -642,7 +626,7 @@ export const StorefrontPreviewModal: React.FC<StorefrontPreviewModalProps> = ({
             flexWrap: 'wrap',
             padding: '0 var(--space-6) var(--space-6)',
             fontSize: 12,
-            color: 'var(--color-neutral-400)'
+            color: 'var(--color-text-muted)'
           }}
           className="tabular-nums"
         >
@@ -653,7 +637,7 @@ export const StorefrontPreviewModal: React.FC<StorefrontPreviewModalProps> = ({
           <span
             style={{
               color:
-                guardrail.status === 'SUCCESS' ? 'var(--color-neutral-400)' : '#f6b8bb'
+                guardrail.status === 'SUCCESS' ? 'var(--color-text-muted)' : '#f6b8bb'
             }}
           >
             {guardrail.reason}

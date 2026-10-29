@@ -400,17 +400,12 @@ export const App: React.FC = () => {
             style={{ gap: 6 }}
           >
             <span className={`status-dot ${health.connected ? 'online' : ''}`} />
-            <span className="mono">
+            <span>
               ADK · {health.agent_name} ({health.connected ? 'Live' : 'Local Seed'})
             </span>
           </div>
 
-          <button
-            type="button"
-            className="btn-ghost"
-            onClick={() => setCopilotOpen(true)}
-            style={{ borderColor: 'var(--color-border)' }}
-          >
+          <button type="button" className="btn-ghost" onClick={() => setCopilotOpen(true)}>
             ADK Copilot
           </button>
 
@@ -430,7 +425,7 @@ export const App: React.FC = () => {
             >
               <span
                 className="switch-knob"
-                style={{ left: autoApprove ? '16px' : '2px' }}
+                style={{ transform: `translateX(${autoApprove ? '14px' : '0'})` }}
               />
             </span>
           </button>
@@ -468,16 +463,8 @@ export const App: React.FC = () => {
       <main className="app-main">
         {/* 01 OVERVIEW */}
         {tab === 'home' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-10)' }}>
-            <section
-              className="card lighten"
-              style={{
-                padding: 'var(--space-6)',
-                background:
-                  'radial-gradient(560px 260px at 85% 20%, var(--color-section-ghost), transparent 70%), linear-gradient(160deg, var(--color-surface), var(--color-bg-subtle))',
-                border: '1px solid var(--color-border)'
-              }}
-            >
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-section)' }}>
+            <section className="card" style={{ padding: 'var(--space-8)' }}>
               <div
                 style={{
                   display: 'flex',
@@ -488,28 +475,13 @@ export const App: React.FC = () => {
                 }}
               >
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
-                  <span
-                    className="mono"
-                    style={{
-                      fontSize: '0.6875rem',
-                      letterSpacing: '0.1em',
-                      textTransform: 'uppercase',
-                      color: 'var(--color-accent)'
-                    }}
-                  >
-                    01 Overview · Table 2 Dynamic Storefront Engine
+                  <span className="page-eyebrow">
+                    Table 2 Dynamic Storefront Engine
                   </span>
-                  <h1
-                    style={{
-                      fontSize: 'clamp(1.375rem, 2.2vw, 1.875rem)',
-                      fontWeight: 500,
-                      letterSpacing: '-0.025em',
-                      margin: 0
-                    }}
-                  >
+                  <h1 className="page-title">
                     One layout for every shopper is costing conversion.
                   </h1>
-                  <p style={{ margin: 0, fontSize: '0.875rem' }}>
+                  <p className="muted" style={{ margin: 0, fontSize: 'var(--text-sm)', maxWidth: '58ch' }}>
                     Continuous BigQuery telemetry across 120 A/B storefront experiments identifies
                     high-bounce segment × SKU mismatches, generates localized hero lifestyle assets,
                     and enforces strict ≤30% discount and ≥15pt margin guardrails.
@@ -666,7 +638,7 @@ export const App: React.FC = () => {
                             <div className="rating-bar">
                               <div
                                 className="rating-fill"
-                                style={{ width: `${e.rating}%` }}
+                                style={{ transform: `scaleX(${e.rating / 100})` }}
                               />
                             </div>
                             <span
@@ -762,7 +734,6 @@ export const App: React.FC = () => {
                       const progress = it.progress ?? 0;
                       const stepIdx = Math.min(3, Math.floor(progress * 4));
                       const activeStep = WIP_STEPS[stepIdx];
-                      const progressPct = `${Math.round(progress * 100)}%`;
 
                       return (
                         <tr key={e.id}>
@@ -800,7 +771,7 @@ export const App: React.FC = () => {
                                   <div className="rating-bar" style={{ width: 96 }}>
                                     <div
                                       className="rating-fill"
-                                      style={{ width: progressPct }}
+                                      style={{ transform: `scaleX(${progress})` }}
                                     />
                                   </div>
                                   <span className="muted" style={{ fontSize: '0.75rem' }}>
