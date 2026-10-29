@@ -32,6 +32,7 @@
 - `save_merchandising_memory` (FastMCP cross-session merchandising memory persistence tool in `mcp_server.py` & `ACTION_TOOLS` in `tools.py`)
 - `recall_merchandising_memory` (FastMCP cross-session merchandising memory recall tool in `mcp_server.py` & `ACTION_TOOLS` in `tools.py`)
 - `route_merchandising_task` (FastMCP dynamic Gemma/Gemini model routing tool in `mcp_server.py` & `ACTION_TOOLS` in `tools.py`)
+- `register_gemini_enterprise_agent` (FastMCP Gemini Enterprise / Discovery Engine ADK agent registration tool in `mcp_server.py` & `ACTION_TOOLS` in `tools.py`)
 
 ## Minimum Playable Scope (~3.5 Hours Build Time)
 Build an ADK agent connected to `seed_t02` and the `t02_dynamic_storefronts` MCP server that: (1) queries catalog products by category, style theme, and stock level, (2) analyzes storefront experiment bounce and conversion rates by audience segment, and (3) publishes updated layouts, visual asset render jobs, and promo banners within discount policy limits.

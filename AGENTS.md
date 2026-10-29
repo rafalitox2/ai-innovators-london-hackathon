@@ -110,6 +110,7 @@ Our team repository is configured for **Table 2 — Dynamic Storefront Engine** 
   - `save_merchandising_memory`: Persists sanitized cross-session merchandising notes (`MEM-6001+`) per `(segment_id, memory_key)` with revision tracking (`gcs` + local state).
   - `recall_merchandising_memory`: Retrieves persisted cross-session merchandising memory notes filtered by `segment_id` and keyword `query`.
   - `route_merchandising_task`: Dynamically routes merchandising tasks (`seed_packs/t02_dynamic_storefronts/model_router.py`) across open-weights `GEMMA_MODEL` (`gemma-3-27b-it`, `ultra_low` latency / `low` cost), `GEMINI_MODEL` (`multi_table_reasoning`), and `GEMINI_IMAGE_MODEL` (`hero_image_generation`).
+  - `register_gemini_enterprise_agent`: Registers the deployed Vertex AI `ReasoningEngine` as an ADK Agent inside a Gemini Enterprise App (`seed_packs/t02_dynamic_storefronts/gemini_enterprise.py`) via the Discovery Engine v1alpha REST API (`adkAgentDefinition.provisionedReasoningEngine`).
 
 ### Workspace Rules & Antigravity Skills (`.agents/`)
 - **Domain & Security Rules**:

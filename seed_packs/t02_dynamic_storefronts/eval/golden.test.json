@@ -522,6 +522,49 @@
         "user_id": "eval_user",
         "state": {}
       }
+    },
+    {
+      "eval_id": "case_13_gemini_enterprise_agent_registration",
+      "conversation": [
+        {
+          "invocation_id": "t02-inv-013",
+          "user_content": {
+            "parts": [
+              {
+                "text": "Register our deployed AtelierNova Dynamic Storefront Agent in Gemini Enterprise app ateliernova-enterprise-search in location eu linked to reasoning engine 3204215998593531904."
+              }
+            ],
+            "role": "user"
+          },
+          "final_response": {
+            "parts": [
+              {
+                "text": "I have registered the AtelierNova Dynamic Storefront Agent (GEM-ENT-8001) in Gemini Enterprise app ateliernova-enterprise-search (location eu) linked to Vertex AI Agent Runtime reasoning engine 3204215998593531904."
+              }
+            ],
+            "role": "model"
+          },
+          "intermediate_data": {
+            "tool_uses": [
+              {
+                "name": "register_gemini_enterprise_agent",
+                "args": {
+                  "app_id": "ateliernova-enterprise-search",
+                  "agent_display_name": "AtelierNova Dynamic Storefront Agent",
+                  "app_location": "eu",
+                  "reasoning_engine_id": "3204215998593531904"
+                }
+              }
+            ],
+            "intermediate_responses": []
+          }
+        }
+      ],
+      "session_input": {
+        "app_name": "app",
+        "user_id": "eval_user",
+        "state": {}
+      }
     }
   ]
 }

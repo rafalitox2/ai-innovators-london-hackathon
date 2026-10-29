@@ -23,6 +23,7 @@ from seed_packs.t02_dynamic_storefronts.mcp_server import (
     publish_storefront_layout,
     queue_visual_asset_render,
     recall_merchandising_memory,
+    register_gemini_enterprise_agent,
     render_storefront_preview,
     route_merchandising_task,
     save_merchandising_memory,
@@ -574,4 +575,5 @@ __all__ = [
     "save_merchandising_memory",
     "recall_merchandising_memory",
     "route_merchandising_task",
+    "register_gemini_enterprise_agent",
 ]

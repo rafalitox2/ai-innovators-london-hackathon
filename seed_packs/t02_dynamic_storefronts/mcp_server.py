@@ -933,6 +933,70 @@ def route_merchandising_task(
         return json.dumps({"status": "ERROR", "error": str(exc)})
 
 
+@mcp.tool()
+def register_gemini_enterprise_agent(
+    app_id: str = "ateliernova-enterprise-search",
+    agent_display_name: str = "AtelierNova Dynamic Storefront Agent",
+    app_location: str = "eu",
+    reasoning_engine_id: str = "",
+) -> str:
+    """Register the deployed Table 2 Vertex AI ReasoningEngine as an ADK Agent inside a Gemini Enterprise App (Discovery Engine v1alpha).
+
+    Args:
+        app_id: Target Gemini Enterprise / Agentspace engine identifier (e.g. 'ateliernova-enterprise-search').
+        agent_display_name: Human-readable display name shown inside the Gemini Enterprise workspace.
+        app_location: Discovery Engine multi-region location ('eu', 'us', or 'global'; default 'eu').
+        reasoning_engine_id: Vertex AI ReasoningEngine ID or full resource name (defaults to `.deployed_agent.json` or live engine `3204215998593531904`).
+
+    Returns:
+        JSON string containing the Gemini Enterprise registration record (`GEM-ENT-8001+`), Discovery Engine endpoint URL, and `adkAgentDefinition` payload.
+    """
+    try:
+        from seed_packs.t02_dynamic_storefronts.gemini_enterprise import (
+            execute_gemini_enterprise_registration,
+        )
+
+        for val in (app_id, agent_display_name, app_location, reasoning_engine_id):
+            if contains_injection_marker(str(val or "")):
+                return json.dumps({
+                    "status": "REJECTED",
+                    "error": "Gemini Enterprise registration rejected: input contains an untrusted prompt-injection marker.",
+                })
+
+        app_clean = _sanitize_text(app_id or "ateliernova-enterprise-search").strip()
+        display_clean = _sanitize_text(
+            agent_display_name or "AtelierNova Dynamic Storefront Agent"
+        ).strip()
+        loc_clean = _sanitize_text(app_location or "eu").strip().lower() or "eu"
+        re_clean = _sanitize_text(reasoning_engine_id or "").strip()
+
+        reg_data = execute_gemini_enterprise_registration(
+            app_id=app_clean,
+            agent_display_name=display_clean,
+            app_location=loc_clean,
+            reasoning_engine_id=re_clean,
+        )
+
+        state = _load_state()
+        registrations = state.setdefault("gemini_enterprise_registrations", [])
+        reg_id = f"GEM-ENT-{8001 + len(registrations)}"
+        record: dict[str, Any] = {
+            "registration_id": reg_id,
+            **reg_data,
+            "registered_at": datetime.now(timezone.utc).isoformat(),
+        }
+        registrations.append(record)
+        backend = _save_state(state)
+
+        return json.dumps({
+            "status": "SUCCESS",
+            "registration": record,
+            "state_backend": backend,
+        })
+    except Exception as exc:
+        return json.dumps({"status": "ERROR", "error": str(exc)})
+
+
 ACTION_TOOLS = [
     publish_storefront_layout,
     queue_visual_asset_render,
@@ -943,6 +1007,7 @@ ACTION_TOOLS = [
     save_merchandising_memory,
     recall_merchandising_memory,
     route_merchandising_task,
+    register_gemini_enterprise_agent,
 ]
 MCP_TOOLS = ACTION_TOOLS
 
