@@ -146,3 +146,52 @@ def test_t02_nocturne_ui_mockup_and_template_tokens(monkeypatch: pytest.MonkeyPa
     for nocturne_token in ("--color-bg: #161826", "--color-surface: #232532", "--color-accent: #9184d9"):
         assert nocturne_token in rendered_html
 
+
+def test_t02_nocturne_mockup_uses_real_catalog_and_segment_data() -> None:
+    """Verify the Nocturne prototype and handoff data files reference real Table 2 SKUs, segments, and experiments."""
+    handoff_dir = (
+        Path(__file__).resolve().parent.parent
+        / "seed_packs"
+        / "t02_dynamic_storefronts"
+        / "ui"
+        / "design_handoff_dynamic_storefronts"
+    )
+    proto_html = (handoff_dir / "prototype" / "Dynamic Storefronts.dc.html").read_text(encoding="utf-8")
+
+    for real_token in (
+        "SKU-0001",
+        "Atelier Nordic Modular Sofas #1",
+        "SKU-0057",
+        "Atelier Mediterranean Smart Lighting #57",
+        "SKU-0100",
+        "Atelier Neo Ceramic Decor #100",
+        "SEG-001",
+        "UK_London_Nordic_Minimal_Mobile",
+        "SEG-057",
+        "UK_London_Mediterranean_Warm_Mobile",
+        "EXP-0001",
+        "EXP-0057",
+        "EXP-0120",
+        "Hero_Video_Grid",
+        "Carousel_Lookbook",
+        "Minimal_Split_Card",
+        "Interactive_Room_Bundle",
+    ):
+        assert real_token in proto_html, f"Expected real Table 2 token {real_token!r} in prototype HTML"
+
+    assert "ANV-" not in proto_html
+    assert "ADMIN OVERRIDE" not in proto_html
+
+    products_csv = (handoff_dir / "data" / "products.csv").read_text(encoding="utf-8")
+    segments_csv = (handoff_dir / "data" / "segments.csv").read_text(encoding="utf-8")
+    experiments_csv = (handoff_dir / "data" / "experiments.csv").read_text(encoding="utf-8")
+    opportunities_csv = (handoff_dir / "data" / "opportunities.csv").read_text(encoding="utf-8")
+
+    assert "SKU-0001,Atelier Nordic Modular Sofas #1" in products_csv
+    assert "ANV-" not in products_csv
+    assert "SEG-001" in segments_csv and "UK_London_Nordic_Minimal_Mobile" in segments_csv
+    assert "EXP-0001" in experiments_csv and "SKU-0001" in experiments_csv
+    assert "EXP-0057" in opportunities_csv and "Atelier Mediterranean Smart Lighting #57" in opportunities_csv
+    assert "SKU-0017" not in opportunities_csv
+
+
