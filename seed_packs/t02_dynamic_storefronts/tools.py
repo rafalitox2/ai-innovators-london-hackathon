@@ -9,7 +9,10 @@ from pathlib import Path
 from typing import Any
 
 from google.cloud import bigquery
-from seed_packs.t02_dynamic_storefronts.guardrails import sanitize_description
+from seed_packs.t02_dynamic_storefronts.guardrails import (
+    before_tool_security_callback,
+    sanitize_description,
+)
 from seed_packs.t02_dynamic_storefronts.mcp_server import (
     ACTION_TOOLS,
     generate_hero_lifestyle_image,
@@ -428,9 +431,12 @@ TOOLS = [
     recommend_storefront_optimization,
 ]
 
+BEFORE_TOOL_CALLBACK = before_tool_security_callback
+
 __all__ = [
     "TOOLS",
     "ACTION_TOOLS",
+    "BEFORE_TOOL_CALLBACK",
     "find_catalog_products",
     "get_storefront_performance",
     "get_audience_segments",
