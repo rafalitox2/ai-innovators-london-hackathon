@@ -94,7 +94,7 @@ verify: check-venv
 	$(PYTHON) -m pytest -q
 	@echo "=== [2/3] Golden evaluation schema validation (PACK=$(or $(PACK),t02)) ==="
 	SEED_PACK="$(or $(PACK),t02)" $(PYTHON) -m eval.run_eval --pack "$(or $(PACK),t02)" --validate-only
-	@echo "=== [3/3] All 10 Seed Packs contract check ==="
+	@echo "=== [3/3] Active Seed Packs contract check ==="
 	$(PYTHON) -m seed_packs.check_packs
 
 worktree:
