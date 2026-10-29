@@ -116,6 +116,19 @@ def test_cd_mcp_cloudrun_http_server_endpoints(monkeypatch) -> None:
     assert hs_payload["status"] == "SUCCESS"
     assert hs_payload["a2a_handshake"]["handshake_type"] == "STOREFRONT_TO_CAMPAIGN_SYNC"
 
+    for invalid_cpm in (None, "not-a-float"):
+        bad_hs_res = client.post(
+            "/a2a",
+            json={
+                "segment_id": "SEG-057",
+                "featured_skus": "SKU-0057,SKU-0002",
+                "hero_headline": "Warm Mediterranean light for London homes",
+                "target_cpm_bid_eur": invalid_cpm,
+            },
+        )
+        assert bad_hs_res.status_code == 200
+        assert bad_hs_res.json()["status"] in {"ERROR", "REJECTED_POLICY_CAP"}
+
     # 3. Interactive Storefront UI Preview endpoint on Cloud Run
     preview_res = client.get("/preview/SEG-001")
     assert preview_res.status_code == 200

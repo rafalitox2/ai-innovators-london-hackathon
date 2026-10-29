@@ -322,7 +322,7 @@ async def a2a_endpoint(request: Request) -> JSONResponse:
         locale=str(payload_src.get("locale") or "en-GB"),
         event_id=str(payload_src.get("event_id") or "EVT-0001"),
         channel=str(payload_src.get("channel") or "Meta_Reels"),
-        target_cpm_bid_eur=float(payload_src.get("target_cpm_bid_eur", 12.5)),
+        target_cpm_bid_eur=payload_src.get("target_cpm_bid_eur", 12.5),
     )
     sync_res = json.loads(sync_raw)
     return JSONResponse(sync_res)
