@@ -504,7 +504,7 @@ export const App: React.FC = () => {
                       ✦ 01 Overview · Table 2 Dynamic Storefront Engine
                     </span>
                     <span className="tag tag-neutral mono">BigQuery EU · seed_t02</span>
-                    <span className="tag tag-neutral mono">FastMCP · 10 Tools</span>
+                    <span className="tag tag-neutral mono">FastMCP · {health.tools.length || 14} Tools</span>
                     <span className="tag tag-success mono">Guardrails · ≤30% &amp; SKU-0017</span>
                   </div>
                   <h1
@@ -525,7 +525,7 @@ export const App: React.FC = () => {
                     Vertex AI multimodal models, and enforces strict ≤30% discount and ≥15pt margin guardrails.
                   </p>
                 </div>
-                <div style={{ display: 'flex', gap: 'var(--space-3)', flexWrap: 'wrap' }}>
+                <div className="hero-actions">
                   <button
                     type="button"
                     className="btn-ghost btn-gemini"
@@ -608,7 +608,7 @@ export const App: React.FC = () => {
         {tab === 'queue' && (
           <section>
             <div className="section-head">
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: 'var(--space-3)' }}>
+              <div style={{ display: 'flex', alignItems: 'baseline', flexWrap: 'wrap', gap: 'var(--space-3)' }}>
                 <h2 className="section-title">Optimization queue</h2>
                 <span className="section-sub">
                   Ranked by views × price × margin × bounce · {pendingList.length} pending approval
@@ -728,7 +728,7 @@ export const App: React.FC = () => {
         {tab === 'wip' && (
           <section>
             <div className="section-head">
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: 'var(--space-3)' }}>
+              <div style={{ display: 'flex', alignItems: 'baseline', flexWrap: 'wrap', gap: 'var(--space-3)' }}>
                 <h2 className="section-title">Work in progress</h2>
                 <span className="section-sub">
                   Open the generated storefront preview before approving for publication
@@ -872,7 +872,7 @@ export const App: React.FC = () => {
         {tab === 'pub' && (
           <section>
             <div className="section-head">
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: 'var(--space-3)' }}>
+              <div style={{ display: 'flex', alignItems: 'baseline', flexWrap: 'wrap', gap: 'var(--space-3)' }}>
                 <h2 className="section-title">Published storefronts</h2>
                 <span className="section-sub">
                   {pubList.length} storefront variants live · estimated added revenue{' '}
@@ -954,7 +954,7 @@ export const App: React.FC = () => {
         {tab === 'res' && (
           <section>
             <div className="section-head">
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: 'var(--space-3)' }}>
+              <div style={{ display: 'flex', alignItems: 'baseline', flexWrap: 'wrap', gap: 'var(--space-3)' }}>
                 <h2 className="section-title">Performance over time</h2>
                 <span className="section-sub">
                   {data.days[0]} – {data.days[data.days.length - 1]} 2026

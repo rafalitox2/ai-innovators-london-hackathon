@@ -283,6 +283,7 @@ a:hover {
 .brand-group {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 0.625rem;
   font-family: var(--font-heading);
 }
@@ -365,6 +366,12 @@ a:hover {
   background: var(--color-surface);
   border-bottom: 1px solid var(--color-border-subtle);
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.app-nav::-webkit-scrollbar {
+  display: none;
 }
 
 .app-nav a.nav-tab {
@@ -1027,4 +1034,324 @@ a:hover {
 
 .lighten {
   mix-blend-mode: var(--img-blend, normal);
+}
+
+.hero-actions {
+  display: flex;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+/* ==========================================================================
+   Storefront Preview Modal Layout
+   ========================================================================== */
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-8);
+  background: color-mix(in srgb, var(--color-bg) 78%, transparent);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+.modal-card {
+  width: min(920px, 100%);
+  max-height: 92vh;
+  max-height: 92dvh;
+  overflow: auto;
+  background: var(--color-surface);
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  padding: var(--space-4) var(--space-6);
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+
+.modal-topbar-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.modal-preview-frame {
+  margin: var(--space-4) var(--space-6);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border-subtle);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+
+.modal-store-nav {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-6);
+  padding: 10px 16px;
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+
+.modal-hero-copy {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 12px;
+  padding: 28px;
+}
+
+.modal-guardrails {
+  margin: 0 var(--space-6) var(--space-4);
+  padding: var(--space-4) var(--space-6);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface-container);
+  border: 1px solid var(--color-border-subtle);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.modal-footer-meta {
+  display: flex;
+  gap: var(--space-8);
+  flex-wrap: wrap;
+  padding: 0 var(--space-6) var(--space-6);
+  font-size: 12px;
+  color: var(--color-neutral-400);
+}
+
+/* ==========================================================================
+   Responsive Design (Tablet <= 768px & Mobile <= 480px)
+   ========================================================================== */
+
+@media (max-width: 768px) {
+  .app-header {
+    padding: 0.625rem var(--space-4);
+    gap: var(--space-3);
+  }
+
+  .brand-sep,
+  .brand-sub {
+    display: none;
+  }
+
+  .header-controls {
+    width: 100%;
+    justify-content: space-between;
+    gap: var(--space-2);
+  }
+
+  .app-nav {
+    padding: 0.5rem var(--space-4);
+    gap: 0.375rem;
+  }
+
+  .app-nav a.nav-tab {
+    padding: 0.45rem 0.85rem;
+    font-size: 0.8125rem;
+  }
+
+  .app-main {
+    padding: var(--space-4);
+  }
+
+  .hero-google-card {
+    padding: var(--space-6);
+    border-radius: var(--radius-lg);
+  }
+
+  .hero-actions {
+    width: 100%;
+  }
+
+  .hero-actions > .btn,
+  .hero-actions > button {
+    flex: 1 1 auto;
+  }
+
+  .kpi-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-3);
+  }
+
+  .kpi-grid .card {
+    padding: 1rem;
+  }
+
+  .kpi-value {
+    font-size: 1.375rem;
+  }
+
+  .kpi-value-lg {
+    font-size: 1.75rem;
+  }
+
+  .opp-grid {
+    grid-template-columns: 1fr;
+    gap: var(--space-3);
+  }
+
+  .charts-grid {
+    grid-template-columns: 1fr;
+    gap: var(--space-4);
+  }
+
+  .section-head {
+    align-items: flex-start;
+    gap: var(--space-3);
+  }
+
+  .section-head > button,
+  .section-head > .btn-primary {
+    width: 100%;
+  }
+
+  .table th,
+  .table td,
+  .table-wrap th,
+  .table-wrap td {
+    padding: 0.65rem 0.75rem;
+    font-size: 0.8125rem;
+  }
+
+  .modal-backdrop {
+    padding: var(--space-2);
+    align-items: flex-end;
+  }
+
+  .modal-card {
+    max-height: 95dvh;
+    border-radius: var(--radius-lg);
+  }
+
+  .modal-topbar {
+    padding: var(--space-3) var(--space-4);
+    gap: var(--space-3);
+  }
+
+  .modal-topbar-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .modal-topbar-actions .btn {
+    flex: 1 1 auto;
+  }
+
+  .modal-preview-frame {
+    margin: var(--space-3) var(--space-4);
+  }
+
+  .modal-store-nav {
+    gap: var(--space-3);
+    padding: 8px 12px;
+  }
+
+  .modal-hero-copy {
+    padding: 18px;
+  }
+
+  .modal-guardrails {
+    margin: 0 var(--space-4) var(--space-3);
+    padding: var(--space-3) var(--space-4);
+  }
+
+  .modal-footer-meta {
+    gap: var(--space-3);
+    padding: 0 var(--space-4) var(--space-4);
+  }
+
+  .copilot-drawer {
+    width: 100vw;
+    height: 100dvh;
+    border-left: none;
+  }
+
+  .copilot-head,
+  .copilot-messages,
+  .copilot-foot {
+    padding: 0.875rem 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .app-header {
+    padding: 0.5rem var(--space-3);
+  }
+
+  .google-cloud-pill {
+    font-size: 0.68rem;
+    padding: 2px 8px;
+  }
+
+  .header-controls .tag {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .header-controls .switch-btn {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .header-controls > button:not(.switch-btn) {
+    flex: 1 1 calc(50% - 0.35rem);
+    font-size: 0.78rem;
+    padding: 0.45rem 0.65rem;
+  }
+
+  .app-main {
+    padding: var(--space-3);
+  }
+
+  .hero-google-card {
+    padding: var(--space-4);
+  }
+
+  .kpi-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-2);
+  }
+
+  .kpi-value {
+    font-size: 1.25rem;
+  }
+
+  .modal-backdrop {
+    padding: 0;
+  }
+
+  .modal-card {
+    width: 100%;
+    max-height: 100dvh;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    border-bottom: none;
+  }
+
+  .modal-preview-frame {
+    margin: var(--space-2) var(--space-3);
+  }
+
+  .modal-guardrails {
+    margin: 0 var(--space-3) var(--space-3);
+    padding: var(--space-3);
+  }
 }

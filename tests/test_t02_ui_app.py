@@ -269,6 +269,51 @@ def test_ui_google_material3_theme_tokens_and_switcher() -> None:
     assert "Gemini Dark" in app_text
 
 
+def test_ui_mobile_responsive_breakpoints_and_modal_classes() -> None:
+    """Verify mobile responsive @media breakpoints (<=768px and <=480px) and responsive modal/layout classes."""
+    ui_root = REPO_ROOT / "ui"
+    css_text = (ui_root / "src" / "styles" / "nocturne.css").read_text(encoding="utf-8")
+    for responsive_token in (
+        "@media (max-width: 768px)",
+        "@media (max-width: 480px)",
+        ".modal-backdrop",
+        ".modal-card",
+        ".modal-topbar",
+        ".modal-topbar-actions",
+        ".modal-preview-frame",
+        ".modal-store-nav",
+        ".modal-hero-copy",
+        ".modal-guardrails",
+        ".modal-footer-meta",
+        ".hero-actions",
+    ):
+        assert responsive_token in css_text, (
+            f"Missing mobile responsive token/class {responsive_token!r} in nocturne.css"
+        )
+
+    modal_text = (ui_root / "src" / "components" / "StorefrontPreviewModal.tsx").read_text(
+        encoding="utf-8"
+    )
+    for modal_cls in (
+        "modal-backdrop",
+        "modal-card",
+        "modal-topbar",
+        "modal-topbar-actions",
+        "modal-preview-frame",
+        "modal-store-nav",
+        "modal-hero-copy",
+        "modal-guardrails",
+        "modal-footer-meta",
+    ):
+        assert modal_cls in modal_text, (
+            f"Expected StorefrontPreviewModal.tsx to use responsive class {modal_cls!r}"
+        )
+
+    app_text = (ui_root / "src" / "App.tsx").read_text(encoding="utf-8")
+    assert "hero-actions" in app_text
+
+
+
 def test_cloudrun_mcp_server_serves_nocturne_ui_and_api_routes(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

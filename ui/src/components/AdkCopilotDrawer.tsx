@@ -115,7 +115,7 @@ export const AdkCopilotDrawer: React.FC<AdkCopilotDrawerProps> = ({
               key={q}
               type="button"
               className="btn-ghost"
-              style={{ fontSize: '0.72rem', padding: '4px 8px' }}
+              style={{ fontSize: '0.72rem', padding: '4px 8px', whiteSpace: 'normal', textAlign: 'left' }}
               onClick={() => handleSend(q)}
               disabled={sending}
             >
