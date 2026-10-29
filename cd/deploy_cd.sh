@@ -51,6 +51,7 @@ gcloud run deploy t02-dynamic-storefronts-mcp \
 MCP_SERVER_URL="$(gcloud run services describe t02-dynamic-storefronts-mcp --project="${GOOGLE_CLOUD_PROJECT}" --region="${AGENT_RUNTIME_LOCATION}" --format="value(status.url)")"
 export MCP_SERVER_URL
 echo "    Cloud Run MCP Server URL: ${MCP_SERVER_URL}"
+curl -fsSL "${MCP_SERVER_URL}/health" >/dev/null || curl -fsSL "${MCP_SERVER_URL}/api/health" >/dev/null
 
 echo "==> [2/4] Deploying ADK Agent to Vertex AI Agent Runtime (syncs .deployed_agent.json with ${STAGING_BUCKET})..."
 PYTHONPATH="${REPO_ROOT}" "${PYTHON_BIN}" -m deploy.deploy --pack "${SEED_PACK}"

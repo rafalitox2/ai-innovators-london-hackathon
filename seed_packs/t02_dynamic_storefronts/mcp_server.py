@@ -538,7 +538,7 @@ def render_storefront_preview(
             candidate_hero = ui_dir / f"hero_{seg_clean}{ext}"
             if candidate_hero.exists():
                 hero_image_html = (
-                    f'<img src="hero_{html.escape(seg_clean)}{ext}" alt="{html.escape(headline_clean)}" />'
+                    f'<img src="/ui/hero_{html.escape(seg_clean)}{ext}" alt="{html.escape(headline_clean)}" />'
                 )
                 break
         if template_path.exists():

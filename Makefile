@@ -33,7 +33,7 @@ endif
 
 PACK ?= $(SEED_PACK)
 
-.PHONY: help setup check-venv seed dev eval eval-validate test verify worktree worktree-link worktree-list deploy test-remote delete
+.PHONY: help setup check-venv seed dev eval eval-validate test verify worktree worktree-link worktree-list deploy test-remote delete ui-install ui-dev ui-build ui-api
 
 help:
 	@echo "AI Innovators Expedition — Starter & Multi-Worktree Commands:"
@@ -44,6 +44,10 @@ help:
 	@echo "  make verify [PACK=t02]        Run full offline PR gate (pytest + eval-validate + check_packs)"
 	@echo "  make seed PACK=t02            Load Seed Pack data into BigQuery & Cloud Storage"
 	@echo "  make dev                      Launch local ADK Web UI (http://127.0.0.1:$(PORT))"
+	@echo "  make ui-api                   Launch integrated FastAPI + ADK server for /ui (http://127.0.0.1:$(PORT))"
+	@echo "  make ui-install               Install npm dependencies in /ui"
+	@echo "  make ui-dev                   Launch Vite dev server for Nocturne React UI (http://127.0.0.1:5173)"
+	@echo "  make ui-build                 Build production bundle in /ui/dist"
 	@echo "  make eval [PACK=t02]          Run the golden evaluation cases (live Gemini calls)"
 	@echo "  make eval-validate [PACK=t02] Validate eval files only (no Gemini calls)"
 	@echo "  make test                     Run fast offline unit tests (pytest)"
@@ -71,6 +75,18 @@ seed: check-venv
 
 dev: check-venv
 	$(ADK) web . --port $(PORT)
+
+ui-api: check-venv
+	$(PYTHON) -m app.ui_server --port $(PORT)
+
+ui-install:
+	cd ui && npm install
+
+ui-dev:
+	cd ui && npm run dev
+
+ui-build:
+	cd ui && npm run build
 
 eval: check-venv
 	@if [ -n "$(PACK)" ]; then \

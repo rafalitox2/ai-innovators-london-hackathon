@@ -28,3 +28,11 @@ agent_engine_deploy_src/
 
 # Local mock state runtime files
 seed_packs/*/.state.json
+seed_packs/*/ui/hero_*.*
+seed_packs/*/ui/preview_*.html
+
+# Nocturne React UI build & dependencies
+ui/node_modules/
+ui/dist/
+ui/*.tsbuildinfo
+

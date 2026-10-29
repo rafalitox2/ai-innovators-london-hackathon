@@ -34,6 +34,15 @@ jobs:
         with:
           python-version: "3.12"
 
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: ui/package-lock.json
+
+      - name: Build Nocturne React UI (/ui -> /ui/dist)
+        run: cd ui && npm ci && npm run build
+
       - name: Install dependencies
         run: make setup
 
@@ -104,6 +113,7 @@ jobs:
             --quiet
           MCP_URL=$(gcloud run services describe t02-dynamic-storefronts-mcp --project="${GOOGLE_CLOUD_PROJECT}" --region="europe-west1" --format="value(status.url)")
           echo "MCP_SERVER_URL=${MCP_URL}" >> "$GITHUB_ENV"
+          curl -fsSL "${MCP_URL}/health" || curl -fsSL "${MCP_URL}/api/health"
 
       - name: Deploy ADK Agent to Vertex AI Agent Runtime (syncs .deployed_agent.json with GCS)
         run: |
