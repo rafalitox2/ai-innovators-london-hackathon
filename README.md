@@ -219,7 +219,21 @@ ai-innovators-london-hackathon/
 
 ---
 
-## 6. Official Documentation Links
+## 6. Our Table's Architecture (T02 — Dynamic Storefronts)
+
+This fork runs **Table 2 — Visual Content Creator & Dynamic Storefronts** (`SEED_PACK=t02`, `seed_packs/t02_dynamic_storefronts`). The animated diagram below traces a real agent turn end to end, in three lanes:
+
+<img src="docs/diagrams/t02_architecture.svg" alt="T02 Dynamic Storefronts — animated component and data-flow architecture diagram: GitHub to GitHub Actions CI to Cloud Build to Vertex AI Agent Runtime; User prompt to LlmAgent expedition_t02 to before_tool_security_callback guardrail to BigQuery read tools and MCP action tools; BigQuery seed_t02 with local CSV fallback, .state.json, UI preview plus hero image, and A2A sync to T01" />
+
+1. **Ship it** — a PR/push triggers **GitHub Actions CI** (`.github/workflows/ci.yml`: `make test` + `make eval-validate`, no GCP credentials); on `main`, **Cloud Build** (`cloudbuild.yaml`) runs the live suite and deploys to **Vertex AI Agent Runtime** (`europe-west1`).
+2. **Run it** — one ADK turn: the `LlmAgent expedition_t02` (`app/agent.py`, Gemini `gemini-3.8-flash`) picks a tool, every call is screened first by the **`before_tool_security_callback`** guardrail (`seed_packs/t02_dynamic_storefronts/guardrails.py`) — it blocks any tool call carrying a prompt-injection marker, and pre-empts `update_promo_banner`'s flat discount cap before the tool runs. The margin-floor cross-check (`compute_max_safe_discount_pct`) and `render_storefront_preview`'s own cap are a second, independent layer one level deeper, inside the tools themselves (`mcp_server.py`) — then the call reaches either the BigQuery read tools or the FastMCP action tools.
+3. **Store & show it** — reads hit `seed_t02` in BigQuery (or the bundled CSV fallback offline); actions persist to `.state.json`, render the storefront preview + hero image into `seed_packs/t02_dynamic_storefronts/ui/`, and `sync_campaign_with_t01` hands off to our Sister Table (**T01**) via the A2A handshake.
+
+If GitHub doesn't animate the diagram in your viewer, open `docs/diagrams/t02_architecture.svg` directly in a browser — it's a self-contained animated SVG (dashed, moving strokes trace a live call; faint dotted strokes trace the offline/fallback path).
+
+---
+
+## 7. Official Documentation Links
 
 - **Google Agent Development Kit (ADK):** [https://adk.dev](https://adk.dev)
   - [ADK Custom & Multi-Agent Orchestration](https://adk.dev/agents/custom-agents/)

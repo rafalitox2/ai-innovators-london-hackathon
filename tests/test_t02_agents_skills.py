@@ -174,8 +174,48 @@ def test_docs_logbook_and_specs_align_with_all_prs() -> None:
         "#14",
         "#15",
         "#16",
+        "#17",
         "before_tool_security_callback",
         "make worktree",
         "make verify",
     ):
         assert expected_token in bitacora, f"BITACORA_T02.md is missing '{expected_token}'"
+
+
+def test_repository_cleaned_to_t02_challenge_and_official_docs() -> None:
+    """Verify non-T02 challenges (T03..T10) are removed and only official + T02 docs remain."""
+    challenges_dir = REPO_ROOT / "challenges"
+    challenge_files = sorted(p.name for p in challenges_dir.glob("*.md"))
+    assert challenge_files == [
+        "README.md",
+        "T02-dynamic_storefronts.md",
+    ], f"challenges/ should only contain README.md and T02-dynamic_storefronts.md, found: {challenge_files}"
+
+    seed_packs_dir = REPO_ROOT / "seed_packs"
+    pack_dirs = sorted(
+        p.name
+        for p in seed_packs_dir.iterdir()
+        if p.is_dir() and not p.name.startswith("__")
+    )
+    assert pack_dirs == [
+        "t00_example",
+        "t01_campaign_orchestrator",
+        "t02_dynamic_storefronts",
+    ], f"seed_packs/ should only retain t00_example, t01_campaign_orchestrator (A2A), and t02_dynamic_storefronts, found: {pack_dirs}"
+
+    env_example = (REPO_ROOT / ".env.example").read_text(encoding="utf-8")
+    assert "SEED_PACK=t02" in env_example, ".env.example must default to SEED_PACK=t02"
+
+    docs_dir = REPO_ROOT / "docs"
+    doc_md_files = sorted(p.name for p in docs_dir.glob("*.md"))
+    assert doc_md_files == [
+        "BITACORA_T02.md",
+        "PHASE1_SPEC.md",
+        "PHASE2_SPEC.md",
+        "PHASE3_SPEC.md",
+        "PITCH_T02.md",
+        "PREWORK.md",
+        "README.md",
+        "STARTER.md",
+    ], f"docs/ must contain only official docs (PREWORK.md, STARTER.md) and T02 docs, found: {doc_md_files}"
+

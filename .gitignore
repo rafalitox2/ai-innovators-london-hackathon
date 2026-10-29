@@ -10,6 +10,9 @@ dist/
 build/
 .pytest_cache/
 .ruff_cache/
+.vscode/
+.idea/
+.DS_Store
 
 # Secrets & local environment
 .env
