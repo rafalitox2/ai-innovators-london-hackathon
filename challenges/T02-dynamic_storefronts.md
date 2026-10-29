@@ -27,6 +27,7 @@
 - `update_promo_banner` (FastMCP stdio tool in `mcp_server.py` & `ACTION_TOOLS` in `tools.py`)
 - `generate_hero_lifestyle_image` (FastMCP multimodal hero lifestyle asset tool in `mcp_server.py` & `ACTION_TOOLS` in `tools.py`)
 - `render_storefront_preview` (FastMCP interactive UI storefront preview tool in `mcp_server.py` & `ACTION_TOOLS` in `tools.py`)
+- `sync_campaign_with_t01` (FastMCP Tribe A2A handshake tool with Table 1 `t01_campaign_orchestrator` in `mcp_server.py` & `ACTION_TOOLS` in `tools.py`)
 
 ## Minimum Playable Scope (~3.5 Hours Build Time)
 Build an ADK agent connected to `seed_t02` and the `t02_dynamic_storefronts` MCP server that: (1) queries catalog products by category, style theme, and stock level, (2) analyzes storefront experiment bounce and conversion rates by audience segment, and (3) publishes updated layouts, visual asset render jobs, and promo banners within discount policy limits.

@@ -15,6 +15,7 @@ from seed_packs.t02_dynamic_storefronts.mcp_server import (
     publish_storefront_layout,
     queue_visual_asset_render,
     render_storefront_preview,
+    sync_campaign_with_t01,
     update_promo_banner,
 )
 
@@ -433,4 +434,5 @@ __all__ = [
     "update_promo_banner",
     "generate_hero_lifestyle_image",
     "render_storefront_preview",
+    "sync_campaign_with_t01",
 ]

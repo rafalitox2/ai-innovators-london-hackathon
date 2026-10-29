@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>AtelierNova Storefront Preview — SEG-001</title>
+  <style>
+    :root {
+      --bg-dark: #0f172a;
+      --card-bg: #1e293b;
+      --accent: #38bdf8;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --border: #334155;
+      --badge-bg: #064e3b;
+      --badge-text: #6ee7b7;
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      margin: 0;
+      background: var(--bg-dark);
+      color: var(--text-main);
+      padding: 32px;
+    }
+    .container { max-width: 1120px; margin: 0 auto; }
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      font-size: 13px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+    .promo {
+      background: linear-gradient(90deg, #38bdf8, #818cf8);
+      color: #0f172a;
+      padding: 12px 20px;
+      border-radius: 10px;
+      font-weight: 700;
+      margin-bottom: 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .hero {
+      background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+      padding: 44px;
+      border-radius: 20px;
+      margin-bottom: 28px;
+      border: 1px solid var(--border);
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.4);
+    }
+    .hero small {
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      font-weight: 600;
+    }
+    .hero h1 {
+      font-size: 38px;
+      margin: 12px 0 0 0;
+      line-height: 1.2;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+    }
+    .sku-card {
+      background: var(--card-bg);
+      padding: 24px;
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      transition: transform 0.15s ease, border-color 0.15s ease;
+    }
+    .sku-card:hover {
+      transform: translateY(-3px);
+      border-color: var(--accent);
+    }
+    .sku-badge {
+      font-size: 12px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .sku-card h3 { margin: 10px 0 8px 0; font-size: 20px; }
+    .sku-card p { color: var(--text-muted); font-size: 14px; line-height: 1.5; }
+    .price-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 16px;
+    }
+    .price-promo { font-size: 22px; font-weight: 700; color: var(--accent); }
+    .price-base { text-decoration: line-through; color: #64748b; font-size: 14px; }
+    .margin-pill {
+      margin-left: auto;
+      background: var(--badge-bg);
+      color: var(--badge-text);
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="topbar">
+      <span>AtelierNova Home &amp; Lifestyle • Dynamic Storefront Engine</span>
+      <span>URI: ui://storefront-preview/SEG-001</span>
+    </div>
+    <div class="promo">
+      <span>London Autumn Edit (15% OFF)</span>
+      <span>Policy Guardrail Verified &le;30%</span>
+    </div>
+    <div class="hero">
+      <small>SEG-001 • UK_London • Theme: Nordic_Minimal</small>
+      <h1>Nordic Comfort for London Living</h1>
+    </div>
+    <div class="grid">
+      <div class="sku-card"><div class="sku-badge">SKU-0001 • Modular_Sofas</div><h3>Atelier Nordic Modular Sofas #1</h3><p>Handcrafted Nordic_Minimal Modular_Sofas piece engineered for modern European living spaces.</p><div class="price-row"><span class="price-promo">€215.20</span><span class="price-base">€253.18</span><span class="margin-pill">Net Margin 22.0%</span></div></div><div class="sku-card"><div class="sku-badge">SKU-0006 • Modular_Sofas</div><h3>Atelier Nordic Modular Sofas #6</h3><p>Handcrafted Nordic_Minimal Modular_Sofas piece engineered for modern European living spaces.</p><div class="price-row"><span class="price-promo">€488.62</span><span class="price-base">€574.85</span><span class="margin-pill">Net Margin 28.4%</span></div></div>
+    </div>
+  </div>
+</body>
+</html>
