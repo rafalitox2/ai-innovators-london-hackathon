@@ -20,14 +20,6 @@ if str(_STARTER_ROOT) not in sys.path:
 EXPECTED_PACKS = [
     ("t01", 1, "t01_campaign_orchestrator"),
     ("t02", 2, "t02_dynamic_storefronts"),
-    ("t03", 3, "t03_catalog_discovery"),
-    ("t04", 4, "t04_b2b_sourcing"),
-    ("t05", 5, "t05_financial_auditor"),
-    ("t06", 6, "t06_climate_risk"),
-    ("t07", 7, "t07_self_healing_ops"),
-    ("t08", 8, "t08_travel_concierge"),
-    ("t09", 9, "t09_mobility_energy"),
-    ("t10", 10, "t10_retention_matcher"),
 ]
 
 REQUIRED_YAML_KEYS = {
@@ -46,14 +38,6 @@ REQUIRED_YAML_KEYS = {
 EXPECTED_TRIBES = {
     1: "Creative AI & AdTech",
     2: "Creative AI & AdTech",
-    3: "Content Intelligence",
-    4: "Content Intelligence",
-    5: "FinTech & Analytics",
-    6: "FinTech & Analytics",
-    7: "Cross-functional Ops & CX",
-    8: "Cross-functional Ops & CX",
-    9: "Smart Mobility & UX",
-    10: "Smart Mobility & UX",
 }
 
 # Terms that must never appear in participant-facing pack docs.
@@ -373,7 +357,7 @@ def main() -> int:
             print(f"  - {err}")
         return 1
 
-    print("\nAll 10 Seed Packs (t01..t10) + README.md passed validation!")
+    print("\nAll active Seed Packs (t01, t02) + README.md passed validation!")
     return 0
 
 
