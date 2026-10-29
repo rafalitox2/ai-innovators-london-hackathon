@@ -444,11 +444,102 @@ def recommend_storefront_optimization(
         return json.dumps({"status": "ERROR", "error": str(exc)})
 
 
+def query_merchandising_knowledge_graph(
+    segment_id: str = "SEG-001",
+    max_bundle_size: int = 3,
+    min_stock: int = 15,
+) -> str:
+    """Query the AtelierNova Merchandising Knowledge Graph for a segment to traverse style affinities and recommend a safe cross-category bundle.
+
+    Args:
+        segment_id: Target audience segment identifier (e.g. 'SEG-001', 'SEG-002').
+        max_bundle_size: Maximum number of distinct-category SKUs in the recommended cross-sell bundle (1 to 5, default 3).
+        min_stock: Minimum available inventory units required for every SKU node in the bundle (default 15).
+
+    Returns:
+        JSON string containing typed knowledge graph nodes, directed relationship edges, quarantined SKUs, and a cross-category bundle with safe discount guardrails.
+    """
+    try:
+        from seed_packs.t02_dynamic_storefronts.knowledge_graph import (
+            build_segment_knowledge_graph,
+        )
+
+        seg_raw = (segment_id or "SEG-001").strip()
+        if contains_injection_marker(seg_raw):
+            return json.dumps({
+                "status": "REJECTED",
+                "error": "Knowledge graph query rejected: segment_id contains an untrusted prompt-injection marker.",
+            })
+
+        seg_clean = seg_raw.upper()
+        bundle_cap = max(1, min(int(max_bundle_size), 5))
+        stock_floor = max(0, int(min_stock))
+
+        project, dataset = _resolve_project_and_dataset()
+        use_offline = os.environ.get("SEED_OFFLINE_MODE", "").lower() in {"1", "true", "yes"}
+        fallback_error: str | None = None
+        if project and not use_offline:
+            try:
+                client = bigquery.Client(project=project)
+                seg_sql = f"""
+                    SELECT segment_id, segment_name, region, preferred_style, device_type,
+                           avg_order_value_eur, conversion_rate_pct
+                    FROM `{project}.{dataset}.audience_segments`
+                    WHERE LOWER(segment_id) = LOWER(@seg_id)
+                """
+                seg_cfg = bigquery.QueryJobConfig(
+                    query_parameters=[bigquery.ScalarQueryParameter("seg_id", "STRING", seg_clean)]
+                )
+                seg_rows = [dict(r.items()) for r in client.query(seg_sql, job_config=seg_cfg).result()]
+
+                prod_sql = f"""
+                    SELECT sku_id, product_name, category, style_theme, base_price_eur,
+                           margin_pct, stock_qty, description
+                    FROM `{project}.{dataset}.products_catalog`
+                """
+                prod_rows = [dict(r.items()) for r in client.query(prod_sql).result()]
+
+                exp_sql = f"""
+                    SELECT experiment_id, segment_id, sku_id, layout_variant, bounce_rate_pct, purchases
+                    FROM `{project}.{dataset}.storefront_experiments`
+                    WHERE LOWER(segment_id) = LOWER(@seg_id)
+                """
+                exp_rows = [dict(r.items()) for r in client.query(exp_sql, job_config=seg_cfg).result()]
+
+                result = build_segment_knowledge_graph(
+                    segment_id=seg_clean,
+                    segments=seg_rows,
+                    products=prod_rows,
+                    experiments=exp_rows,
+                    max_bundle_size=bundle_cap,
+                    min_stock=stock_floor,
+                    source="bigquery_knowledge_graph",
+                )
+                return json.dumps(result)
+            except Exception as bq_exc:
+                fallback_error = _bq_error_hint(bq_exc)
+
+        result = build_segment_knowledge_graph(
+            segment_id=seg_clean,
+            segments=_read_local_csv("audience_segments"),
+            products=_read_local_csv("products_catalog"),
+            experiments=_read_local_csv("storefront_experiments"),
+            max_bundle_size=bundle_cap,
+            min_stock=stock_floor,
+            source="local_csv_knowledge_graph",
+            fallback_reason=fallback_error or _offline_reason(project),
+        )
+        return json.dumps(result)
+    except Exception as exc:
+        return json.dumps({"status": "ERROR", "error": str(exc)})
+
+
 TOOLS = [
     find_catalog_products,
     get_storefront_performance,
     get_audience_segments,
     recommend_storefront_optimization,
+    query_merchandising_knowledge_graph,
 ]
 
 BEFORE_TOOL_CALLBACK = before_tool_security_callback
@@ -461,6 +552,7 @@ __all__ = [
     "get_storefront_performance",
     "get_audience_segments",
     "recommend_storefront_optimization",
+    "query_merchandising_knowledge_graph",
     "publish_storefront_layout",
     "queue_visual_asset_render",
     "update_promo_banner",
