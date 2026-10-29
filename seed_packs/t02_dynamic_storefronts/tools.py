@@ -11,6 +11,7 @@ from typing import Any
 from google.cloud import bigquery
 from seed_packs.t02_dynamic_storefronts.guardrails import (
     INJECTION_REGEX_PATTERN,
+    MARGIN_SAFETY_BUFFER_PCT,
     before_tool_security_callback,
     compute_max_safe_discount_pct,
     contains_injection_marker,
@@ -497,8 +498,19 @@ def query_merchandising_knowledge_graph(
                     SELECT sku_id, product_name, category, style_theme, base_price_eur,
                            margin_pct, stock_qty, description
                     FROM `{project}.{dataset}.products_catalog`
+                    WHERE stock_qty >= @min_stock
+                      AND margin_pct > @min_margin
+                      AND LOWER(sku_id) != 'sku-0017'
+                      AND NOT REGEXP_CONTAINS(LOWER(IFNULL(description, '')), @injection_pattern)
                 """
-                prod_rows = [dict(r.items()) for r in client.query(prod_sql).result()]
+                prod_cfg = bigquery.QueryJobConfig(
+                    query_parameters=[
+                        bigquery.ScalarQueryParameter("min_stock", "INT64", stock_floor),
+                        bigquery.ScalarQueryParameter("min_margin", "FLOAT64", MARGIN_SAFETY_BUFFER_PCT),
+                        bigquery.ScalarQueryParameter("injection_pattern", "STRING", INJECTION_REGEX_PATTERN),
+                    ]
+                )
+                prod_rows = [dict(r.items()) for r in client.query(prod_sql, job_config=prod_cfg).result()]
 
                 exp_sql = f"""
                     SELECT experiment_id, segment_id, sku_id, layout_variant, bounce_rate_pct, purchases

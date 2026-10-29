@@ -9,6 +9,13 @@ Models a property graph connecting:
 - `HERO_SKU` -> `COMPLEMENTS_CATEGORY` -> `COMPLEMENTARY_SKU` (distinct product categories)
 - `HERO_SKU` -> `GUARDED_BY_MARGIN` -> `POLICY` (`<= 30%` max automated discount cap)
 - `SEGMENT` -> `SYNCS_WITH_A2A` -> `SISTER_CAMPAIGN` (`expedition_t01_campaign_orchestrator`)
+
+Node Identity Convention:
+- Domain entities use their primary catalog/table identifiers as `id` (`SEG-xxx`, `SKU-xxxx`, `EXP-xxxx`)
+  for direct cross-tool correlation, while contextual/policy nodes carry explicit prefixes (`REGION:...`,
+  `STYLE:...`, `POLICY:...`, `AGENT:...`).
+- Every node also exposes `"namespace"` (from `NODE_ID_NAMESPACES`) and a globally uniform
+  `"canonical_uri"` (`urn:ateliernova:kg:<namespace>:<id>`).
 """
 
 from __future__ import annotations
@@ -16,6 +23,7 @@ from __future__ import annotations
 from typing import Any
 
 from seed_packs.t02_dynamic_storefronts.guardrails import (
+    MARGIN_SAFETY_BUFFER_PCT,
     MAX_DISCOUNT_PCT,
     compute_max_safe_discount_pct,
     contains_injection_marker,
@@ -23,6 +31,36 @@ from seed_packs.t02_dynamic_storefronts.guardrails import (
 )
 
 QUARANTINED_SKU_IDS = ("SKU-0017",)
+MIN_MARGIN_BUFFER_PCT = 10.0
+
+NODE_ID_NAMESPACES: dict[str, str] = {
+    "SEGMENT": "SEGMENT",
+    "REGION": "REGION",
+    "STYLE_THEME": "STYLE",
+    "HERO_SKU": "SKU",
+    "COMPLEMENTARY_SKU": "SKU",
+    "POLICY": "POLICY",
+    "SISTER_CAMPAIGN": "AGENT",
+    "EXPERIMENT": "EXPERIMENT",
+}
+
+
+def _make_node(
+    node_id: str,
+    node_type: str,
+    label: str,
+    properties: dict[str, Any],
+) -> dict[str, Any]:
+    namespace = NODE_ID_NAMESPACES.get(node_type, node_type)
+    clean_suffix = node_id.split(":", 1)[1] if ":" in node_id else node_id
+    return {
+        "id": node_id,
+        "type": node_type,
+        "namespace": namespace,
+        "canonical_uri": f"urn:ateliernova:kg:{namespace.lower()}:{clean_suffix}",
+        "label": label,
+        "properties": properties,
+    }
 
 STYLE_AFFINITY_GRAPH: dict[str, list[tuple[str, float, str]]] = {
     "Nordic_Minimal": [
@@ -102,6 +140,7 @@ def build_segment_knowledge_graph(
     conv_rate = float(seg_row.get("conversion_rate_pct", 0.0) or 0.0)
 
     quarantined_skus: list[str] = []
+    low_margin_excluded_skus: list[str] = []
     safe_products: list[dict[str, Any]] = []
     for p in products:
         sku_id = str(p.get("sku_id", "")).strip().upper()
@@ -110,6 +149,11 @@ def build_segment_knowledge_graph(
                 quarantined_skus.append(sku_id)
             continue
         if int(p.get("stock_qty", 0) or 0) < stock_floor:
+            continue
+        item_margin = float(p.get("margin_pct", 0.0) or 0.0)
+        if item_margin <= MARGIN_SAFETY_BUFFER_PCT or item_margin <= MIN_MARGIN_BUFFER_PCT:
+            if sku_id and sku_id not in low_margin_excluded_skus:
+                low_margin_excluded_skus.append(sku_id)
             continue
         safe_products.append(p)
 
@@ -139,7 +183,10 @@ def build_segment_knowledge_graph(
         return {
             "status": "NOT_FOUND",
             "segment_id": seg_clean,
-            "error": f"No safe in-stock SKUs (min_stock={stock_floor}) found for segment '{seg_clean}'.",
+            "error": (
+                f"No safe in-stock SKUs (min_stock={stock_floor}, margin_pct>{MARGIN_SAFETY_BUFFER_PCT}) "
+                f"found for segment '{seg_clean}'."
+            ),
         }
 
     hero_raw = hero_candidates[0]
@@ -156,51 +203,51 @@ def build_segment_knowledge_graph(
     }
 
     nodes: list[dict[str, Any]] = [
-        {
-            "id": seg_clean,
-            "type": "SEGMENT",
-            "label": segment_name,
-            "properties": {
+        _make_node(
+            node_id=seg_clean,
+            node_type="SEGMENT",
+            label=segment_name,
+            properties={
                 "region": region,
                 "preferred_style": preferred_style,
                 "device_type": device_type,
                 "avg_order_value_eur": aov_eur,
                 "conversion_rate_pct": conv_rate,
             },
-        },
-        {
-            "id": f"REGION:{region}",
-            "type": "REGION",
-            "label": region,
-            "properties": {"market": region},
-        },
-        {
-            "id": f"STYLE:{preferred_style}",
-            "type": "STYLE_THEME",
-            "label": preferred_style,
-            "properties": {"role": "primary_segment_style"},
-        },
-        {
-            "id": hero_node_data["sku_id"],
-            "type": "HERO_SKU",
-            "label": hero_node_data["product_name"],
-            "properties": hero_node_data,
-        },
-        {
-            "id": f"POLICY:MAX_DISCOUNT_{MAX_DISCOUNT_PCT}_PCT",
-            "type": "POLICY",
-            "label": f"Max Automated Discount <= {MAX_DISCOUNT_PCT}%",
-            "properties": {"max_discount_pct": MAX_DISCOUNT_PCT},
-        },
-        {
-            "id": "AGENT:expedition_t01_campaign_orchestrator",
-            "type": "SISTER_CAMPAIGN",
-            "label": "Table 1 Autonomous Creative Campaign Orchestrator",
-            "properties": {
+        ),
+        _make_node(
+            node_id=f"REGION:{region}",
+            node_type="REGION",
+            label=region,
+            properties={"market": region},
+        ),
+        _make_node(
+            node_id=f"STYLE:{preferred_style}",
+            node_type="STYLE_THEME",
+            label=preferred_style,
+            properties={"role": "primary_segment_style"},
+        ),
+        _make_node(
+            node_id=hero_node_data["sku_id"],
+            node_type="HERO_SKU",
+            label=hero_node_data["product_name"],
+            properties=hero_node_data,
+        ),
+        _make_node(
+            node_id=f"POLICY:MAX_DISCOUNT_{MAX_DISCOUNT_PCT}_PCT",
+            node_type="POLICY",
+            label=f"Max Automated Discount <= {MAX_DISCOUNT_PCT}%",
+            properties={"max_discount_pct": MAX_DISCOUNT_PCT},
+        ),
+        _make_node(
+            node_id="AGENT:expedition_t01_campaign_orchestrator",
+            node_type="SISTER_CAMPAIGN",
+            label="Table 1 Autonomous Creative Campaign Orchestrator",
+            properties={
                 "tribe": "Creative AI & AdTech",
                 "a2a_handshake": "STOREFRONT_TO_CAMPAIGN_SYNC",
             },
-        },
+        ),
     ]
 
     edges: list[dict[str, Any]] = [
@@ -248,17 +295,19 @@ def build_segment_knowledge_graph(
         if not exp_id:
             continue
         bounce_val = float(exp.get("bounce_rate_pct", 0.0) or 0.0)
-        nodes.append({
-            "id": exp_id,
-            "type": "EXPERIMENT",
-            "label": f"{exp_id} ({exp.get('layout_variant', 'Grid')})",
-            "properties": {
-                "tested_sku_id": str(exp.get("sku_id", "")),
-                "layout_variant": str(exp.get("layout_variant", "")),
-                "bounce_rate_pct": bounce_val,
-                "purchases": int(exp.get("purchases", 0) or 0),
-            },
-        })
+        nodes.append(
+            _make_node(
+                node_id=exp_id,
+                node_type="EXPERIMENT",
+                label=f"{exp_id} ({exp.get('layout_variant', 'Grid')})",
+                properties={
+                    "tested_sku_id": str(exp.get("sku_id", "")),
+                    "layout_variant": str(exp.get("layout_variant", "")),
+                    "bounce_rate_pct": bounce_val,
+                    "purchases": int(exp.get("purchases", 0) or 0),
+                },
+            )
+        )
         edges.append({
             "source": seg_clean,
             "target": exp_id,
@@ -270,23 +319,14 @@ def build_segment_knowledge_graph(
     complementary_skus: list[dict[str, Any]] = []
     seen_categories: set[str] = {hero_node_data["category"].lower()}
     seen_skus: set[str] = {hero_node_data["sku_id"].upper()}
+    added_style_nodes: set[str] = {preferred_style}
 
-    affinities = STYLE_AFFINITY_GRAPH.get(preferred_style, [])
-    for comp_style, affinity_score, rationale in affinities:
-        if len(complementary_skus) + 1 >= bundle_cap:
-            break
-        candidates = by_style.get(comp_style, [])
-        chosen = next(
-            (
-                c
-                for c in candidates
-                if str(c.get("sku_id", "")).strip().upper() not in seen_skus
-                and str(c.get("category", "")).strip().lower() not in seen_categories
-            ),
-            None,
-        )
-        if chosen is None:
-            continue
+    def _attach_complementary_sku(
+        chosen: dict[str, Any],
+        comp_style: str,
+        affinity_score: float,
+        rationale: str,
+    ) -> None:
         c_margin = float(chosen.get("margin_pct", 0.0) or 0.0)
         comp_item = {
             "sku_id": str(chosen["sku_id"]).strip(),
@@ -304,25 +344,32 @@ def build_segment_knowledge_graph(
         seen_skus.add(comp_item["sku_id"].upper())
         seen_categories.add(comp_item["category"].lower())
 
-        nodes.append({
-            "id": f"STYLE:{comp_style}",
-            "type": "STYLE_THEME",
-            "label": comp_style,
-            "properties": {"role": "complementary_style", "affinity_score": affinity_score},
-        })
-        nodes.append({
-            "id": comp_item["sku_id"],
-            "type": "COMPLEMENTARY_SKU",
-            "label": comp_item["product_name"],
-            "properties": comp_item,
-        })
-        edges.append({
-            "source": f"STYLE:{preferred_style}",
-            "target": f"STYLE:{comp_style}",
-            "relation": "STYLE_AFFINITY",
-            "weight": affinity_score,
-            "metadata": {"rationale": rationale},
-        })
+        if comp_style not in added_style_nodes:
+            added_style_nodes.add(comp_style)
+            nodes.append(
+                _make_node(
+                    node_id=f"STYLE:{comp_style}",
+                    node_type="STYLE_THEME",
+                    label=comp_style,
+                    properties={"role": "complementary_style", "affinity_score": affinity_score},
+                )
+            )
+            edges.append({
+                "source": f"STYLE:{preferred_style}",
+                "target": f"STYLE:{comp_style}",
+                "relation": "STYLE_AFFINITY",
+                "weight": affinity_score,
+                "metadata": {"rationale": rationale},
+            })
+
+        nodes.append(
+            _make_node(
+                node_id=comp_item["sku_id"],
+                node_type="COMPLEMENTARY_SKU",
+                label=comp_item["product_name"],
+                properties=comp_item,
+            )
+        )
         edges.append({
             "source": hero_node_data["sku_id"],
             "target": comp_item["sku_id"],
@@ -334,6 +381,48 @@ def build_segment_knowledge_graph(
                 "rationale": rationale,
             },
         })
+
+    affinities = STYLE_AFFINITY_GRAPH.get(preferred_style, [])
+    # Pass 1: 1 complementary SKU per affine style with a distinct category
+    for comp_style, affinity_score, rationale in affinities:
+        if len(complementary_skus) + 1 >= bundle_cap:
+            break
+        candidates = by_style.get(comp_style, [])
+        chosen = next(
+            (
+                c
+                for c in candidates
+                if str(c.get("sku_id", "")).strip().upper() not in seen_skus
+                and str(c.get("category", "")).strip().lower() not in seen_categories
+            ),
+            None,
+        )
+        if chosen is not None:
+            _attach_complementary_sku(chosen, comp_style, affinity_score, rationale)
+
+    # Pass 2: If bundle_cap is still not reached, scan affine + primary styles for remaining distinct categories,
+    # then fall back to remaining highest-margin unseen SKUs so max_bundle_size is honored whenever inventory allows.
+    if len(complementary_skus) + 1 < bundle_cap:
+        style_search_order = [
+            *affinities,
+            (preferred_style, 1.0, f"Same-style high-margin reinforcement within {preferred_style}."),
+        ]
+        for require_distinct_category in (True, False):
+            if len(complementary_skus) + 1 >= bundle_cap:
+                break
+            for comp_style, affinity_score, rationale in style_search_order:
+                if len(complementary_skus) + 1 >= bundle_cap:
+                    break
+                for cand in by_style.get(comp_style, []):
+                    if len(complementary_skus) + 1 >= bundle_cap:
+                        break
+                    cand_sku = str(cand.get("sku_id", "")).strip().upper()
+                    cand_cat = str(cand.get("category", "")).strip().lower()
+                    if cand_sku in seen_skus:
+                        continue
+                    if require_distinct_category and cand_cat in seen_categories:
+                        continue
+                    _attach_complementary_sku(cand, comp_style, affinity_score, rationale)
 
     all_bundle_items = [hero_node_data, *complementary_skus]
     bundle_sku_ids = [item["sku_id"] for item in all_bundle_items]
@@ -355,6 +444,7 @@ def build_segment_knowledge_graph(
             "node_count": len(nodes),
             "edge_count": len(edges),
             "quarantined_skus": quarantined_skus,
+            "low_margin_excluded_skus": low_margin_excluded_skus,
             "nodes": nodes,
             "edges": edges,
         },
