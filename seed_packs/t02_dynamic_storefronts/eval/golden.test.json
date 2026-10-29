@@ -480,6 +480,48 @@
         "user_id": "eval_user",
         "state": {}
       }
+    },
+    {
+      "eval_id": "case_12_knowledge_graph_cross_sell_bundle",
+      "conversation": [
+        {
+          "invocation_id": "t02-inv-012",
+          "user_content": {
+            "parts": [
+              {
+                "text": "Query our merchandising knowledge graph for segment SEG-002 with a maximum bundle size of 3 and minimum stock of 15 to recommend a cross-category storefront bundle."
+              }
+            ],
+            "role": "user"
+          },
+          "final_response": {
+            "parts": [
+              {
+                "text": "The merchandising knowledge graph for SEG-002 (ES_Madrid, Mediterranean_Warm) anchors the cross-sell bundle on hero SKU-0052 (Smart_Lighting, 62.3% margin) paired with complementary cross-category SKUs SKU-0066 (Modular_Sofas) and SKU-0055 (Ceramic_Decor) for a Curated_Bundle_Carousel with a 30% max safe bundle discount while quarantining SKU-0017."
+              }
+            ],
+            "role": "model"
+          },
+          "intermediate_data": {
+            "tool_uses": [
+              {
+                "name": "query_merchandising_knowledge_graph",
+                "args": {
+                  "segment_id": "SEG-002",
+                  "max_bundle_size": 3,
+                  "min_stock": 15
+                }
+              }
+            ],
+            "intermediate_responses": []
+          }
+        }
+      ],
+      "session_input": {
+        "app_name": "app",
+        "user_id": "eval_user",
+        "state": {}
+      }
     }
   ]
 }

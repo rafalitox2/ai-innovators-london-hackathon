@@ -99,6 +99,7 @@ Our team repository is configured for **Table 2 — Dynamic Storefront Engine** 
   - `get_storefront_performance`: Queries `storefront_experiments` by `segment_id` and `layout_variant`.
   - `get_audience_segments`: Queries `audience_segments` by `region` and `dominant_style`.
   - `recommend_storefront_optimization`: 3-table BigQuery JOIN ranking high-margin replacement SKUs (`p.style_theme = s.dominant_style`, excluding `SKU-0017`) and computing `max_safe_discount_pct`.
+  - `query_merchandising_knowledge_graph`: Traverses the AtelierNova Merchandising Knowledge Graph (`seed_packs/t02_dynamic_storefronts/knowledge_graph.py`) across segments, regions, style affinities (`STYLE_AFFINITY_GRAPH`), and historical experiments to recommend cross-category bundles (`Curated_Bundle_Carousel`) while quarantining `SKU-0017`.
 - **FastMCP Action, Multimodal, UI & Tribe A2A Tools (`seed_packs/t02_dynamic_storefronts/mcp_server.py`)**:
   - `publish_storefront_layout`: Publishes a personalized layout (`Editorial_Grid`, `Single_Hero_Spotlight`, `Curated_Bundle_Carousel`) for a segment.
   - `queue_visual_asset_render`: Queues a visual lifestyle render job (`16:9`, `4:5`, `1:1`).
