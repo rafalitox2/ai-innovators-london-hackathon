@@ -8,8 +8,9 @@ All agents and contributors working on **Table 2 — Dynamic Storefront Engine**
 
 ## 1. Environment & Model Configuration
 - **No Hardcoded Model Names**: Never hardcode Gemini model strings in Python source files (`app/`, `seed_packs/`).
-  - Read the primary reasoning model via `os.environ.get("GEMINI_MODEL")` (configured as `gemini-3.0-flash` in `.env`, `pack.yaml`, and `cloudbuild.yaml`).
-  - Read the multimodal image generation model via `os.environ.get("GEMINI_IMAGE_MODEL", "gemini-3.1-flash-image")` in `generate_hero_lifestyle_image`.
+  - Read the primary reasoning model via `os.environ.get("GEMINI_MODEL")` (configured as `gemini-3.8-flash` in `.env`, `pack.yaml`, and `cloudbuild.yaml`).
+  - Read the multimodal image generation model via `os.environ.get("GEMINI_IMAGE_MODEL")` in `generate_hero_lifestyle_image`.
+  - Read the ultra-low-latency open-weights copy/tagging model via `os.environ.get("GEMMA_MODEL")` (configured as `gemma-3-27b-it` in `.env.example` and `deploy/deploy.py`).
 - **Region Split**:
   - `GOOGLE_CLOUD_LOCATION=global` for Gemini 3 model endpoints (`google-genai`).
   - `AGENT_RUNTIME_LOCATION=europe-west1` for Vertex AI Agent Runtime (`agent_engines`).
@@ -17,7 +18,7 @@ All agents and contributors working on **Table 2 — Dynamic Storefront Engine**
 
 ## 2. ADK Prompt & Tool Contract Invariants
 - **No Raw `{curly_braces}` in System Instructions**: ADK interpolates `{var}` placeholders against `session.state` and raises `KeyError` at turn time if unset. Never include raw `{...}` or JSON examples with braces inside `app/agent.py` or `pack.yaml` `instruction_addon`.
-- **Simple Scalar Signatures & Structured JSON Return**: Every ADK/MCP tool function must use simple scalar parameters (`str`, `int`, `float`, `bool`) with Google-style `Args:` docstrings and return a `json.dumps(..., indent=2)` string with a top-level `"status"` key (`"SUCCESS"`, `"REJECTED_POLICY_CAP"`, `"REJECTED_MARGIN_FLOOR"`, `"NOT_FOUND"`, or `"ERROR"`). Tools must never raise unhandled exceptions to the LLM.
+- **Simple Scalar Signatures & Structured JSON Return**: Every ADK/MCP tool function must use simple scalar parameters (`str`, `int`, `float`, `bool`) with Google-style `Args:` docstrings and return a `json.dumps(..., indent=2)` string with a top-level `"status"` key (`"SUCCESS"`, `"STORED"`, `"REJECTED"`, `"REJECTED_POLICY_CAP"`, `"REJECTED_MARGIN_FLOOR"`, `"REJECTED_MARGIN_POLICY"`, `"NOT_FOUND"`, or `"ERROR"`). Tools must never raise unhandled exceptions to the LLM.
 - **`MCP_TOOLS` Export Parity**: Every `@mcp.tool()` registered in `seed_packs/t02_dynamic_storefronts/mcp_server.py` MUST also be listed in `MCP_TOOLS` so `app/loader.py` can bind it in-process when `USE_MCP_STDIO=0` on Vertex AI Agent Runtime.
 
 ## 3. Merchandising & Security Guardrails

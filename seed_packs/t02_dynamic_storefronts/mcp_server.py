@@ -17,6 +17,7 @@ from seed_packs.t02_dynamic_storefronts.guardrails import (
     MARGIN_SAFETY_BUFFER_PCT,
     MAX_DISCOUNT_PCT,
     compute_max_safe_discount_pct,
+    contains_injection_marker,
     sanitize_description,
 )
 
@@ -26,6 +27,7 @@ _PACK_DIR = Path(__file__).resolve().parent
 _DATA_DIR = _PACK_DIR / "data"
 _DEFAULT_STATE_PATH = _PACK_DIR / ".state.json"
 _FALLBACK_STATE_PATH = Path("/tmp/t02_dynamic_storefronts_state.json")
+_GCS_STATE_BLOB_PATH = "t02_dynamic_storefronts/state.json"
 _sanitize_text = sanitize_description
 
 
@@ -37,6 +39,27 @@ def _read_csv_rows(name: str) -> list[dict[str, Any]]:
         return list(csv.DictReader(fp))
 
 
+def _resolve_gcs_bucket_name() -> tuple[str, str]:
+    """Return `(project_id, bucket_name)` when GCS state sync is active, or `('', '')`."""
+    use_offline = os.environ.get("SEED_OFFLINE_MODE", "").lower() in {"1", "true", "yes"}
+    sync_enabled = (
+        os.environ.get("AGENT_RUNTIME_DEPLOY") == "1"
+        or os.environ.get("T02_ENABLE_GCS_STATE") == "1"
+    )
+    if use_offline or not sync_enabled:
+        return "", ""
+    project = (
+        os.environ.get("GOOGLE_CLOUD_PROJECT")
+        or os.environ.get("AGENT_ENGINE_PROJECT")
+        or ""
+    ).strip()
+    raw_bucket = (os.environ.get("STAGING_BUCKET") or "").strip()
+    if not raw_bucket and project:
+        raw_bucket = f"{project}-hackathon-staging"
+    bucket_name = raw_bucket.removeprefix("gs://").strip("/")
+    return project, bucket_name
+
+
 def _load_state() -> dict[str, Any]:
     for path in (_DEFAULT_STATE_PATH, _FALLBACK_STATE_PATH):
         if path.exists():
@@ -44,6 +67,17 @@ def _load_state() -> dict[str, Any]:
                 return json.loads(path.read_text(encoding="utf-8"))
             except Exception:
                 continue
+    project, bucket_name = _resolve_gcs_bucket_name()
+    if bucket_name:
+        try:
+            from google.cloud import storage
+
+            client = storage.Client(project=project or None)
+            blob = client.bucket(bucket_name).blob(_GCS_STATE_BLOB_PATH)
+            if blob.exists():
+                return json.loads(blob.download_as_text(encoding="utf-8"))
+        except Exception:
+            pass
     return {
         "published_layouts": [],
         "render_queue": [],
@@ -54,13 +88,27 @@ def _load_state() -> dict[str, Any]:
 
 def _save_state(state: dict[str, Any]) -> str:
     payload = json.dumps(state, indent=2)
+    local_written = ""
     for path in (_DEFAULT_STATE_PATH, _FALLBACK_STATE_PATH):
         try:
             path.write_text(payload, encoding="utf-8")
-            return str(path)
+            local_written = str(path)
+            break
         except OSError:
             continue
-    return "memory-only"
+    project, bucket_name = _resolve_gcs_bucket_name()
+    if bucket_name:
+        try:
+            from google.cloud import storage
+
+            client = storage.Client(project=project or None)
+            blob = client.bucket(bucket_name).blob(_GCS_STATE_BLOB_PATH)
+            blob.upload_from_string(payload, content_type="application/json")
+            gcs_uri = f"gs://{bucket_name}/{_GCS_STATE_BLOB_PATH}"
+            return f"{gcs_uri}+{local_written}" if local_written else gcs_uri
+        except Exception:
+            pass
+    return local_written or "memory-only"
 
 
 @mcp.tool()
@@ -642,6 +690,12 @@ def save_merchandising_memory(
                 "error": "segment_id, memory_key, and memory_note must all be non-empty.",
             })
 
+        if any(contains_injection_marker(v) for v in (seg_clean, key_clean, note_clean, author_clean)):
+            return json.dumps({
+                "status": "REJECTED",
+                "error": "Memory rejected: input contains an untrusted prompt-injection marker.",
+            })
+
         state = _load_state()
         memories: list[dict[str, Any]] = state.setdefault("memories", [])
         now_iso = datetime.now(timezone.utc).isoformat()
@@ -768,6 +822,13 @@ def route_merchandising_task(
                 "supported_task_types": SUPPORTED_TASK_TYPES,
             })
 
+        if contains_injection_marker(clean_prompt):
+            return json.dumps({
+                "status": "REJECTED",
+                "error": "Routing rejected: prompt_text contains an untrusted prompt-injection marker.",
+                "supported_task_types": SUPPORTED_TASK_TYPES,
+            })
+
         decision = select_model_for_task(task_type)
         if decision is None:
             return json.dumps({
@@ -778,7 +839,7 @@ def route_merchandising_task(
 
         seg_clean = _sanitize_text(segment_id or "SEG-001").strip() or "SEG-001"
         theme_clean = _sanitize_text(style_theme or "Nordic_Minimal").strip() or "Nordic_Minimal"
-        output_text, exec_mode = execute_routed_task(
+        output_text, exec_mode, fallback_reason = execute_routed_task(
             decision=decision,
             prompt_text=clean_prompt,
             segment_id=seg_clean,
@@ -788,7 +849,7 @@ def route_merchandising_task(
         state = _load_state()
         routings = state.setdefault("model_routings", [])
         routing_id = f"RTE-{7001 + len(routings)}"
-        routing_record = {
+        routing_record: dict[str, Any] = {
             "routing_id": routing_id,
             **decision,
             "segment_id": seg_clean,
@@ -796,6 +857,8 @@ def route_merchandising_task(
             "execution_mode": exec_mode,
             "routed_at": datetime.now(timezone.utc).isoformat(),
         }
+        if fallback_reason:
+            routing_record["fallback_reason"] = fallback_reason
         routings.append(routing_record)
         backend = _save_state(state)
 

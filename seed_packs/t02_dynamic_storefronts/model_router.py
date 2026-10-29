@@ -35,7 +35,7 @@ def select_model_for_task(task_type: str) -> dict[str, Any] | None:
     """Return routing metadata for `task_type`, or None if unsupported."""
     clean_task = (task_type or "").strip().lower()
     gemma_model = os.environ.get("GEMMA_MODEL", "").strip() or resolve_env_config(
-        "GEMMA_MODEL", default="gemma-3-27b-it"
+        "GEMMA_MODEL"
     )
     gemini_model = os.environ.get("GEMINI_MODEL", "").strip() or resolve_env_config(
         "GEMINI_MODEL"
@@ -95,11 +95,11 @@ def execute_routed_task(
     prompt_text: str,
     segment_id: str = "SEG-001",
     style_theme: str = "Nordic_Minimal",
-) -> tuple[str, str]:
+) -> tuple[str, str, str]:
     """Execute or deterministically synthesize output for the selected model tier.
 
     Returns:
-        Tuple of `(output_text, execution_mode)`.
+        Tuple of `(output_text, execution_mode, fallback_reason)`.
     """
     clean_prompt = sanitize_description(prompt_text)
     seg_clean = (segment_id or "SEG-001").strip()
@@ -110,13 +110,16 @@ def execute_routed_task(
     use_offline = os.environ.get("SEED_OFFLINE_MODE", "").lower() in {"1", "true", "yes"}
     project = (
         os.environ.get("GOOGLE_CLOUD_PROJECT")
+        or os.environ.get("AGENT_ENGINE_PROJECT")
         or resolve_env_config("GOOGLE_CLOUD_PROJECT")
     ).strip()
     location = (
         os.environ.get("GOOGLE_CLOUD_LOCATION")
+        or os.environ.get("GEMINI_LOCATION")
         or resolve_env_config("GOOGLE_CLOUD_LOCATION", default="global")
     ).strip()
 
+    fallback_reason = ""
     if project and not use_offline and selected_model and decision.get("model_family") != "gemini_multimodal":
         try:
             from google import genai
@@ -131,24 +134,36 @@ def execute_routed_task(
             )
             text = (getattr(resp, "text", None) or "").strip()
             if text:
-                return sanitize_description(text), "vertex_ai_live"
-        except Exception:
-            pass
+                return sanitize_description(text), "vertex_ai_live", ""
+            fallback_reason = "Vertex AI response contained empty text; using deterministic router synthesis."
+        except Exception as exc:
+            fallback_reason = (
+                f"Vertex AI call failed ({type(exc).__name__}: {exc}); using deterministic router synthesis."
+            )
+    elif use_offline:
+        fallback_reason = "SEED_OFFLINE_MODE enabled: using deterministic router synthesis."
+    elif decision.get("model_family") == "gemini_multimodal":
+        fallback_reason = "Multimodal tier routed to specification plan (use generate_hero_lifestyle_image for binary asset)."
+    else:
+        fallback_reason = "GOOGLE_CLOUD_PROJECT not configured: using deterministic router synthesis."
 
     if decision.get("model_family") == "gemma":
         return (
             f"[{selected_model} | {theme_clean} | {seg_clean}] "
             f"AtelierNova Nocturne Edit — {clean_prompt}",
             "deterministic_router_synthesis",
+            fallback_reason,
         )
     if decision.get("model_family") == "gemini_multimodal":
         return (
             f"[{selected_model} | Multimodal Render Plan | {seg_clean}] "
             f"Prepared {theme_clean} hero lifestyle scene specification: {clean_prompt}",
             "deterministic_router_synthesis",
+            fallback_reason,
         )
     return (
         f"[{selected_model} | Multi-Table Strategy | {seg_clean}] "
         f"Synthesized {theme_clean} merchandising recommendation: {clean_prompt}",
         "deterministic_router_synthesis",
+        fallback_reason,
     )
