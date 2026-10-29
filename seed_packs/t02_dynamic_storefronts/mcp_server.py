@@ -300,18 +300,19 @@ def generate_hero_lifestyle_image(
 
         ui_dir = _PACK_DIR / "ui"
         ui_asset_path_str = str(asset_path)
+        ui_sync_warning: str | None = None
         try:
             ui_dir.mkdir(parents=True, exist_ok=True)
             ui_asset_file = ui_dir / f"hero_{seg_clean}{asset_path.suffix}"
             ui_asset_file.write_bytes(asset_path.read_bytes())
             ui_asset_path_str = str(ui_asset_file)
-        except OSError:
-            pass
+        except OSError as exc:
+            ui_sync_warning = f"Failed to sync hero image to ui/: {exc}"
 
         state = _load_state()
         queue = state.setdefault("render_queue", [])
         job_id = f"HERO-{2501 + len(queue)}"
-        record = {
+        record: dict[str, Any] = {
             "render_job_id": job_id,
             "sku_id": sku_clean,
             "product_name": product_name,
@@ -326,6 +327,8 @@ def generate_hero_lifestyle_image(
             "rendered_at": datetime.now(timezone.utc).isoformat(),
             "status": "RENDERED",
         }
+        if ui_sync_warning:
+            record["ui_sync_warning"] = ui_sync_warning
         queue.append(record)
         backend = _save_state(state)
         return json.dumps({"status": "SUCCESS", "render_job": record, "state_backend": backend})
@@ -431,9 +434,7 @@ def render_storefront_preview(
             candidate_hero = ui_dir / f"hero_{seg_clean}{ext}"
             if candidate_hero.exists():
                 hero_image_html = (
-                    f'<div class="hero-visual">'
                     f'<img src="hero_{html.escape(seg_clean)}{ext}" alt="{html.escape(headline_clean)}" />'
-                    f'</div>'
                 )
                 break
         if template_path.exists():

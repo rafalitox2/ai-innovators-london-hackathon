@@ -1,0 +1,14 @@
+{
+  "products": 100,
+  "audience_segments": 80,
+  "experiments": 120,
+  "avg_conversion_rate": 0.02813,
+  "max_conversion_rate": 0.05697,
+  "avg_bounce_rate": 0.5447,
+  "sales_eur": 7898066,
+  "margin_eur": 3562150.71,
+  "total_views": 864919,
+  "low_performance_opportunities": 58,
+  "potential_add_revenue_eur": 1889809.58,
+  "potential_add_margin_eur": 848186.4
+}
