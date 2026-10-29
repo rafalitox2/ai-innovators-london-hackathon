@@ -21,9 +21,8 @@ steps:
         uv pip install --python .venv/bin/python -r pyproject.toml
         .venv/bin/python -m pytest -q
         .venv/bin/python -m eval.run_eval --pack "${_SEED_PACK}"
-        .venv/bin/python -c 'from pathlib import Path; import os; from deploy.deploy import sync_state_from_gcs; p = os.environ["GOOGLE_CLOUD_PROJECT"]; sync_state_from_gcs(p, f"gs://{p}-hackathon-staging", Path(".deployed_agent.json"))'
+        # deploy.deploy handles sync_state_from_gcs and sync_state_to_gcs automatically
         .venv/bin/python -m deploy.deploy --pack "${_SEED_PACK}"
-        .venv/bin/python -c 'from pathlib import Path; import os; from deploy.deploy import sync_state_to_gcs; p = os.environ["GOOGLE_CLOUD_PROJECT"]; sync_state_to_gcs(p, f"gs://{p}-hackathon-staging", Path(".deployed_agent.json"))'
         .venv/bin/python -m deploy.test_remote
 
 substitutions:

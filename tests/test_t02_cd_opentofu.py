@@ -59,6 +59,9 @@ def test_cd_mcp_cloudrun_http_server_endpoints() -> None:
         "generate_hero_lifestyle_image",
         "render_storefront_preview",
         "sync_campaign_with_t01",
+        "save_merchandising_memory",
+        "recall_merchandising_memory",
+        "route_merchandising_task",
     ):
         assert mcp_tool_name in health["mcp_tools"]
 
@@ -91,6 +94,13 @@ def test_cd_agent_registry_payload_builders() -> None:
     assert mcp_payload["interfaces"][0]["url"].startswith(
         "https://t02-dynamic-storefronts-mcp-ew1.a.run.app"
     )
+    for expected_tool in (
+        "publish_storefront_layout",
+        "save_merchandising_memory",
+        "recall_merchandising_memory",
+        "route_merchandising_task",
+    ):
+        assert expected_tool in mcp_payload["description"]
 
     agent_payload = build_agent_registry_service_payload(
         mcp_url="https://t02-dynamic-storefronts-mcp-ew1.a.run.app",
@@ -98,6 +108,7 @@ def test_cd_agent_registry_payload_builders() -> None:
     )
     assert "agentSpec" in agent_payload
     assert agent_payload["displayName"]
+    assert "recommend_storefront_optimization" in agent_payload["description"]
 
     binding_payload = build_agent_mcp_binding_payload(
         agent_urn="urn:agent:projects-633924037012:projects:633924037012:locations:europe-west1:agentregistry:services:t02-dynamic-storefronts-agent",
@@ -114,8 +125,17 @@ def test_cd_agent_registry_payload_builders() -> None:
 
 
 def test_cd_dockerfile_and_scripts_exist() -> None:
-    """Verify cd/Dockerfile.mcp, cd/deploy_cd.sh, and cd/README.md exist."""
-    assert (CD_DIR / "Dockerfile.mcp").exists(), "Missing cd/Dockerfile.mcp"
+    """Verify cd/Dockerfile.mcp, cd/deploy_cd.sh, and cd/README.md exist and follow repo conventions."""
+    dockerfile_path = CD_DIR / "Dockerfile.mcp"
+    assert dockerfile_path.exists(), "Missing cd/Dockerfile.mcp"
+    dockerfile_text = dockerfile_path.read_text(encoding="utf-8")
+    assert "google-genai==" in dockerfile_text
+    assert "google-cloud-storage==" in dockerfile_text
+
+    mcp_http_text = (CD_DIR / "mcp_http_server.py").read_text(encoding="utf-8")
+    assert "resolve_env_config" in mcp_http_text
+    assert "gemini-" not in mcp_http_text.lower()
+
     assert (CD_DIR / "deploy_cd.sh").exists(), "Missing cd/deploy_cd.sh"
     assert (CD_DIR / "README.md").exists(), "Missing cd/README.md"
 
