@@ -21,6 +21,7 @@ RUN pip install --no-cache-dir \
     "pyyaml==6.0.3" \
     "python-dotenv==1.2.4"
 
+COPY .env.example .deployed_agent.json ./
 COPY app ./app
 COPY seed_packs ./seed_packs
 COPY cd ./cd

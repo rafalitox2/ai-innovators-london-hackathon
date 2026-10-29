@@ -46,9 +46,10 @@ def test_cd_mcp_cloudrun_http_server_endpoints() -> None:
     app = build_mcp_cloudrun_app()
     client = TestClient(app)
 
-    # 1. Health & MCP tool manifest endpoint
-    health_res = client.get("/healthz")
-    assert health_res.status_code == 200
+    # 1. Health & MCP tool manifest endpoints (/health, /api/health, /healthz)
+    for health_path in ("/health", "/api/health", "/healthz"):
+        health_res = client.get(health_path)
+        assert health_res.status_code == 200
     health = health_res.json()
     assert health["status"] == "ONLINE"
     assert health["service"] == "t02-dynamic-storefronts-mcp"
@@ -65,11 +66,13 @@ def test_cd_mcp_cloudrun_http_server_endpoints() -> None:
     ):
         assert mcp_tool_name in health["mcp_tools"]
 
-    # 2. A2A Agent Discovery Card endpoint
-    card_res = client.get("/.well-known/agent.json")
+    # 2. A2A Agent Discovery Card endpoint (respecting X-Forwarded-Proto: https)
+    card_res = client.get("/.well-known/agent.json", headers={"x-forwarded-proto": "https"})
     assert card_res.status_code == 200
     card = card_res.json()
     assert card["name"] == "expedition_t02_dynamic_storefronts"
+    assert card["url"].startswith("https://")
+    assert card["reasoning_engine_resource"].startswith("projects/")
     assert len(card["skills"]) >= 4
 
     # 3. Interactive Storefront UI Preview endpoint on Cloud Run
