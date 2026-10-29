@@ -1,0 +1,35 @@
+name: Agent CI Gates
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  SEED_PACK: t02
+
+jobs:
+  test-and-validate-evals:
+    name: Offline tests + golden eval schema
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v4
+        with:
+          python-version: "3.12"
+          enable-cache: true
+
+      - name: Install dependencies
+        run: make setup
+
+      - name: Run offline unit tests
+        run: make test
+
+      - name: Validate golden evaluation cases
+        run: make eval-validate PACK=t02

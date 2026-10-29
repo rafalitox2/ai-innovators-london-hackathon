@@ -1,0 +1,30 @@
+steps:
+  - id: test-eval-deploy
+    name: "ghcr.io/astral-sh/uv:python3.12-bookworm"
+    entrypoint: "bash"
+    env:
+      - "GOOGLE_CLOUD_PROJECT=$PROJECT_ID"
+      - "GOOGLE_GENAI_USE_VERTEXAI=1"
+      - "GOOGLE_CLOUD_LOCATION=global"
+      - "GEMINI_MODEL=gemini-3.8-flash"
+      - "AGENT_RUNTIME_LOCATION=europe-west1"
+      - "BQ_LOCATION=EU"
+      - "SEED_PACK=${_SEED_PACK}"
+      - "AGENT_RUNTIME_DEPLOY=1"
+    args:
+      - "-c"
+      - |
+        set -euo pipefail
+        uv venv --python 3.12 .venv
+        uv pip install --python .venv/bin/python -r pyproject.toml
+        .venv/bin/python -m pytest -q
+        .venv/bin/python -m eval.run_eval --pack "${_SEED_PACK}"
+        .venv/bin/python -m deploy.deploy --pack "${_SEED_PACK}"
+
+substitutions:
+  _SEED_PACK: "t02"
+
+options:
+  logging: CLOUD_LOGGING_ONLY
+
+timeout: 2400s
