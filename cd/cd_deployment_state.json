@@ -1,0 +1,101 @@
+{
+  "status": "REGISTERED",
+  "project_id": "expedition-dn26lon-5922",
+  "location": "europe-west1",
+  "cloud_run_mcp_url": "https://t02-dynamic-storefronts-mcp-d2lv3suxga-ew.a.run.app",
+  "cloud_run_mcp_sse_url": "https://t02-dynamic-storefronts-mcp-d2lv3suxga-ew.a.run.app/sse",
+  "cloud_run_storefront_preview_url": "https://t02-dynamic-storefronts-mcp-d2lv3suxga-ew.a.run.app/preview/SEG-001",
+  "vertex_ai_reasoning_engine": "projects/633924037012/locations/europe-west1/reasoningEngines/5876565294532526080",
+  "agent_registry": {
+    "mcp_service": {
+      "name": "projects/expedition-dn26lon-5922/locations/europe-west1/services/t02-dynamic-storefronts-mcp",
+      "displayName": "T02 Dynamic Storefronts MCP Server",
+      "description": "Table 2 (t02_dynamic_storefronts) FastMCP Server hosted on Google Cloud Run providing publish_storefront_layout, queue_visual_asset_render, update_promo_banner, generate_hero_lifestyle_image, render_storefront_preview, and sync_campaign_with_t01.",
+      "interfaces": [
+        {
+          "url": "https://t02-dynamic-storefronts-mcp-d2lv3suxga-ew.a.run.app/sse",
+          "protocolBinding": "JSONRPC"
+        }
+      ],
+      "mcpServerSpec": {
+        "type": "NO_SPEC"
+      },
+      "createTime": "2026-10-29T15:38:36.973713841Z",
+      "updateTime": "2026-10-29T16:08:40.376830842Z",
+      "registryResource": "projects/633924037012/locations/europe-west1/mcpServers/agentregistry-00000000-0000-0000-53aa-f9cc4d6a1d28"
+    },
+    "mcp_server_entity": {
+      "name": "projects/633924037012/locations/europe-west1/mcpServers/agentregistry-00000000-0000-0000-53aa-f9cc4d6a1d28",
+      "displayName": "T02 Dynamic Storefronts MCP Server",
+      "description": "Table 2 (t02_dynamic_storefronts) FastMCP Server hosted on Google Cloud Run providing publish_storefront_layout, queue_visual_asset_render, update_promo_banner, generate_hero_lifestyle_image, render_storefront_preview, and sync_campaign_with_t01.",
+      "interfaces": [
+        {
+          "url": "https://t02-dynamic-storefronts-mcp-d2lv3suxga-ew.a.run.app/sse",
+          "protocolBinding": "JSONRPC"
+        }
+      ],
+      "createTime": "2026-10-29T15:38:37.102295Z",
+      "updateTime": "2026-10-29T15:38:37.102295Z",
+      "attributes": {
+        "agentregistry.googleapis.com/system/RuntimeReference": {
+          "uri": "//agentregistry.googleapis.com/projects/633924037012/locations/europe-west1/services/t02-dynamic-storefronts-mcp"
+        }
+      },
+      "mcpServerId": "urn:mcp:projects-633924037012:projects:633924037012:locations:europe-west1:agentregistry:services:t02-dynamic-storefronts-mcp"
+    },
+    "agent_service": {
+      "name": "projects/expedition-dn26lon-5922/locations/europe-west1/services/t02-dynamic-storefronts-agent",
+      "displayName": "T02 Dynamic Storefronts ADK Agent",
+      "description": "Table 2 Dynamic Storefront Engine ADK Agent deployed on Vertex AI Agent Runtime (projects/633924037012/locations/europe-west1/reasoningEngines/5876565294532526080) and paired with Cloud Run MCP (https://t02-dynamic-storefronts-mcp-d2lv3suxga-ew.a.run.app).",
+      "interfaces": [
+        {
+          "url": "https://europe-west1-aiplatform.googleapis.com/v1/projects/633924037012/locations/europe-west1/reasoningEngines/5876565294532526080",
+          "protocolBinding": "HTTP_JSON"
+        }
+      ],
+      "agentSpec": {
+        "type": "NO_SPEC"
+      },
+      "createTime": "2026-10-29T15:31:15.415608978Z",
+      "updateTime": "2026-10-29T16:08:41.820205951Z",
+      "registryResource": "projects/633924037012/locations/europe-west1/agents/agentregistry-00000000-0000-0000-fdb9-ee664e383f84"
+    },
+    "agent_entity": {
+      "name": "projects/633924037012/locations/europe-west1/agents/agentregistry-00000000-0000-0000-fdb9-ee664e383f84",
+      "agentId": "urn:agent:projects-633924037012:projects:633924037012:locations:europe-west1:agentregistry:services:t02-dynamic-storefronts-agent",
+      "location": "europe-west1",
+      "displayName": "T02 Dynamic Storefronts ADK Agent",
+      "description": "Table 2 Dynamic Storefront Engine ADK Agent deployed on Vertex AI Agent Runtime (projects/633924037012/locations/europe-west1/reasoningEngines/5876565294532526080) and paired with Cloud Run MCP (https://t02-dynamic-storefronts-mcp-d2lv3suxga-ew.a.run.app).",
+      "protocols": [
+        {
+          "type": "CUSTOM",
+          "interfaces": [
+            {
+              "url": "https://europe-west1-aiplatform.googleapis.com/v1/projects/633924037012/locations/europe-west1/reasoningEngines/5876565294532526080",
+              "protocolBinding": "HTTP_JSON"
+            }
+          ]
+        }
+      ],
+      "uid": "agentregistry-00000000-0000-0000-fdb9-ee664e383f84",
+      "createTime": "2026-10-29T15:31:15.527770Z",
+      "updateTime": "2026-10-29T15:31:15.527770Z",
+      "attributes": {
+        "agentregistry.googleapis.com/system/RuntimeReference": {
+          "uri": "//agentregistry.googleapis.com/projects/633924037012/locations/europe-west1/services/t02-dynamic-storefronts-agent"
+        }
+      }
+    },
+    "binding": {
+      "displayName": "T02 ADK Agent to Cloud Run MCP Binding",
+      "description": "Binds the Table 2 ADK Agent in Vertex AI Agent Runtime to its Cloud Run FastMCP Server.",
+      "source": {
+        "identifier": "urn:agent:projects-633924037012:projects:633924037012:locations:europe-west1:agentregistry:services:t02-dynamic-storefronts-agent"
+      },
+      "target": {
+        "identifier": "urn:mcp:projects-633924037012:projects:633924037012:locations:europe-west1:agentregistry:services:t02-dynamic-storefronts-mcp"
+      }
+    }
+  },
+  "registered_at": "2026-10-29T16:08:42.916784+00:00"
+}

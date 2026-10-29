@@ -1,0 +1,15 @@
+steps:
+  - name: "gcr.io/cloud-builders/docker"
+    args:
+      - "build"
+      - "-f"
+      - "cd/Dockerfile.mcp"
+      - "-t"
+      - "${_IMAGE_URI}"
+      - "."
+images:
+  - "${_IMAGE_URI}"
+substitutions:
+  _IMAGE_URI: "europe-west1-docker.pkg.dev/expedition-dn26lon-5922/t02-mcp/t02-mcp-server:latest"
+options:
+  logging: CLOUD_LOGGING_ONLY

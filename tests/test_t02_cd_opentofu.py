@@ -1,4 +1,4 @@
-"""TDD validation suite for Table 2 Continuous Delivery (OpenTofu, Cloud Run MCP Server, and Agent Registry)."""
+"""TDD validation suite for Table 2 Continuous Delivery (GitHub Actions CD, Cloud Run MCP, GCS State Sync, and Agent Registry)."""
 
 from __future__ import annotations
 
@@ -8,24 +8,35 @@ import yaml
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 CD_DIR = REPO_ROOT / "cd"
-OPENTOFU_DIR = CD_DIR / "opentofu"
 
 
-def test_cd_opentofu_files_and_resources_exist() -> None:
-    """Verify cd/opentofu/ contains versions.tf, variables.tf, main.tf, and outputs.tf with Cloud Run & Agent Registry."""
-    for filename in ("versions.tf", "variables.tf", "main.tf", "outputs.tf"):
-        tf_file = OPENTOFU_DIR / filename
-        assert tf_file.exists(), f"Missing OpenTofu file: {tf_file}"
+def test_cd_github_actions_and_cloudbuild_config() -> None:
+    """Verify .github/workflows/ci.yml and cloudbuild.yaml implement Issue #19 CD + Cloud Run MCP + Agent Registry."""
+    ci_wf_path = REPO_ROOT / ".github" / "workflows" / "ci.yml"
+    assert ci_wf_path.exists(), "Missing .github/workflows/ci.yml"
+    ci_text = ci_wf_path.read_text(encoding="utf-8")
+    ci_wf = yaml.safe_load(ci_text)
 
-    main_tf = (OPENTOFU_DIR / "main.tf").read_text(encoding="utf-8")
-    for required in (
-        "google_storage_bucket",
-        "google_artifact_registry_repository",
-        "google_cloud_run_v2_service",
+    assert "test-and-validate-evals" in ci_wf["jobs"]
+    assert "cd-deploy-agent-runtime" in ci_wf["jobs"]
+
+    for expected in (
+        "google-github-actions/auth@v2",
         "t02-dynamic-storefronts-mcp",
-        "register_agent_registry.py",
+        "make deploy PACK=t02",
+        "make test-remote",
+        "cd.register_agent_registry",
     ):
-        assert required in main_tf, f"cd/opentofu/main.tf is missing '{required}'"
+        assert expected in ci_text, f".github/workflows/ci.yml is missing '{expected}'"
+
+    cb_text = (REPO_ROOT / "cloudbuild.yaml").read_text(encoding="utf-8")
+    for expected in (
+        "sync_state_from_gcs",
+        "sync_state_to_gcs",
+        "deploy.deploy",
+        "deploy.test_remote",
+    ):
+        assert expected in cb_text, f"cloudbuild.yaml is missing '{expected}'"
 
 
 def test_cd_mcp_cloudrun_http_server_endpoints() -> None:
@@ -41,7 +52,6 @@ def test_cd_mcp_cloudrun_http_server_endpoints() -> None:
     health = health_res.json()
     assert health["status"] == "ONLINE"
     assert health["service"] == "t02-dynamic-storefronts-mcp"
-    assert "recommend_storefront_optimization" in health["adk_tools"] or len(health["mcp_tools"]) >= 6
     for mcp_tool_name in (
         "publish_storefront_layout",
         "queue_visual_asset_render",
@@ -77,39 +87,99 @@ def test_cd_agent_registry_payload_builders() -> None:
         mcp_url="https://t02-dynamic-storefronts-mcp-ew1.a.run.app"
     )
     assert "mcpServerSpec" in mcp_payload
-    assert mcp_payload["interfaces"][0]["protocolBinding"] == "HTTP_JSON"
+    assert mcp_payload["interfaces"][0]["protocolBinding"] == "JSONRPC"
     assert mcp_payload["interfaces"][0]["url"].startswith(
         "https://t02-dynamic-storefronts-mcp-ew1.a.run.app"
     )
 
     agent_payload = build_agent_registry_service_payload(
         mcp_url="https://t02-dynamic-storefronts-mcp-ew1.a.run.app",
-        reasoning_engine_resource="projects/633924037012/locations/europe-west1/reasoningEngines/12345",
+        reasoning_engine_resource="projects/633924037012/locations/europe-west1/reasoningEngines/5876565294532526080",
     )
     assert "agentSpec" in agent_payload
     assert agent_payload["displayName"]
 
     binding_payload = build_agent_mcp_binding_payload(
-        agent_urn="urn:agent:custom:expedition-dn26lon-5922:t02-dynamic-storefronts-agent",
-        mcp_urn="urn:mcp:custom:expedition-dn26lon-5922:t02-dynamic-storefronts-mcp",
+        agent_urn="urn:agent:projects-633924037012:projects:633924037012:locations:europe-west1:agentregistry:services:t02-dynamic-storefronts-agent",
+        mcp_urn="urn:mcp:projects-633924037012:projects:633924037012:locations:europe-west1:agentregistry:services:t02-dynamic-storefronts-mcp",
     )
     assert (
         binding_payload["source"]["identifier"]
-        == "urn:agent:custom:expedition-dn26lon-5922:t02-dynamic-storefronts-agent"
+        == "urn:agent:projects-633924037012:projects:633924037012:locations:europe-west1:agentregistry:services:t02-dynamic-storefronts-agent"
     )
     assert (
         binding_payload["target"]["identifier"]
-        == "urn:mcp:custom:expedition-dn26lon-5922:t02-dynamic-storefronts-mcp"
+        == "urn:mcp:projects-633924037012:projects:633924037012:locations:europe-west1:agentregistry:services:t02-dynamic-storefronts-mcp"
     )
 
 
-def test_cd_dockerfile_scripts_and_github_workflow_exist() -> None:
-    """Verify cd/Dockerfile.mcp, cd/deploy_cd.sh, and .github/workflows/cd.yml exist and are valid."""
+def test_cd_dockerfile_and_scripts_exist() -> None:
+    """Verify cd/Dockerfile.mcp, cd/deploy_cd.sh, and cd/README.md exist."""
     assert (CD_DIR / "Dockerfile.mcp").exists(), "Missing cd/Dockerfile.mcp"
     assert (CD_DIR / "deploy_cd.sh").exists(), "Missing cd/deploy_cd.sh"
     assert (CD_DIR / "README.md").exists(), "Missing cd/README.md"
 
-    cd_wf_path = REPO_ROOT / ".github" / "workflows" / "cd.yml"
-    assert cd_wf_path.exists(), "Missing .github/workflows/cd.yml"
-    cd_wf = yaml.safe_load(cd_wf_path.read_text(encoding="utf-8"))
-    assert "jobs" in cd_wf
+
+def test_deploy_gcs_state_sync_roundtrip(tmp_path: Path) -> None:
+    """Verify sync_state_to_gcs and sync_state_from_gcs keep .deployed_agent.json synchronized across ephemeral runners."""
+    from deploy.deploy import sync_state_from_gcs, sync_state_to_gcs
+
+    class _FakeBlob:
+        def __init__(self, store: dict[str, str], name: str) -> None:
+            self._store = store
+            self._name = name
+
+        def exists(self) -> bool:
+            return self._name in self._store
+
+        def download_as_text(self, encoding: str = "utf-8") -> str:
+            return self._store[self._name]
+
+        def upload_from_string(self, content: str, content_type: str = "application/json") -> None:
+            self._store[self._name] = content
+
+    class _FakeBucket:
+        def __init__(self, store: dict[str, str]) -> None:
+            self._store = store
+
+        def blob(self, name: str) -> _FakeBlob:
+            return _FakeBlob(self._store, name)
+
+    class _FakeStorageClient:
+        def __init__(self) -> None:
+            self.store: dict[str, str] = {}
+
+        def bucket(self, _name: str) -> _FakeBucket:
+            return _FakeBucket(self.store)
+
+    fake_client = _FakeStorageClient()
+    state_a = tmp_path / "runner_a" / ".deployed_agent.json"
+    state_a.parent.mkdir()
+    state_a.write_text(
+        '{"resource_name": "projects/633924037012/locations/europe-west1/reasoningEngines/5876565294532526080"}',
+        encoding="utf-8",
+    )
+
+    assert (
+        sync_state_to_gcs(
+            "expedition-dn26lon-5922",
+            "gs://expedition-dn26lon-5922-hackathon-staging",
+            state_a,
+            storage_client=fake_client,
+        )
+        is True
+    )
+    assert ".deployed_agent.json" in fake_client.store
+
+    state_b = tmp_path / "runner_b" / ".deployed_agent.json"
+    state_b.parent.mkdir()
+    assert (
+        sync_state_from_gcs(
+            "expedition-dn26lon-5922",
+            "gs://expedition-dn26lon-5922-hackathon-staging",
+            state_b,
+            storage_client=fake_client,
+        )
+        is True
+    )
+    assert state_b.read_text(encoding="utf-8") == state_a.read_text(encoding="utf-8")

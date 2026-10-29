@@ -14,8 +14,13 @@ concurrency:
 
 env:
   SEED_PACK: t02
-  GEMINI_MODEL: gemini-3.0-flash
+  GEMINI_MODEL: gemini-3.8-flash
   GEMINI_IMAGE_MODEL: gemini-3.1-flash-image
+  GOOGLE_CLOUD_PROJECT: ${{ vars.GCP_PROJECT_ID || 'expedition-dn26lon-5922' }}
+  GOOGLE_GENAI_USE_VERTEXAI: "1"
+  GOOGLE_CLOUD_LOCATION: global
+  AGENT_RUNTIME_LOCATION: europe-west1
+  BQ_LOCATION: EU
 
 jobs:
   test-and-validate-evals:
@@ -48,4 +53,86 @@ jobs:
             echo "|---|---|---|---|"
             echo "| Offline Unit & Guardrail Suite | \`make test\` | \`t02\` | \`${GEMINI_MODEL}\` |"
             echo "| Golden EvalSet & Tool Registry | \`make eval-validate PACK=t02\` | \`t02\` | \`${GEMINI_IMAGE_MODEL}\` |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  cd-deploy-agent-runtime:
+    name: CD — Cloud Run MCP + ADK Agent Runtime + Agent Registry
+    needs: test-and-validate-evals
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v4
+        with:
+          python-version: "3.12"
+
+      - name: Install Python 3.12 dependencies (ADK + Vertex AI + FastMCP)
+        run: make setup
+
+      - name: Authenticate to Google Cloud (WIF OIDC or Sandbox ADC)
+        id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
+          credentials_json: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER == '' && secrets.GCP_CREDENTIALS_JSON || '' }}
+
+      - name: Set up Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Build & Deploy FastMCP Server on Google Cloud Run (europe-west1)
+        run: |
+          gcloud config set project "${GOOGLE_CLOUD_PROJECT}"
+          IMAGE_URI="europe-west1-docker.pkg.dev/${GOOGLE_CLOUD_PROJECT}/t02-mcp/t02-mcp-server:latest"
+          gcloud builds submit . \
+            --project="${GOOGLE_CLOUD_PROJECT}" \
+            --config="cd/cloudbuild-mcp-image.yaml" \
+            --substitutions="_IMAGE_URI=${IMAGE_URI}" \
+            --quiet
+          gcloud run deploy t02-dynamic-storefronts-mcp \
+            --project="${GOOGLE_CLOUD_PROJECT}" \
+            --region="europe-west1" \
+            --image="${IMAGE_URI}" \
+            --platform="managed" \
+            --allow-unauthenticated \
+            --set-env-vars="GOOGLE_CLOUD_PROJECT=${GOOGLE_CLOUD_PROJECT},SEED_PACK=t02,BQ_LOCATION=EU,GEMINI_MODEL=${GEMINI_MODEL},GEMINI_IMAGE_MODEL=${GEMINI_IMAGE_MODEL}" \
+            --quiet
+          MCP_URL=$(gcloud run services describe t02-dynamic-storefronts-mcp --project="${GOOGLE_CLOUD_PROJECT}" --region="europe-west1" --format="value(status.url)")
+          echo "MCP_SERVER_URL=${MCP_URL}" >> "$GITHUB_ENV"
+
+      - name: Deploy ADK Agent to Vertex AI Agent Runtime (syncs .deployed_agent.json with GCS)
+        run: |
+          export STAGING_BUCKET="gs://${GOOGLE_CLOUD_PROJECT}-hackathon-staging"
+          make deploy PACK=t02
+
+      - name: Verify live ADK Agent Runtime via make test-remote
+        run: |
+          make test-remote
+
+      - name: Register Cloud Run MCP Server & ADK Agent in Google Cloud Agent Registry
+        run: |
+          .venv/bin/python -m cd.register_agent_registry \
+            --project-id "${GOOGLE_CLOUD_PROJECT}" \
+            --location "europe-west1" \
+            --mcp-url "${MCP_SERVER_URL}" \
+            --mcp-service-id "t02-dynamic-storefronts-mcp" \
+            --agent-service-id "t02-dynamic-storefronts-agent"
+
+      - name: Publish CD Summary
+        if: always()
+        run: |
+          RESOURCE_NAME=$(.venv/bin/python -c 'import json, pathlib; p = pathlib.Path(".deployed_agent.json"); print(json.loads(p.read_text()).get("resource_name", "N/A") if p.exists() else "N/A")')
+          {
+            echo "## 🚀 Table 2 (\`t02_dynamic_storefronts\`) — Continuous Delivery Summary"
+            echo ""
+            echo "| Component | Target | Status / Endpoint |"
+            echo "|---|---|---|"
+            echo "| **FastMCP + UI Preview Server** | Google Cloud Run (\`europe-west1\`) | \`${MCP_SERVER_URL}\` |"
+            echo "| **ADK Agent Runtime** | Vertex AI Reasoning Engine (\`europe-west1\`) | \`${RESOURCE_NAME}\` |"
+            echo "| **Google Cloud Agent Registry** | \`agentregistry.googleapis.com/v1alpha\` | \`t02-dynamic-storefronts-mcp\` + \`t02-dynamic-storefronts-agent\` |"
           } >> "$GITHUB_STEP_SUMMARY"
