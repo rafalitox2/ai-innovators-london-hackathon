@@ -1,59 +1,67 @@
 rank,experiment_id,sku,product_name,segment_id,segment_label,views,purchases,revenue_eur,conversion_rate,bounce_rate,score_raw,rating,potential_add_revenue_eur,potential_add_margin_eur,status,published_date
-1,e78,ANV-1427,Orla Shelf,SEG-032,Paris · Mobile · Home-office buyer,11977,154,157696,0.01286,0.7817,6051430.08,100,187357.21,118266.53,pending_approval,
-2,e40,ANV-1273,Rhea Daybed,SEG-069,Lisbon · Desktop · Design enthusiast,13462,169,142636,0.01255,0.6109,3874583.85,64,177025.33,98820.73,published,2026-10-26
-3,e25,ANV-1560,Lumen Sofa,SEG-055,Amsterdam · Mobile · Gift shopper,10074,47,64343,0.00467,0.5968,2767468.79,46,323667.48,108824.7,published,2026-10-19
-4,e90,ANV-1098,Fenn Desk Lamp,SEG-020,London · Desktop · Gift shopper,10778,216,143424,0.02004,0.6825,2275308.5,38,57922.61,26983.41,published,2026-10-15
-5,e66,ANV-1035,Nord Sofa,SEG-001,Madrid · Mobile · Urban renter,5782,125,163000,0.02162,0.7853,1896738.35,31,49125.92,15736.77,pending_approval,
-6,e118,ANV-1637,Oslo Sofa,SEG-035,Paris · Mobile · Gift shopper,12859,206,219184,0.01602,0.3702,1519206.05,25,165750.55,49718.11,published,2026-10-25
-7,e31,ANV-1119,Hale Lounge Chair,SEG-051,Amsterdam · Mobile · Urban renter,7702,207,78453,0.02688,0.7726,1362951.15,23,3673.02,2219.83,pending_approval,
-8,e83,ANV-1049,Vela Sofa,SEG-013,London · Mobile · New homeowner,6109,115,109135,0.01882,0.3554,1297631.61,21,53972.68,33996.34,pending_approval,
-9,e70,ANV-1147,Orla Task Chair,SEG-014,London · Mobile · Design enthusiast,9664,146,88914,0.01511,0.4529,1029548.11,17,76667.68,29616.1,pending_approval,
-10,e49,ANV-1329,Vela Task Chair,SEG-008,Madrid · Desktop · New homeowner,11980,201,59094,0.01678,0.4704,842552.49,14,39998.83,20339.21,published,2026-10-13
-11,e81,ANV-1350,Mira Throw,SEG-070,Lisbon · Desktop · Gift shopper,11862,56,13104,0.00472,0.4631,826771.67,14,64988.95,41804.1,pending_approval,
-12,e53,ANV-1175,Nord Throw,SEG-019,London · Desktop · Design enthusiast,11305,231,52899,0.02043,0.7686,798499.58,13,19936.67,8001.05,published,2026-10-26
-13,e103,ANV-1602,Alba Desk,SEG-034,Paris · Mobile · Design enthusiast,6463,117,60138,0.0181,0.5315,758128.03,13,33324.06,14309.02,pending_approval,
-14,e0,ANV-1322,Alba Desk,SEG-071,Barcelona · Mobile · Urban renter,4227,97,58103,0.02295,0.7012,728881.57,12,13132.61,5391.8,pending_approval,
-15,e30,ANV-1105,Aria Planter,SEG-059,Amsterdam · Desktop · Design enthusiast,4163,114,54606,0.02738,0.7294,723008.03,12,1496.21,743.77,pending_approval,
-16,e95,ANV-1350,Mira Throw,SEG-011,London · Mobile · Urban renter,8641,241,56394,0.02789,0.5235,680858.33,11,493.64,317.53,published,2026-10-26
-17,e34,ANV-1231,Lido Sideboard,SEG-043,Berlin · Mobile · New homeowner,2643,21,14574,0.00795,0.7028,661640.27,11,37031.35,19006.51,pending_approval,
-18,e108,ANV-1056,Tessa Desk Lamp,SEG-031,Paris · Mobile · Urban renter,5667,66,26334,0.01165,0.4984,607248.53,10,37281.68,20090.05,pending_approval,
-19,e109,ANV-1658,Fenn Wall Print,SEG-017,London · Desktop · Home-office buyer,13891,350,48650,0.0252,0.4836,553549.87,9,5673.33,3363.44,pending_approval,
-20,e112,ANV-1497,Oslo Desk Lamp,SEG-035,Paris · Mobile · Gift shopper,4828,118,53572,0.02444,0.3928,479632.85,8,8096.19,4509.9,pending_approval,
-21,e92,ANV-1357,Oslo Pendant,SEG-012,London · Mobile · Home-office buyer,8085,111,27639,0.01373,0.7138,453169.99,7,29000.24,9145.11,pending_approval,
-22,e33,ANV-1462,Alba Desk Lamp,SEG-013,London · Mobile · New homeowner,5917,103,58607,0.01741,0.2867,443012.71,7,36115.23,16577.11,pending_approval,
-23,e5,ANV-1413,Rhea Table Lamp,SEG-043,Berlin · Mobile · New homeowner,8067,154,50666,0.01909,0.532,418214.62,7,24003.98,7110.08,pending_approval,
-24,e1,ANV-1245,Aria Floor Lamp,SEG-064,Lisbon · Mobile · Design enthusiast,12956,348,72732,0.02686,0.4528,409877.01,7,3450.51,1153.6,pending_approval,
-25,e110,ANV-1602,Alba Desk,SEG-013,London · Mobile · New homeowner,4325,25,12850,0.00578,0.4232,403931.4,7,49694.24,21338.21,pending_approval,
-26,e80,ANV-1343,Ruvo Carafe,SEG-012,London · Mobile · Home-office buyer,10544,205,21320,0.01944,0.5844,396464.34,7,9531.54,5896.99,pending_approval,
-27,e9,ANV-1644,Cava Desk,SEG-026,Milan · Desktop · Urban renter,3592,82,27798,0.02283,0.6259,395578.62,7,6460.95,3353.54,published,2026-10-22
-28,e117,ANV-1077,Oslo Throw,SEG-015,London · Mobile · Gift shopper,4840,99,33066,0.02045,0.4307,391427,6,12414.99,6979.44,pending_approval,
-29,e43,ANV-1371,Lido Bistro Set,SEG-041,Berlin · Mobile · Urban renter,3990,33,14982,0.00827,0.6135,386622.82,6,35982.39,12518.12,published,2026-10-15
-30,e51,ANV-1336,Tessa Mirror,SEG-068,Lisbon · Desktop · New homeowner,12550,126,23814,0.01004,0.5201,383189.87,6,42919.45,13331.28,pending_approval,
-31,e23,ANV-1196,Tessa Serving Bowl,SEG-011,London · Mobile · Urban renter,12475,216,26784,0.01731,0.3849,371242.43,6,16737.14,10435.96,published,2026-10-15
-32,e27,ANV-1420,Lumen Dinner Set,SEG-073,Barcelona · Mobile · New homeowner,13248,181,19729,0.01366,0.738,370015.62,6,20898.01,7255.66,pending_approval,
-33,e102,ANV-1511,Lido Wall Print,SEG-016,London · Desktop · Urban renter,13838,219,39201,0.01583,0.2836,345324.38,6,30488.03,14988.68,published,2026-10-14
-34,e96,ANV-1686,Isola Lounge Chair,SEG-064,Lisbon · Mobile · Design enthusiast,4490,123,50307,0.02739,0.4694,314453.33,5,1359.34,495.91,pending_approval,
-35,e32,ANV-1091,Lido Table Lamp,SEG-070,Lisbon · Desktop · Gift shopper,7436,156,19344,0.02098,0.7589,284231.81,5,6597.74,2679.87,pending_approval,
-36,e61,ANV-1392,Porto Mirror,SEG-061,Lisbon · Mobile · Urban renter,12384,115,14835,0.00929,0.2858,275889.8,5,30110.76,18191.72,published,2026-10-11
-37,e84,ANV-1651,Lido Cushion Cover,SEG-056,Amsterdam · Desktop · Urban renter,11588,289,70516,0.02494,0.3176,252032.33,4,9033.3,2535.17,published,2026-10-22
-38,e85,ANV-1546,Isola Wall Print,SEG-030,Milan · Desktop · Gift shopper,13262,77,3388,0.00581,0.6814,249883.88,4,13029.23,8188.71,pending_approval,
-39,e57,ANV-1210,Mira Rug,SEG-002,Madrid · Mobile · Home-office buyer,11068,59,5841,0.00533,0.6602,235903.45,4,24986.79,8148.15,pending_approval,
-40,e119,ANV-1091,Lido Table Lamp,SEG-052,Amsterdam · Mobile · Home-office buyer,10489,218,27032,0.02078,0.4388,231834.67,4,9560.65,3883.35,pending_approval,
-41,e24,ANV-1168,Sienna Lounge Chair,SEG-044,Berlin · Mobile · Design enthusiast,1083,20,12280,0.01847,0.572,227312.23,4,6428.32,3841.61,pending_approval,
-42,e4,ANV-1504,Cava Table Lamp,SEG-028,Milan · Desktop · New homeowner,7015,106,7314,0.01511,0.7493,223299.53,4,6304.05,3881.17,published,2026-10-27
-43,e15,ANV-1182,Alba Mirror,SEG-046,Berlin · Desktop · Urban renter,12631,205,13120,0.01623,0.5778,220983.1,4,9623.42,4553.01,pending_approval,
-44,e64,ANV-1406,Isola Mirror,SEG-017,London · Desktop · Home-office buyer,9263,196,28224,0.02116,0.3405,165899.83,3,9303.72,3398.48,pending_approval,
-45,e74,ANV-1357,Oslo Pendant,SEG-054,Amsterdam · Mobile · Design enthusiast,3077,12,2988,0.0039,0.6274,151574.78,3,18567.84,5855.29,published,2026-10-20
-46,e116,ANV-1651,Lido Cushion Cover,SEG-018,London · Desktop · New homeowner,3823,26,6344,0.0068,0.5717,149667.43,2,19900.13,5584.92,pending_approval,
-47,e21,ANV-1497,Oslo Desk Lamp,SEG-053,Amsterdam · Mobile · New homeowner,1543,15,6810,0.00972,0.343,133854.63,2,12898.78,7185.14,published,2026-10-25
-48,e68,ANV-1245,Aria Floor Lamp,SEG-077,Barcelona · Desktop · Home-office buyer,2421,63,13167,0.02602,0.7327,123954.48,2,1068.71,357.3,pending_approval,
-49,e56,ANV-1217,Oslo Dinner Set,SEG-044,Berlin · Mobile · Design enthusiast,9878,53,3127,0.00537,0.3159,111679.35,2,13269.8,8050.29,pending_approval,
-50,e55,ANV-1588,Sienna Throw,SEG-042,Berlin · Mobile · Home-office buyer,2912,73,5767,0.02507,0.7751,102762.04,2,705.27,406.44,pending_approval,
-51,e115,ANV-1336,Tessa Mirror,SEG-037,Paris · Desktop · Home-office buyer,3840,73,13797,0.01901,0.3487,78612.51,1,6621.84,2056.82,pending_approval,
-52,e79,ANV-1336,Tessa Mirror,SEG-018,London · Desktop · New homeowner,3104,45,8505,0.0145,0.3747,68286.13,1,8000.23,2484.96,pending_approval,
-53,e17,ANV-1588,Sienna Throw,SEG-032,Paris · Mobile · Home-office buyer,2167,50,3950,0.02307,0.6307,62221.41,1,866.42,499.3,pending_approval,
-54,e114,ANV-1518,Fenn Task Chair,SEG-011,London · Mobile · Urban renter,965,14,1736,0.01451,0.7013,53621.28,1,1630.57,1041.94,pending_approval,
-55,e48,ANV-1063,Ruvo Carafe,SEG-026,Milan · Desktop · Urban renter,2979,68,9792,0.02283,0.272,42857.09,1,2276.99,836.28,pending_approval,
-56,e37,ANV-1441,Kaito Carafe,SEG-048,Berlin · Desktop · New homeowner,1518,39,4836,0.02569,0.764,40723.91,1,459.8,130.21,published,2026-10-26
-57,e100,ANV-1392,Porto Mirror,SEG-055,Amsterdam · Mobile · Gift shopper,1169,17,2193,0.01454,0.3344,30464.6,1,2049.7,1238.35,published,2026-10-12
-58,e73,ANV-1504,Cava Table Lamp,SEG-025,Milan · Mobile · Gift shopper,1252,23,1587,0.01837,0.5637,29982.81,0,843.48,519.3,pending_approval,
+1,EXP-0057,SKU-0057,Atelier Mediterranean Smart Lighting #57,SEG-057,SEG-057 · UK_London_Mediterranean_Warm_Mobile (Mobile_iOS),32366,654,668623.44,0.02021,0.6120,10834230.81,100,238740.12,127725.97,pending_approval,
+2,EXP-0081,SKU-0081,Atelier Nordic Modular Sofas #81,SEG-001,SEG-001 · UK_London_Nordic_Minimal_Mobile (Mobile_iOS),28662,724,865455.12,0.02526,0.4740,10247553.11,95,74053.85,46727.98,published,2026-10-26
+3,EXP-0074,SKU-0074,Atelier Biophilic Ergonomic Desks #74,SEG-074,SEG-074 · ES_Madrid_Biophilic_Zen_Mobile (Mobile_Android),29262,675,802642.50,0.02307,0.4990,9983682.83,92,151494.73,87109.47,published,2026-10-19
+4,EXP-0012,SKU-0012,Atelier Mediterranean Smart Lighting #12,SEG-012,SEG-012 · FR_Paris_Mediterranean_Warm_Tablet (Tablet_App),22655,215,259939.30,0.00949,0.7000,9759181.03,90,491140.37,249990.45,published,2026-10-15
+5,EXP-0042,SKU-0042,Atelier Mediterranean Smart Lighting #42,SEG-042,SEG-042 · ES_Madrid_Mediterranean_Warm_Mobile (Mobile_Android),19205,350,427234.50,0.01822,0.7090,8476742.56,78,215602.76,109957.41,pending_approval,
+6,EXP-0105,SKU-0005,Atelier Neo Ceramic Decor #5,SEG-025,SEG-025 · UK_London_Neo_Bauhaus_Mobile (Mobile_iOS),20939,269,294186.47,0.01285,0.6950,8419122.50,78,333748.70,176553.06,published,2026-10-25
+7,EXP-0089,SKU-0089,Atelier Biophilic Ergonomic Desks #89,SEG-009,SEG-009 · UK_London_Biophilic_Zen_Mobile (Mobile_iOS),24943,484,675180.00,0.01940,0.4120,7884656.90,73,278958.35,153427.09,pending_approval,
+8,EXP-0052,SKU-0052,Atelier Mediterranean Smart Lighting #52,SEG-052,SEG-052 · FR_Paris_Mediterranean_Warm_Tablet (Tablet_App),21737,456,506187.36,0.02098,0.5140,7726756.47,71,155472.08,96859.11,pending_approval,
+9,EXP-0082,SKU-0082,Atelier Mediterranean Smart Lighting #82,SEG-002,SEG-002 · ES_Madrid_Mediterranean_Warm_Mobile (Mobile_Android),19190,144,203191.20,0.00750,0.5640,7177849.36,66,539324.83,253482.67,pending_approval,
+10,EXP-0031,SKU-0031,Atelier Nordic Modular Sofas #31,SEG-031,SEG-031 · NL_Amsterdam_Nordic_Minimal_Desktop (Desktop_Web),23498,361,409922.72,0.01536,0.6670,7029891.42,65,321745.42,127089.44,published,2026-10-13
+11,EXP-0100,SKU-0100,Atelier Neo Ceramic Decor #100,SEG-020,SEG-020 · FR_Paris_Neo_Bauhaus_Tablet (Tablet_App),21677,254,312724.80,0.01172,0.4910,6958310.39,64,419115.36,222550.26,pending_approval,
+12,EXP-0086,SKU-0086,Atelier Nordic Modular Sofas #86,SEG-006,SEG-006 · IT_Milan_Nordic_Minimal_Mobile (Mobile_Android),21257,235,187718.00,0.01106,0.6790,6883100.87,64,277898.63,165905.48,published,2026-10-26
+13,EXP-0045,SKU-0045,Atelier Neo Ceramic Decor #45,SEG-045,SEG-045 · DE_Berlin_Neo_Bauhaus_Mobile (Mobile_iOS),24117,632,845337.92,0.02621,0.5190,6864165.89,63,39217.43,16079.14,pending_approval,
+14,EXP-0049,SKU-0049,Atelier Biophilic Ergonomic Desks #49,SEG-049,SEG-049 · UK_London_Biophilic_Zen_Mobile (Mobile_iOS),34273,619,717773.83,0.01806,0.4920,6452501.80,60,372002.94,122760.97,pending_approval,
+15,EXP-0098,SKU-0098,Atelier Industrial Acoustic Panels #98,SEG-018,SEG-018 · ES_Madrid_Industrial_Loft_Mobile (Mobile_Android),32970,642,566308.20,0.01947,0.3210,5704045.90,53,231181.76,141252.06,published,2026-10-22
+16,EXP-0016,SKU-0016,Atelier Nordic Modular Sofas #16,SEG-016,SEG-016 · PT_Lisbon_Nordic_Minimal_Tablet (Tablet_App),26769,615,401681.10,0.02297,0.6620,5532536.85,51,77750.75,37164.86,pending_approval,
+17,EXP-0096,SKU-0096,Atelier Nordic Modular Sofas #96,SEG-016,SEG-016 · PT_Lisbon_Nordic_Minimal_Tablet (Tablet_App),30131,458,566559.74,0.01520,0.3440,5526236.80,51,455514.01,196326.54,published,2026-10-22
+18,EXP-0113,SKU-0013,Atelier Industrial Acoustic Panels #13,SEG-033,SEG-033 · UK_London_Industrial_Loft_Mobile (Mobile_iOS),24419,229,174367.47,0.00938,0.6940,5174420.30,48,335487.10,134530.33,pending_approval,
+19,EXP-0006,SKU-0006,Atelier Nordic Modular Sofas #6,SEG-006,SEG-006 · IT_Milan_Nordic_Minimal_Mobile (Mobile_Android),29726,709,407568.65,0.02385,0.6410,4753776.60,44,61006.73,26476.92,published,2026-10-25
+20,EXP-0027,SKU-0027,Atelier Mediterranean Smart Lighting #27,SEG-027,SEG-027 · ES_Barcelona_Mediterranean_Warm_Desktop (Desktop_Web),29966,725,488795.00,0.02419,0.6770,4281052.26,40,65200.17,20407.65,pending_approval,
+21,EXP-0011,SKU-0011,Atelier Nordic Modular Sofas #11,SEG-011,SEG-011 · ES_Barcelona_Nordic_Minimal_Desktop (Desktop_Web),17505,258,254584.08,0.01474,0.5170,4259734.91,39,219070.90,104496.82,pending_approval,
+22,EXP-0041,SKU-0041,Atelier Nordic Modular Sofas #41,SEG-041,SEG-041 · UK_London_Nordic_Minimal_Mobile (Mobile_iOS),20507,474,660433.68,0.02311,0.3290,3938790.88,36,123070.75,51566.65,published,2026-10-20
+23,EXP-0099,SKU-0099,Atelier Biophilic Ergonomic Desks #99,SEG-019,SEG-019 · ES_Barcelona_Biophilic_Zen_Desktop (Desktop_Web),19379,325,188669.00,0.01677,0.5800,3914964.18,36,119818.10,71890.86,pending_approval,
+24,EXP-0014,SKU-0014,Atelier Biophilic Ergonomic Desks #14,SEG-014,SEG-014 · IT_Milan_Biophilic_Zen_Mobile (Mobile_Android),26798,489,295747.20,0.01825,0.6390,3862992.41,36,148682.04,55458.40,published,2026-10-14
+25,EXP-0038,SKU-0038,Atelier Industrial Acoustic Panels #38,SEG-038,SEG-038 · IT_Milan_Industrial_Loft_Mobile (Mobile_Android),18657,508,568396.12,0.02723,0.6280,3657573.41,34,4027.65,1123.71,pending_approval,
+26,EXP-0020,SKU-0020,Atelier Neo Ceramic Decor #20,SEG-020,SEG-020 · FR_Paris_Neo_Bauhaus_Tablet (Tablet_App),29760,471,279764.58,0.01583,0.4180,3487570.77,32,204957.95,96740.15,published,2026-10-15
+27,EXP-0080,SKU-0080,Atelier Neo Ceramic Decor #80,SEG-080,SEG-080 · PT_Lisbon_Neo_Bauhaus_Tablet (Tablet_App),26533,674,255243.80,0.02540,0.5810,3298422.18,30,20286.98,11462.14,pending_approval,
+28,EXP-0035,SKU-0035,Atelier Neo Ceramic Decor #35,SEG-035,SEG-035 · ES_Barcelona_Neo_Bauhaus_Desktop (Desktop_Web),31899,573,176747.58,0.01796,0.6830,3091394.70,29,93066.36,42810.52,pending_approval,
+29,EXP-0008,SKU-0008,Atelier Industrial Acoustic Panels #8,SEG-008,SEG-008 · PT_Lisbon_Industrial_Loft_Tablet (Tablet_App),17999,193,173910.37,0.01072,0.3130,3030646.03,28,270828.41,161684.56,published,2026-10-12
+30,EXP-0111,SKU-0011,Atelier Nordic Modular Sofas #11,SEG-031,SEG-031 · NL_Amsterdam_Nordic_Minimal_Desktop (Desktop_Web),13591,302,298001.52,0.02222,0.4410,2821109.33,26,69747.40,33269.51,pending_approval,
+31,EXP-0069,SKU-0069,Atelier Biophilic Ergonomic Desks #69,SEG-069,SEG-069 · DE_Berlin_Biophilic_Zen_Mobile (Mobile_iOS),5674,52,73337.68,0.00916,0.5190,2525132.04,23,146095.15,88825.85,published,2026-10-11
+32,EXP-0071,SKU-0071,Atelier Nordic Modular Sofas #71,SEG-071,SEG-071 · NL_Amsterdam_Nordic_Minimal_Desktop (Desktop_Web),30033,206,66292.86,0.00686,0.4040,2467724.62,23,198732.06,125598.66,pending_approval,
+33,EXP-0077,SKU-0077,Atelier Mediterranean Smart Lighting #77,SEG-077,SEG-077 · DE_Berlin_Mediterranean_Warm_Mobile (Mobile_iOS),9674,194,251728.58,0.02005,0.5640,2421263.69,22,92482.89,31629.15,pending_approval,
+34,EXP-0021,SKU-0021,Atelier Nordic Modular Sofas #21,SEG-021,SEG-021 · DE_Berlin_Nordic_Minimal_Mobile (Mobile_iOS),5756,127,168982.39,0.02206,0.6990,2376942.40,22,41030.99,18217.76,published,2026-10-15
+35,EXP-0118,SKU-0018,Atelier Industrial Acoustic Panels #18,SEG-038,SEG-038 · IT_Milan_Industrial_Loft_Mobile (Mobile_Android),13788,282,265962.66,0.02045,0.3690,2341634.04,22,90620.88,44222.99,pending_approval,
+36,EXP-0075,SKU-0075,Atelier Neo Ceramic Decor #75,SEG-075,SEG-075 · ES_Barcelona_Neo_Bauhaus_Desktop (Desktop_Web),15083,352,329232.64,0.02334,0.3200,2216559.65,20,57611.84,28287.41,pending_approval,
+37,EXP-0030,SKU-0030,Atelier Neo Ceramic Decor #30,SEG-030,SEG-030 · IT_Milan_Neo_Bauhaus_Mobile (Mobile_Android),30870,621,367482.96,0.02012,0.4290,2108102.91,19,133439.71,35895.28,published,2026-10-27
+38,EXP-0092,SKU-0092,Atelier Mediterranean Smart Lighting #92,SEG-012,SEG-012 · FR_Paris_Mediterranean_Warm_Tablet (Tablet_App),21908,411,444212.91,0.01876,0.3820,2035157.23,19,205079.82,46142.96,pending_approval,
+39,EXP-0059,SKU-0059,Atelier Biophilic Ergonomic Desks #59,SEG-059,SEG-059 · ES_Barcelona_Biophilic_Zen_Desktop (Desktop_Web),5202,115,130705.55,0.02211,0.5800,2002660.71,18,31421.32,18350.05,pending_approval,
+40,EXP-0063,SKU-0063,Atelier Industrial Acoustic Panels #63,SEG-063,SEG-063 · NL_Amsterdam_Industrial_Loft_Desktop (Desktop_Web),27106,487,352812.02,0.01797,0.2620,1980805.65,18,185666.40,71481.56,pending_approval,
+41,EXP-0043,SKU-0043,Atelier Industrial Acoustic Panels #43,SEG-043,SEG-043 · ES_Barcelona_Industrial_Loft_Desktop (Desktop_Web),17245,329,90313.79,0.01908,0.6650,1838467.09,17,39496.71,23066.08,published,2026-10-27
+42,EXP-0036,SKU-0036,Atelier Nordic Modular Sofas #36,SEG-036,SEG-036 · FR_Paris_Nordic_Minimal_Tablet (Tablet_App),30058,793,266384.56,0.02638,0.5530,1837033.06,17,10490.86,3451.49,pending_approval,
+43,EXP-0022,SKU-0022,Atelier Mediterranean Smart Lighting #22,SEG-022,SEG-022 · IT_Milan_Mediterranean_Warm_Mobile (Mobile_Android),17961,156,220504.44,0.00869,0.3010,1834007.01,17,475659.80,114158.35,pending_approval,
+44,EXP-0109,SKU-0009,Atelier Biophilic Ergonomic Desks #9,SEG-029,SEG-029 · DE_Berlin_Biophilic_Zen_Mobile (Mobile_iOS),8509,216,263865.60,0.02538,0.3980,1824438.42,17,21167.96,9335.07,pending_approval,
+45,EXP-0024,SKU-0024,Atelier Biophilic Ergonomic Desks #24,SEG-024,SEG-024 · PT_Lisbon_Biophilic_Zen_Tablet (Tablet_App),21151,295,84570.60,0.01395,0.5210,1728038.25,16,81700.49,44690.17,published,2026-10-28
+46,EXP-0047,SKU-0047,Atelier Mediterranean Smart Lighting #47,SEG-047,SEG-047 · NL_Amsterdam_Mediterranean_Warm_Desktop (Desktop_Web),33822,721,107854.39,0.02132,0.7140,1618370.95,15,30881.97,13835.12,pending_approval,
+47,EXP-0106,SKU-0006,Atelier Nordic Modular Sofas #6,SEG-026,SEG-026 · ES_Madrid_Nordic_Minimal_Mobile (Mobile_Android),9594,113,64958.05,0.01178,0.6570,1572567.69,15,86273.61,37442.74,pending_approval,
+48,EXP-0054,SKU-0054,Atelier Biophilic Ergonomic Desks #54,SEG-054,SEG-054 · IT_Milan_Biophilic_Zen_Mobile (Mobile_Android),11761,207,177806.79,0.01760,0.3700,1562428.86,14,99212.94,41471.01,pending_approval,
+49,EXP-0026,SKU-0026,Atelier Nordic Modular Sofas #26,SEG-026,SEG-026 · ES_Madrid_Nordic_Minimal_Mobile (Mobile_Android),26211,137,86118.20,0.00523,0.2960,1506982.32,14,365682.00,112995.74,pending_approval,
+50,EXP-0055,SKU-0055,Atelier Neo Ceramic Decor #55,SEG-055,SEG-055 · NL_Amsterdam_Neo_Bauhaus_Desktop (Desktop_Web),9337,185,79263.25,0.01981,0.5930,1477917.68,14,30434.06,18960.42,pending_approval,
+51,EXP-0073,SKU-0073,Atelier Industrial Acoustic Panels #73,SEG-073,SEG-073 · UK_London_Industrial_Loft_Mobile (Mobile_iOS),26318,199,60024.37,0.00756,0.3020,1275398.76,12,157654.30,83872.09,pending_approval,
+52,EXP-0095,SKU-0095,Atelier Neo Ceramic Decor #95,SEG-015,SEG-015 · NL_Amsterdam_Neo_Bauhaus_Desktop (Desktop_Web),12097,290,169821.10,0.02397,0.4620,1174918.54,11,24428.35,8769.78,pending_approval,
+53,EXP-0001,SKU-0001,Atelier Nordic Modular Sofas #1,SEG-001,SEG-001 · UK_London_Nordic_Minimal_Mobile (Mobile_iOS),23112,330,83549.40,0.01428,0.5240,1134488.08,10,76906.39,28455.36,pending_approval,
+54,EXP-0104,SKU-0004,Atelier Biophilic Ergonomic Desks #4,SEG-024,SEG-024 · PT_Lisbon_Biophilic_Zen_Tablet (Tablet_App),34124,913,96531.49,0.02676,0.6580,1063560.19,10,2402.75,1076.43,pending_approval,
+55,EXP-0015,SKU-0015,Atelier Neo Ceramic Decor #15,SEG-015,SEG-015 · NL_Amsterdam_Neo_Bauhaus_Desktop (Desktop_Web),23498,620,90451.80,0.02639,0.5790,962668.42,9,3551.89,1722.66,pending_approval,
+56,EXP-0090,SKU-0090,Atelier Neo Ceramic Decor #90,SEG-010,SEG-010 · ES_Madrid_Neo_Bauhaus_Mobile (Mobile_Android),33210,715,115830.00,0.02153,0.5350,915302.80,8,31697.28,10079.74,pending_approval,
+57,EXP-0004,SKU-0004,Atelier Biophilic Ergonomic Desks #4,SEG-004,SEG-004 · FR_Paris_Biophilic_Zen_Tablet (Tablet_App),27683,502,53076.46,0.01813,0.4920,645140.79,6,27183.67,12178.28,pending_approval,
+58,EXP-0048,SKU-0048,Atelier Industrial Acoustic Panels #48,SEG-048,SEG-048 · PT_Lisbon_Industrial_Loft_Tablet (Tablet_App),2475,34,23907.78,0.01374,0.6320,556548.65,5,23814.81,12050.29,pending_approval,
+59,EXP-0046,SKU-0046,Atelier Nordic Modular Sofas #46,SEG-046,SEG-046 · IT_Milan_Nordic_Minimal_Mobile (Mobile_Android),1825,25,22261.25,0.01370,0.5720,493586.14,5,22300.36,11841.49,pending_approval,
+60,EXP-0070,SKU-0070,Atelier Neo Ceramic Decor #70,SEG-070,SEG-070 · IT_Milan_Neo_Bauhaus_Mobile (Mobile_Android),4165,55,77101.75,0.01321,0.3040,434866.77,4,83003.29,20335.81,pending_approval,
+61,EXP-0097,SKU-0097,Atelier Mediterranean Smart Lighting #97,SEG-017,SEG-017 · UK_London_Mediterranean_Warm_Mobile (Mobile_iOS),11701,201,32312.76,0.01718,0.5970,380693.10,4,19268.20,6531.92,pending_approval,
+62,EXP-0003,SKU-0003,Atelier Industrial Acoustic Panels #3,SEG-003,SEG-003 · ES_Barcelona_Industrial_Loft_Desktop (Desktop_Web),7030,85,38793.15,0.01209,0.2430,357078.08,3,49186.03,22527.20,pending_approval,
+63,EXP-0094,SKU-0094,Atelier Biophilic Ergonomic Desks #94,SEG-014,SEG-014 · IT_Milan_Biophilic_Zen_Mobile (Mobile_Android),4506,105,98435.40,0.02330,0.2800,356022.73,3,17400.09,5237.43,pending_approval,
+64,EXP-0039,SKU-0039,Atelier Biophilic Ergonomic Desks #39,SEG-039,SEG-039 · NL_Amsterdam_Biophilic_Zen_Desktop (Desktop_Web),4693,51,20547.39,0.01087,0.2440,143939.99,1,31299.83,9765.55,pending_approval,
+65,EXP-0079,SKU-0079,Atelier Biophilic Ergonomic Desks #79,SEG-079,SEG-079 · NL_Amsterdam_Biophilic_Zen_Desktop (Desktop_Web),6294,129,10077.48,0.02050,0.6070,134005.93,1,3405.24,1528.95,pending_approval,
+66,EXP-0044,SKU-0044,Atelier Biophilic Ergonomic Desks #44,SEG-044,SEG-044 · FR_Paris_Biophilic_Zen_Tablet (Tablet_App),2832,34,4415.24,0.01201,0.6520,120130.69,1,5669.32,2840.33,pending_approval,

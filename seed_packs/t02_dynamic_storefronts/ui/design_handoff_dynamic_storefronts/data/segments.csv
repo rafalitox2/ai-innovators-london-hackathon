@@ -1,81 +1,81 @@
-segment_id,city,device,persona,label
-SEG-001,Madrid,Mobile,Urban renter,Madrid · Mobile · Urban renter
-SEG-002,Madrid,Mobile,Home-office buyer,Madrid · Mobile · Home-office buyer
-SEG-003,Madrid,Mobile,New homeowner,Madrid · Mobile · New homeowner
-SEG-004,Madrid,Mobile,Design enthusiast,Madrid · Mobile · Design enthusiast
-SEG-005,Madrid,Mobile,Gift shopper,Madrid · Mobile · Gift shopper
-SEG-006,Madrid,Desktop,Urban renter,Madrid · Desktop · Urban renter
-SEG-007,Madrid,Desktop,Home-office buyer,Madrid · Desktop · Home-office buyer
-SEG-008,Madrid,Desktop,New homeowner,Madrid · Desktop · New homeowner
-SEG-009,Madrid,Desktop,Design enthusiast,Madrid · Desktop · Design enthusiast
-SEG-010,Madrid,Desktop,Gift shopper,Madrid · Desktop · Gift shopper
-SEG-011,London,Mobile,Urban renter,London · Mobile · Urban renter
-SEG-012,London,Mobile,Home-office buyer,London · Mobile · Home-office buyer
-SEG-013,London,Mobile,New homeowner,London · Mobile · New homeowner
-SEG-014,London,Mobile,Design enthusiast,London · Mobile · Design enthusiast
-SEG-015,London,Mobile,Gift shopper,London · Mobile · Gift shopper
-SEG-016,London,Desktop,Urban renter,London · Desktop · Urban renter
-SEG-017,London,Desktop,Home-office buyer,London · Desktop · Home-office buyer
-SEG-018,London,Desktop,New homeowner,London · Desktop · New homeowner
-SEG-019,London,Desktop,Design enthusiast,London · Desktop · Design enthusiast
-SEG-020,London,Desktop,Gift shopper,London · Desktop · Gift shopper
-SEG-021,Milan,Mobile,Urban renter,Milan · Mobile · Urban renter
-SEG-022,Milan,Mobile,Home-office buyer,Milan · Mobile · Home-office buyer
-SEG-023,Milan,Mobile,New homeowner,Milan · Mobile · New homeowner
-SEG-024,Milan,Mobile,Design enthusiast,Milan · Mobile · Design enthusiast
-SEG-025,Milan,Mobile,Gift shopper,Milan · Mobile · Gift shopper
-SEG-026,Milan,Desktop,Urban renter,Milan · Desktop · Urban renter
-SEG-027,Milan,Desktop,Home-office buyer,Milan · Desktop · Home-office buyer
-SEG-028,Milan,Desktop,New homeowner,Milan · Desktop · New homeowner
-SEG-029,Milan,Desktop,Design enthusiast,Milan · Desktop · Design enthusiast
-SEG-030,Milan,Desktop,Gift shopper,Milan · Desktop · Gift shopper
-SEG-031,Paris,Mobile,Urban renter,Paris · Mobile · Urban renter
-SEG-032,Paris,Mobile,Home-office buyer,Paris · Mobile · Home-office buyer
-SEG-033,Paris,Mobile,New homeowner,Paris · Mobile · New homeowner
-SEG-034,Paris,Mobile,Design enthusiast,Paris · Mobile · Design enthusiast
-SEG-035,Paris,Mobile,Gift shopper,Paris · Mobile · Gift shopper
-SEG-036,Paris,Desktop,Urban renter,Paris · Desktop · Urban renter
-SEG-037,Paris,Desktop,Home-office buyer,Paris · Desktop · Home-office buyer
-SEG-038,Paris,Desktop,New homeowner,Paris · Desktop · New homeowner
-SEG-039,Paris,Desktop,Design enthusiast,Paris · Desktop · Design enthusiast
-SEG-040,Paris,Desktop,Gift shopper,Paris · Desktop · Gift shopper
-SEG-041,Berlin,Mobile,Urban renter,Berlin · Mobile · Urban renter
-SEG-042,Berlin,Mobile,Home-office buyer,Berlin · Mobile · Home-office buyer
-SEG-043,Berlin,Mobile,New homeowner,Berlin · Mobile · New homeowner
-SEG-044,Berlin,Mobile,Design enthusiast,Berlin · Mobile · Design enthusiast
-SEG-045,Berlin,Mobile,Gift shopper,Berlin · Mobile · Gift shopper
-SEG-046,Berlin,Desktop,Urban renter,Berlin · Desktop · Urban renter
-SEG-047,Berlin,Desktop,Home-office buyer,Berlin · Desktop · Home-office buyer
-SEG-048,Berlin,Desktop,New homeowner,Berlin · Desktop · New homeowner
-SEG-049,Berlin,Desktop,Design enthusiast,Berlin · Desktop · Design enthusiast
-SEG-050,Berlin,Desktop,Gift shopper,Berlin · Desktop · Gift shopper
-SEG-051,Amsterdam,Mobile,Urban renter,Amsterdam · Mobile · Urban renter
-SEG-052,Amsterdam,Mobile,Home-office buyer,Amsterdam · Mobile · Home-office buyer
-SEG-053,Amsterdam,Mobile,New homeowner,Amsterdam · Mobile · New homeowner
-SEG-054,Amsterdam,Mobile,Design enthusiast,Amsterdam · Mobile · Design enthusiast
-SEG-055,Amsterdam,Mobile,Gift shopper,Amsterdam · Mobile · Gift shopper
-SEG-056,Amsterdam,Desktop,Urban renter,Amsterdam · Desktop · Urban renter
-SEG-057,Amsterdam,Desktop,Home-office buyer,Amsterdam · Desktop · Home-office buyer
-SEG-058,Amsterdam,Desktop,New homeowner,Amsterdam · Desktop · New homeowner
-SEG-059,Amsterdam,Desktop,Design enthusiast,Amsterdam · Desktop · Design enthusiast
-SEG-060,Amsterdam,Desktop,Gift shopper,Amsterdam · Desktop · Gift shopper
-SEG-061,Lisbon,Mobile,Urban renter,Lisbon · Mobile · Urban renter
-SEG-062,Lisbon,Mobile,Home-office buyer,Lisbon · Mobile · Home-office buyer
-SEG-063,Lisbon,Mobile,New homeowner,Lisbon · Mobile · New homeowner
-SEG-064,Lisbon,Mobile,Design enthusiast,Lisbon · Mobile · Design enthusiast
-SEG-065,Lisbon,Mobile,Gift shopper,Lisbon · Mobile · Gift shopper
-SEG-066,Lisbon,Desktop,Urban renter,Lisbon · Desktop · Urban renter
-SEG-067,Lisbon,Desktop,Home-office buyer,Lisbon · Desktop · Home-office buyer
-SEG-068,Lisbon,Desktop,New homeowner,Lisbon · Desktop · New homeowner
-SEG-069,Lisbon,Desktop,Design enthusiast,Lisbon · Desktop · Design enthusiast
-SEG-070,Lisbon,Desktop,Gift shopper,Lisbon · Desktop · Gift shopper
-SEG-071,Barcelona,Mobile,Urban renter,Barcelona · Mobile · Urban renter
-SEG-072,Barcelona,Mobile,Home-office buyer,Barcelona · Mobile · Home-office buyer
-SEG-073,Barcelona,Mobile,New homeowner,Barcelona · Mobile · New homeowner
-SEG-074,Barcelona,Mobile,Design enthusiast,Barcelona · Mobile · Design enthusiast
-SEG-075,Barcelona,Mobile,Gift shopper,Barcelona · Mobile · Gift shopper
-SEG-076,Barcelona,Desktop,Urban renter,Barcelona · Desktop · Urban renter
-SEG-077,Barcelona,Desktop,Home-office buyer,Barcelona · Desktop · Home-office buyer
-SEG-078,Barcelona,Desktop,New homeowner,Barcelona · Desktop · New homeowner
-SEG-079,Barcelona,Desktop,Design enthusiast,Barcelona · Desktop · Design enthusiast
-SEG-080,Barcelona,Desktop,Gift shopper,Barcelona · Desktop · Gift shopper
+segment_id,segment_name,region,city,device,preferred_style,avg_order_value_eur,baseline_conversion_rate_pct,label
+SEG-001,UK_London_Nordic_Minimal_Mobile,UK_London,London,Mobile_iOS,Nordic_Minimal,307.73,4.01,SEG-001 · UK_London_Nordic_Minimal_Mobile (Mobile_iOS)
+SEG-002,ES_Madrid_Mediterranean_Warm_Mobile,ES_Madrid,Madrid,Mobile_Android,Mediterranean_Warm,420.15,2.83,SEG-002 · ES_Madrid_Mediterranean_Warm_Mobile (Mobile_Android)
+SEG-003,ES_Barcelona_Industrial_Loft_Desktop,ES_Barcelona,Barcelona,Desktop_Web,Industrial_Loft,275.28,4.15,SEG-003 · ES_Barcelona_Industrial_Loft_Desktop (Desktop_Web)
+SEG-004,FR_Paris_Biophilic_Zen_Tablet,FR_Paris,Paris,Tablet_App,Biophilic_Zen,620.88,2.24,SEG-004 · FR_Paris_Biophilic_Zen_Tablet (Tablet_App)
+SEG-005,DE_Berlin_Neo_Bauhaus_Mobile,DE_Berlin,Berlin,Mobile_iOS,Neo_Bauhaus,312.84,1.84,SEG-005 · DE_Berlin_Neo_Bauhaus_Mobile (Mobile_iOS)
+SEG-006,IT_Milan_Nordic_Minimal_Mobile,IT_Milan,Milan,Mobile_Android,Nordic_Minimal,318.13,2.93,SEG-006 · IT_Milan_Nordic_Minimal_Mobile (Mobile_Android)
+SEG-007,NL_Amsterdam_Mediterranean_Warm_Desktop,NL_Amsterdam,Amsterdam,Desktop_Web,Mediterranean_Warm,163.36,4.13,SEG-007 · NL_Amsterdam_Mediterranean_Warm_Desktop (Desktop_Web)
+SEG-008,PT_Lisbon_Industrial_Loft_Tablet,PT_Lisbon,Lisbon,Tablet_App,Industrial_Loft,305.98,4.89,SEG-008 · PT_Lisbon_Industrial_Loft_Tablet (Tablet_App)
+SEG-009,UK_London_Biophilic_Zen_Mobile,UK_London,London,Mobile_iOS,Biophilic_Zen,248.38,4.55,SEG-009 · UK_London_Biophilic_Zen_Mobile (Mobile_iOS)
+SEG-010,ES_Madrid_Neo_Bauhaus_Mobile,ES_Madrid,Madrid,Mobile_Android,Neo_Bauhaus,668.41,1.89,SEG-010 · ES_Madrid_Neo_Bauhaus_Mobile (Mobile_Android)
+SEG-011,ES_Barcelona_Nordic_Minimal_Desktop,ES_Barcelona,Barcelona,Desktop_Web,Nordic_Minimal,321.07,5.67,SEG-011 · ES_Barcelona_Nordic_Minimal_Desktop (Desktop_Web)
+SEG-012,FR_Paris_Mediterranean_Warm_Tablet,FR_Paris,Paris,Tablet_App,Mediterranean_Warm,339.95,2.64,SEG-012 · FR_Paris_Mediterranean_Warm_Tablet (Tablet_App)
+SEG-013,DE_Berlin_Industrial_Loft_Mobile,DE_Berlin,Berlin,Mobile_iOS,Industrial_Loft,197.48,5.00,SEG-013 · DE_Berlin_Industrial_Loft_Mobile (Mobile_iOS)
+SEG-014,IT_Milan_Biophilic_Zen_Mobile,IT_Milan,Milan,Mobile_Android,Biophilic_Zen,295.76,5.23,SEG-014 · IT_Milan_Biophilic_Zen_Mobile (Mobile_Android)
+SEG-015,NL_Amsterdam_Neo_Bauhaus_Desktop,NL_Amsterdam,Amsterdam,Desktop_Web,Neo_Bauhaus,428.07,1.95,SEG-015 · NL_Amsterdam_Neo_Bauhaus_Desktop (Desktop_Web)
+SEG-016,PT_Lisbon_Nordic_Minimal_Tablet,PT_Lisbon,Lisbon,Tablet_App,Nordic_Minimal,675.86,5.33,SEG-016 · PT_Lisbon_Nordic_Minimal_Tablet (Tablet_App)
+SEG-017,UK_London_Mediterranean_Warm_Mobile,UK_London,London,Mobile_iOS,Mediterranean_Warm,536.78,3.93,SEG-017 · UK_London_Mediterranean_Warm_Mobile (Mobile_iOS)
+SEG-018,ES_Madrid_Industrial_Loft_Mobile,ES_Madrid,Madrid,Mobile_Android,Industrial_Loft,539.67,5.55,SEG-018 · ES_Madrid_Industrial_Loft_Mobile (Mobile_Android)
+SEG-019,ES_Barcelona_Biophilic_Zen_Desktop,ES_Barcelona,Barcelona,Desktop_Web,Biophilic_Zen,222.41,2.23,SEG-019 · ES_Barcelona_Biophilic_Zen_Desktop (Desktop_Web)
+SEG-020,FR_Paris_Neo_Bauhaus_Tablet,FR_Paris,Paris,Tablet_App,Neo_Bauhaus,544.55,3.06,SEG-020 · FR_Paris_Neo_Bauhaus_Tablet (Tablet_App)
+SEG-021,DE_Berlin_Nordic_Minimal_Mobile,DE_Berlin,Berlin,Mobile_iOS,Nordic_Minimal,671.50,5.02,SEG-021 · DE_Berlin_Nordic_Minimal_Mobile (Mobile_iOS)
+SEG-022,IT_Milan_Mediterranean_Warm_Mobile,IT_Milan,Milan,Mobile_Android,Mediterranean_Warm,407.25,1.85,SEG-022 · IT_Milan_Mediterranean_Warm_Mobile (Mobile_Android)
+SEG-023,NL_Amsterdam_Industrial_Loft_Desktop,NL_Amsterdam,Amsterdam,Desktop_Web,Industrial_Loft,458.81,3.93,SEG-023 · NL_Amsterdam_Industrial_Loft_Desktop (Desktop_Web)
+SEG-024,PT_Lisbon_Biophilic_Zen_Tablet,PT_Lisbon,Lisbon,Tablet_App,Biophilic_Zen,440.75,4.76,SEG-024 · PT_Lisbon_Biophilic_Zen_Tablet (Tablet_App)
+SEG-025,UK_London_Neo_Bauhaus_Mobile,UK_London,London,Mobile_iOS,Neo_Bauhaus,382.15,5.30,SEG-025 · UK_London_Neo_Bauhaus_Mobile (Mobile_iOS)
+SEG-026,ES_Madrid_Nordic_Minimal_Mobile,ES_Madrid,Madrid,Mobile_Android,Nordic_Minimal,449.30,1.85,SEG-026 · ES_Madrid_Nordic_Minimal_Mobile (Mobile_Android)
+SEG-027,ES_Barcelona_Mediterranean_Warm_Desktop,ES_Barcelona,Barcelona,Desktop_Web,Mediterranean_Warm,577.90,1.89,SEG-027 · ES_Barcelona_Mediterranean_Warm_Desktop (Desktop_Web)
+SEG-028,FR_Paris_Industrial_Loft_Tablet,FR_Paris,Paris,Tablet_App,Industrial_Loft,626.18,5.46,SEG-028 · FR_Paris_Industrial_Loft_Tablet (Tablet_App)
+SEG-029,DE_Berlin_Biophilic_Zen_Mobile,DE_Berlin,Berlin,Mobile_iOS,Biophilic_Zen,221.38,2.05,SEG-029 · DE_Berlin_Biophilic_Zen_Mobile (Mobile_iOS)
+SEG-030,IT_Milan_Neo_Bauhaus_Mobile,IT_Milan,Milan,Mobile_Android,Neo_Bauhaus,510.33,3.25,SEG-030 · IT_Milan_Neo_Bauhaus_Mobile (Mobile_Android)
+SEG-031,NL_Amsterdam_Nordic_Minimal_Desktop,NL_Amsterdam,Amsterdam,Desktop_Web,Nordic_Minimal,323.58,4.63,SEG-031 · NL_Amsterdam_Nordic_Minimal_Desktop (Desktop_Web)
+SEG-032,PT_Lisbon_Mediterranean_Warm_Tablet,PT_Lisbon,Lisbon,Tablet_App,Mediterranean_Warm,301.20,1.71,SEG-032 · PT_Lisbon_Mediterranean_Warm_Tablet (Tablet_App)
+SEG-033,UK_London_Industrial_Loft_Mobile,UK_London,London,Mobile_iOS,Industrial_Loft,424.13,5.22,SEG-033 · UK_London_Industrial_Loft_Mobile (Mobile_iOS)
+SEG-034,ES_Madrid_Biophilic_Zen_Mobile,ES_Madrid,Madrid,Mobile_Android,Biophilic_Zen,657.10,1.60,SEG-034 · ES_Madrid_Biophilic_Zen_Mobile (Mobile_Android)
+SEG-035,ES_Barcelona_Neo_Bauhaus_Desktop,ES_Barcelona,Barcelona,Desktop_Web,Neo_Bauhaus,535.22,2.62,SEG-035 · ES_Barcelona_Neo_Bauhaus_Desktop (Desktop_Web)
+SEG-036,FR_Paris_Nordic_Minimal_Tablet,FR_Paris,Paris,Tablet_App,Nordic_Minimal,663.47,2.93,SEG-036 · FR_Paris_Nordic_Minimal_Tablet (Tablet_App)
+SEG-037,DE_Berlin_Mediterranean_Warm_Mobile,DE_Berlin,Berlin,Mobile_iOS,Mediterranean_Warm,168.47,2.65,SEG-037 · DE_Berlin_Mediterranean_Warm_Mobile (Mobile_iOS)
+SEG-038,IT_Milan_Industrial_Loft_Mobile,IT_Milan,Milan,Mobile_Android,Industrial_Loft,403.78,1.93,SEG-038 · IT_Milan_Industrial_Loft_Mobile (Mobile_Android)
+SEG-039,NL_Amsterdam_Biophilic_Zen_Desktop,NL_Amsterdam,Amsterdam,Desktop_Web,Biophilic_Zen,548.84,2.65,SEG-039 · NL_Amsterdam_Biophilic_Zen_Desktop (Desktop_Web)
+SEG-040,PT_Lisbon_Neo_Bauhaus_Tablet,PT_Lisbon,Lisbon,Tablet_App,Neo_Bauhaus,533.02,2.19,SEG-040 · PT_Lisbon_Neo_Bauhaus_Tablet (Tablet_App)
+SEG-041,UK_London_Nordic_Minimal_Mobile,UK_London,London,Mobile_iOS,Nordic_Minimal,389.97,4.20,SEG-041 · UK_London_Nordic_Minimal_Mobile (Mobile_iOS)
+SEG-042,ES_Madrid_Mediterranean_Warm_Mobile,ES_Madrid,Madrid,Mobile_Android,Mediterranean_Warm,227.77,2.46,SEG-042 · ES_Madrid_Mediterranean_Warm_Mobile (Mobile_Android)
+SEG-043,ES_Barcelona_Industrial_Loft_Desktop,ES_Barcelona,Barcelona,Desktop_Web,Industrial_Loft,588.60,2.95,SEG-043 · ES_Barcelona_Industrial_Loft_Desktop (Desktop_Web)
+SEG-044,FR_Paris_Biophilic_Zen_Tablet,FR_Paris,Paris,Tablet_App,Biophilic_Zen,308.69,4.00,SEG-044 · FR_Paris_Biophilic_Zen_Tablet (Tablet_App)
+SEG-045,DE_Berlin_Neo_Bauhaus_Mobile,DE_Berlin,Berlin,Mobile_iOS,Neo_Bauhaus,504.04,5.16,SEG-045 · DE_Berlin_Neo_Bauhaus_Mobile (Mobile_iOS)
+SEG-046,IT_Milan_Nordic_Minimal_Mobile,IT_Milan,Milan,Mobile_Android,Nordic_Minimal,432.03,5.11,SEG-046 · IT_Milan_Nordic_Minimal_Mobile (Mobile_Android)
+SEG-047,NL_Amsterdam_Mediterranean_Warm_Desktop,NL_Amsterdam,Amsterdam,Desktop_Web,Mediterranean_Warm,618.96,5.46,SEG-047 · NL_Amsterdam_Mediterranean_Warm_Desktop (Desktop_Web)
+SEG-048,PT_Lisbon_Industrial_Loft_Tablet,PT_Lisbon,Lisbon,Tablet_App,Industrial_Loft,634.07,4.36,SEG-048 · PT_Lisbon_Industrial_Loft_Tablet (Tablet_App)
+SEG-049,UK_London_Biophilic_Zen_Mobile,UK_London,London,Mobile_iOS,Biophilic_Zen,506.70,2.93,SEG-049 · UK_London_Biophilic_Zen_Mobile (Mobile_iOS)
+SEG-050,ES_Madrid_Neo_Bauhaus_Mobile,ES_Madrid,Madrid,Mobile_Android,Neo_Bauhaus,170.67,5.44,SEG-050 · ES_Madrid_Neo_Bauhaus_Mobile (Mobile_Android)
+SEG-051,ES_Barcelona_Nordic_Minimal_Desktop,ES_Barcelona,Barcelona,Desktop_Web,Nordic_Minimal,346.16,2.69,SEG-051 · ES_Barcelona_Nordic_Minimal_Desktop (Desktop_Web)
+SEG-052,FR_Paris_Mediterranean_Warm_Tablet,FR_Paris,Paris,Tablet_App,Mediterranean_Warm,422.92,4.65,SEG-052 · FR_Paris_Mediterranean_Warm_Tablet (Tablet_App)
+SEG-053,DE_Berlin_Industrial_Loft_Mobile,DE_Berlin,Berlin,Mobile_iOS,Industrial_Loft,583.02,1.64,SEG-053 · DE_Berlin_Industrial_Loft_Mobile (Mobile_iOS)
+SEG-054,IT_Milan_Biophilic_Zen_Mobile,IT_Milan,Milan,Mobile_Android,Biophilic_Zen,556.79,5.52,SEG-054 · IT_Milan_Biophilic_Zen_Mobile (Mobile_Android)
+SEG-055,NL_Amsterdam_Neo_Bauhaus_Desktop,NL_Amsterdam,Amsterdam,Desktop_Web,Neo_Bauhaus,667.58,5.53,SEG-055 · NL_Amsterdam_Neo_Bauhaus_Desktop (Desktop_Web)
+SEG-056,PT_Lisbon_Nordic_Minimal_Tablet,PT_Lisbon,Lisbon,Tablet_App,Nordic_Minimal,435.98,5.28,SEG-056 · PT_Lisbon_Nordic_Minimal_Tablet (Tablet_App)
+SEG-057,UK_London_Mediterranean_Warm_Mobile,UK_London,London,Mobile_iOS,Mediterranean_Warm,446.75,5.09,SEG-057 · UK_London_Mediterranean_Warm_Mobile (Mobile_iOS)
+SEG-058,ES_Madrid_Industrial_Loft_Mobile,ES_Madrid,Madrid,Mobile_Android,Industrial_Loft,674.17,2.86,SEG-058 · ES_Madrid_Industrial_Loft_Mobile (Mobile_Android)
+SEG-059,ES_Barcelona_Biophilic_Zen_Desktop,ES_Barcelona,Barcelona,Desktop_Web,Biophilic_Zen,180.47,4.63,SEG-059 · ES_Barcelona_Biophilic_Zen_Desktop (Desktop_Web)
+SEG-060,FR_Paris_Neo_Bauhaus_Tablet,FR_Paris,Paris,Tablet_App,Neo_Bauhaus,644.65,5.35,SEG-060 · FR_Paris_Neo_Bauhaus_Tablet (Tablet_App)
+SEG-061,DE_Berlin_Nordic_Minimal_Mobile,DE_Berlin,Berlin,Mobile_iOS,Nordic_Minimal,373.63,3.21,SEG-061 · DE_Berlin_Nordic_Minimal_Mobile (Mobile_iOS)
+SEG-062,IT_Milan_Mediterranean_Warm_Mobile,IT_Milan,Milan,Mobile_Android,Mediterranean_Warm,181.09,5.10,SEG-062 · IT_Milan_Mediterranean_Warm_Mobile (Mobile_Android)
+SEG-063,NL_Amsterdam_Industrial_Loft_Desktop,NL_Amsterdam,Amsterdam,Desktop_Web,Industrial_Loft,264.92,1.67,SEG-063 · NL_Amsterdam_Industrial_Loft_Desktop (Desktop_Web)
+SEG-064,PT_Lisbon_Biophilic_Zen_Tablet,PT_Lisbon,Lisbon,Tablet_App,Biophilic_Zen,167.96,5.48,SEG-064 · PT_Lisbon_Biophilic_Zen_Tablet (Tablet_App)
+SEG-065,UK_London_Neo_Bauhaus_Mobile,UK_London,London,Mobile_iOS,Neo_Bauhaus,346.95,4.83,SEG-065 · UK_London_Neo_Bauhaus_Mobile (Mobile_iOS)
+SEG-066,ES_Madrid_Nordic_Minimal_Mobile,ES_Madrid,Madrid,Mobile_Android,Nordic_Minimal,150.04,3.36,SEG-066 · ES_Madrid_Nordic_Minimal_Mobile (Mobile_Android)
+SEG-067,ES_Barcelona_Mediterranean_Warm_Desktop,ES_Barcelona,Barcelona,Desktop_Web,Mediterranean_Warm,535.14,4.73,SEG-067 · ES_Barcelona_Mediterranean_Warm_Desktop (Desktop_Web)
+SEG-068,FR_Paris_Industrial_Loft_Tablet,FR_Paris,Paris,Tablet_App,Industrial_Loft,218.39,3.36,SEG-068 · FR_Paris_Industrial_Loft_Tablet (Tablet_App)
+SEG-069,DE_Berlin_Biophilic_Zen_Mobile,DE_Berlin,Berlin,Mobile_iOS,Biophilic_Zen,573.30,5.39,SEG-069 · DE_Berlin_Biophilic_Zen_Mobile (Mobile_iOS)
+SEG-070,IT_Milan_Neo_Bauhaus_Mobile,IT_Milan,Milan,Mobile_Android,Neo_Bauhaus,163.63,3.86,SEG-070 · IT_Milan_Neo_Bauhaus_Mobile (Mobile_Android)
+SEG-071,NL_Amsterdam_Nordic_Minimal_Desktop,NL_Amsterdam,Amsterdam,Desktop_Web,Nordic_Minimal,617.14,4.01,SEG-071 · NL_Amsterdam_Nordic_Minimal_Desktop (Desktop_Web)
+SEG-072,PT_Lisbon_Mediterranean_Warm_Tablet,PT_Lisbon,Lisbon,Tablet_App,Mediterranean_Warm,557.60,2.50,SEG-072 · PT_Lisbon_Mediterranean_Warm_Tablet (Tablet_App)
+SEG-073,UK_London_Industrial_Loft_Mobile,UK_London,London,Mobile_iOS,Industrial_Loft,390.68,1.17,SEG-073 · UK_London_Industrial_Loft_Mobile (Mobile_iOS)
+SEG-074,ES_Madrid_Biophilic_Zen_Mobile,ES_Madrid,Madrid,Mobile_Android,Biophilic_Zen,565.10,3.75,SEG-074 · ES_Madrid_Biophilic_Zen_Mobile (Mobile_Android)
+SEG-075,ES_Barcelona_Neo_Bauhaus_Desktop,ES_Barcelona,Barcelona,Desktop_Web,Neo_Bauhaus,213.15,5.52,SEG-075 · ES_Barcelona_Neo_Bauhaus_Desktop (Desktop_Web)
+SEG-076,FR_Paris_Nordic_Minimal_Tablet,FR_Paris,Paris,Tablet_App,Nordic_Minimal,230.48,1.26,SEG-076 · FR_Paris_Nordic_Minimal_Tablet (Tablet_App)
+SEG-077,DE_Berlin_Mediterranean_Warm_Mobile,DE_Berlin,Berlin,Mobile_iOS,Mediterranean_Warm,523.02,1.48,SEG-077 · DE_Berlin_Mediterranean_Warm_Mobile (Mobile_iOS)
+SEG-078,IT_Milan_Industrial_Loft_Mobile,IT_Milan,Milan,Mobile_Android,Industrial_Loft,485.44,1.74,SEG-078 · IT_Milan_Industrial_Loft_Mobile (Mobile_Android)
+SEG-079,NL_Amsterdam_Biophilic_Zen_Desktop,NL_Amsterdam,Amsterdam,Desktop_Web,Biophilic_Zen,122.92,4.56,SEG-079 · NL_Amsterdam_Biophilic_Zen_Desktop (Desktop_Web)
+SEG-080,PT_Lisbon_Neo_Bauhaus_Tablet,PT_Lisbon,Lisbon,Tablet_App,Neo_Bauhaus,459.60,4.20,SEG-080 · PT_Lisbon_Neo_Bauhaus_Tablet (Tablet_App)

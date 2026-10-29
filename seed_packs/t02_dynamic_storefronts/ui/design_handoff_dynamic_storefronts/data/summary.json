@@ -2,13 +2,13 @@
   "products": 100,
   "audience_segments": 80,
   "experiments": 120,
-  "avg_conversion_rate": 0.02813,
-  "max_conversion_rate": 0.05697,
-  "avg_bounce_rate": 0.5447,
-  "sales_eur": 7898066,
-  "margin_eur": 3562150.71,
-  "total_views": 864919,
-  "low_performance_opportunities": 58,
-  "potential_add_revenue_eur": 1889809.58,
-  "potential_add_margin_eur": 848186.4
+  "avg_conversion_rate": 0.02742,
+  "max_conversion_rate": 0.0582,
+  "avg_bounce_rate": 0.5101,
+  "sales_eur": 45715124.06,
+  "margin_eur": 20631929.99,
+  "total_views": 2344015,
+  "low_performance_opportunities": 66,
+  "potential_add_revenue_eur": 9410565.87,
+  "potential_add_margin_eur": 4309751.36
 }
