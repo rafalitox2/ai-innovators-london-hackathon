@@ -1,0 +1,128 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 580" width="100%" font-family="ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,sans-serif" role="img" aria-label="T02 to T01 Agent-to-Agent integration diagram, showing the merged in-process handshake and the in-progress live A2A endpoint">
+  <title>T02 — Dynamic Storefronts · Agent-to-Agent (A2A) Integration with Table 1</title>
+  <style>
+    .edge{fill:none;stroke-width:2.2;opacity:.9}
+    .flow{stroke-dasharray:7 8;animation:dash 1.1s linear infinite}
+    .fall{stroke-width:1.6;stroke-dasharray:2 7;opacity:.55;animation:dash 1.9s linear infinite reverse}
+    .pending{stroke-dasharray:5 6;opacity:.65}
+    .warn{stroke-dasharray:2 4;opacity:.85}
+    @keyframes dash{to{stroke-dashoffset:-150}}
+    .title{font-size:13.5px;font-weight:700;fill:#e6edf3}
+    .sub{font-size:10px;fill:#8b949e;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+    .hint{font-size:9.5px;fill:#6e7681;font-style:italic}
+    .lane{font-size:14px;font-weight:700;fill:#8b949e;letter-spacing:.5px}
+    .lane-b{font-size:14px;font-weight:700;fill:#a78bfa;letter-spacing:.5px}
+    .gatetitle{fill:#fca5a5}
+  </style>
+  <rect x="0" y="0" width="1600" height="580" rx="14" fill="#0d1117"/>
+
+  <defs>
+    <marker id="a1" markerWidth="9" markerHeight="9" refX="7" refY="3.5" orient="auto"><path d="M0,0 L8,3.5 L0,7 Z" fill="#2dd4bf"/></marker>
+    <marker id="a2" markerWidth="9" markerHeight="9" refX="7" refY="3.5" orient="auto"><path d="M0,0 L8,3.5 L0,7 Z" fill="#a78bfa"/></marker>
+    <marker id="aw" markerWidth="9" markerHeight="9" refX="7" refY="3.5" orient="auto"><path d="M0,0 L8,3.5 L0,7 Z" fill="#f87171"/></marker>
+    <marker id="af" markerWidth="9" markerHeight="9" refX="7" refY="3.5" orient="auto"><path d="M0,0 L8,3.5 L0,7 Z" fill="#6e7681"/></marker>
+  </defs>
+
+  <line x1="800" y1="20" x2="800" y2="500" stroke="#30363d" stroke-width="1.5" stroke-dasharray="4 5"/>
+
+  <text class="lane" x="40" y="35">STATE A — MERGED ON MAIN (current, running)</text>
+  <text class="lane-b" x="840" y="35">STATE B — IN PROGRESS (feat/a2a-live-endpoint, not merged)</text>
+
+  <!-- ===================== STATE A edges ===================== -->
+  <path class="edge flow" d="M280,118 L330,122" stroke="#2dd4bf" marker-end="url(#a1)"/>
+  <path class="edge flow" d="M450,160 L450,192" stroke="#2dd4bf" marker-end="url(#a1)"/>
+  <path class="edge flow" d="M330,222 C305,224 292,228 280,235" stroke="#2dd4bf" marker-end="url(#a1)"/>
+  <path class="edge fall" d="M280,205 C310,185 322,165 332,146" stroke="#6e7681" marker-end="url(#af)"/>
+  <path class="edge flow" d="M450,268 L450,296" stroke="#2dd4bf" marker-end="url(#a1)"/>
+
+  <circle r="4.5" fill="#2dd4bf"><animateMotion dur="2.4s" repeatCount="indefinite" path="M280,118 L330,122 M450,160 L450,192 M330,222 C305,224 292,228 280,235"/></circle>
+  <circle r="4" fill="#6e7681"><animateMotion dur="2.8s" repeatCount="indefinite" path="M280,205 C310,185 322,165 332,146"/></circle>
+  <circle r="4.5" fill="#2dd4bf"><animateMotion dur="2s" begin=".7s" repeatCount="indefinite" path="M450,268 L450,296"/></circle>
+
+  <!-- ===================== STATE A nodes ===================== -->
+  <g><rect x="60" y="80" width="220" height="70" rx="8" fill="#161b22" stroke="#30363d"/><rect x="60" y="80" width="4" height="70" fill="#2dd4bf"/>
+    <text class="title" x="170" y="104" text-anchor="middle" font-size="12.5">LlmAgent expedition_t02</text>
+    <text class="sub" x="170" y="120" text-anchor="middle">app/agent.py · ADK root_agent</text>
+    <text class="sub" x="170" y="134" text-anchor="middle">decides to sync a storefront change</text></g>
+
+  <g><rect x="330" y="80" width="240" height="80" rx="8" fill="#161b22" stroke="#30363d"/><rect x="330" y="80" width="4" height="80" fill="#2dd4bf"/>
+    <text class="title" x="450" y="104" text-anchor="middle" font-size="12.5">sync_campaign_with_t01</text>
+    <text class="sub" x="450" y="120" text-anchor="middle">mcp_server.py · @mcp.tool()</text>
+    <text class="sub" x="450" y="134" text-anchor="middle">builds STOREFRONT_TO_CAMPAIGN_SYNC</text>
+    <text class="sub" x="450" y="148" text-anchor="middle">envelope (a2a_version 1.0)</text></g>
+
+  <g><rect x="330" y="192" width="240" height="56" rx="8" fill="#1c1410" stroke="#f87171" stroke-width="1.4"/>
+    <text class="title gatetitle" x="450" y="212" text-anchor="middle" font-size="12.5">⬥ CPM guardrail</text>
+    <text class="sub" x="450" y="228" text-anchor="middle">target_cpm_bid_eur ≤ 25.00 EUR</text>
+    <text class="hint" x="450" y="242" text-anchor="middle">else: REJECTED_POLICY_CAP</text></g>
+
+  <g><rect x="60" y="192" width="220" height="90" rx="8" fill="#161b22" stroke="#30363d"/><rect x="60" y="192" width="4" height="90" fill="#2dd4bf"/>
+    <text class="title" x="170" y="214" text-anchor="middle" font-size="12.5">T01 functions (same process)</text>
+    <text class="sub" x="170" y="230" text-anchor="middle">create_localized_variant()</text>
+    <text class="sub" x="170" y="244" text-anchor="middle">place_ad_bid()</text>
+    <text class="hint" x="170" y="260" text-anchor="middle">in-process Python import —</text>
+    <text class="hint" x="170" y="272" text-anchor="middle">NOT a network call</text></g>
+
+  <g><rect x="330" y="296" width="240" height="64" rx="8" fill="#161b22" stroke="#30363d"/><rect x="330" y="296" width="4" height="64" fill="#2dd4bf"/>
+    <text class="title" x="450" y="318" text-anchor="middle" font-size="12.5">.state.json</text>
+    <text class="sub" x="450" y="334" text-anchor="middle">a2a_handshakes[]</text>
+    <text class="sub" x="450" y="348" text-anchor="middle">id: A2A-T02-T01-5001+</text></g>
+
+  <g><rect x="60" y="400" width="510" height="78" rx="8" fill="#161b22" stroke="#30363d"/><rect x="60" y="400" width="4" height="78" fill="#6e7681"/>
+    <text class="title" x="315" y="422" text-anchor="middle" font-size="12.5">Cloud Run · /.well-known/agent.json</text>
+    <text class="sub" x="315" y="438" text-anchor="middle">build_a2a_agent_card() — cd/mcp_http_server.py</text>
+    <text class="hint" x="315" y="454" text-anchor="middle">outbound discovery card only — advertises url: &#123;base&#125;/a2a,</text>
+    <text class="hint" x="315" y="468" text-anchor="middle">but main has no /a2a route — nothing listens for inbound calls yet</text></g>
+
+  <!-- ===================== STATE B edges ===================== -->
+  <path class="edge pending" d="M1140,112 L1230,112" stroke="#a78bfa" marker-end="url(#a2)"/>
+  <path class="edge pending" d="M1230,140 L1140,140" stroke="#a78bfa" marker-end="url(#a2)"/>
+  <path class="edge pending" d="M1000,180 L1000,222" stroke="#a78bfa" marker-end="url(#a2)"/>
+  <path class="edge flow" d="M1000,292 L1000,324" stroke="#2dd4bf" marker-end="url(#a1)"/>
+  <path class="edge warn" d="M1230,262 C1160,260 1148,230 1140,182" stroke="#f87171" marker-end="url(#aw)"/>
+
+  <circle r="4.5" fill="#a78bfa" opacity=".8"><animateMotion dur="3.4s" repeatCount="indefinite" path="M1140,112 L1230,112"/></circle>
+  <circle r="4.5" fill="#a78bfa" opacity=".8"><animateMotion dur="3.4s" begin="1.7s" repeatCount="indefinite" path="M1230,140 L1140,140"/></circle>
+  <circle r="4" fill="#2dd4bf"><animateMotion dur="2s" repeatCount="indefinite" path="M1000,292 L1000,324"/></circle>
+
+  <!-- ===================== STATE B nodes ===================== -->
+  <g><rect x="860" y="80" width="280" height="100" rx="8" fill="#161b22" stroke="#a78bfa" stroke-width="1.3"/><rect x="860" y="80" width="4" height="100" fill="#a78bfa"/>
+    <text class="title" x="1000" y="102" text-anchor="middle" font-size="12.5">Cloud Run · /a2a</text>
+    <text class="sub" x="1000" y="118" text-anchor="middle">a2a_endpoint() · JSON-RPC 2.0</text>
+    <text class="sub" x="1000" y="132" text-anchor="middle">message/send · agent/card</text>
+    <text class="hint" x="1000" y="148" text-anchor="middle">cd/mcp_http_server.py</text>
+    <text class="hint" x="1000" y="162" text-anchor="middle">(feat/a2a-live-endpoint worktree)</text></g>
+
+  <g><rect x="1230" y="80" width="300" height="100" rx="8" stroke-dasharray="4 4" fill="#161b22" stroke="#6e7681"/>
+    <text class="title" x="1380" y="102" text-anchor="middle" font-size="12.5">T01 /a2a endpoint (future)</text>
+    <text class="sub" x="1380" y="118" text-anchor="middle">expedition_t01_campaign_orchestrator</text>
+    <text class="hint" x="1380" y="136" text-anchor="middle">hypothetical / future symmetric endpoint —</text>
+    <text class="hint" x="1380" y="150" text-anchor="middle">not verified to exist; would let T01 POST</text>
+    <text class="hint" x="1380" y="164" text-anchor="middle">a sync directly into T02, and vice versa</text></g>
+
+  <g><rect x="860" y="222" width="280" height="70" rx="8" fill="#161b22" stroke="#a78bfa" stroke-width="1.3"/><rect x="860" y="222" width="4" height="70" fill="#a78bfa"/>
+    <text class="title" x="1000" y="244" text-anchor="middle" font-size="12.5">sync_campaign_with_t01</text>
+    <text class="sub" x="1000" y="260" text-anchor="middle">same function as State A</text>
+    <text class="sub" x="1000" y="274" text-anchor="middle">reached via structured-handshake branch</text></g>
+
+  <g><rect x="860" y="324" width="280" height="56" rx="8" fill="#1c1410" stroke="#f87171" stroke-width="1.4"/>
+    <text class="title gatetitle" x="1000" y="344" text-anchor="middle" font-size="12.5">⬥ CPM guardrail</text>
+    <text class="sub" x="1000" y="360" text-anchor="middle">same ≤ 25.00 EUR check, unchanged</text></g>
+
+  <g><rect x="1230" y="222" width="300" height="150" rx="8" fill="#1c1410" stroke="#f87171" stroke-width="1.6"/>
+    <text class="title gatetitle" x="1380" y="244" text-anchor="middle" font-size="12.5">⚠ Agent-card / route mismatch</text>
+    <text class="sub" x="1380" y="262" text-anchor="middle">agent card advertises:</text>
+    <text class="sub" x="1380" y="276" text-anchor="middle">a2a_sync_endpoint: &#123;base&#125;/api/a2a/sync</text>
+    <text class="sub" x="1380" y="294" text-anchor="middle">but build_mcp_cloudrun_app() only mounts</text>
+    <text class="sub" x="1380" y="308" text-anchor="middle">/a2a and /a2a/ — /api/a2a/sync is a 404</text>
+    <text class="hint" x="1380" y="326" text-anchor="middle">(observed on the feat/a2a-live-endpoint</text>
+    <text class="hint" x="1380" y="340" text-anchor="middle">worktree, not yet fixed or merged)</text></g>
+
+  <g font-size="12" fill="#8b949e">
+    <line x1="40" y1="520" x2="66" y2="520" stroke="#2dd4bf" stroke-width="3"/><text x="74" y="525">live now · merged on main</text>
+    <line x1="260" y1="520" x2="286" y2="520" stroke="#a78bfa" stroke-width="3" stroke-dasharray="5 4"/><text x="294" y="525">in progress · unmerged branch</text>
+    <line x1="520" y1="520" x2="546" y2="520" stroke="#6e7681" stroke-width="3" stroke-dasharray="2 5"/><text x="554" y="525">deployed but passive (discovery only)</text>
+    <circle cx="820" cy="520" r="5" fill="#f87171"/><text x="834" y="525">guardrail check / flagged inconsistency</text>
+    <text x="40" y="550" font-size="11" fill="#6e7681" font-style="italic">State A has no live /a2a listener on main; State B adds one but its agent card still advertises an endpoint it never mounts</text>
+  </g>
+</svg>
