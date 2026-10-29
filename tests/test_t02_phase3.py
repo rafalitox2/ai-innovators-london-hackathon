@@ -68,3 +68,32 @@ def test_t02_render_storefront_preview_writes_to_ui_folder(monkeypatch: pytest.M
     ui_file = Path(res["preview"]["ui_repo_path"])
     assert ui_file.exists()
     assert "Dynamic Storefront Engine" in ui_file.read_text(encoding="utf-8")
+
+
+def test_t02_nocturne_ui_mockup_and_template_tokens(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Verify Nocturne UI design handoff mockup files and Nocturne tokens in template.html."""
+    monkeypatch.setenv("SEED_OFFLINE_MODE", "1")
+    from seed_packs.t02_dynamic_storefronts.mcp_server import render_storefront_preview
+
+    ui_dir = Path(__file__).resolve().parent.parent / "seed_packs" / "t02_dynamic_storefronts" / "ui"
+    handoff_dir = ui_dir / "design_handoff_dynamic_storefronts"
+
+    assert (handoff_dir / "README.md").exists()
+    assert (handoff_dir / "design-system" / "styles.css").exists()
+    assert (handoff_dir / "design-system" / "nocturne-guide.md").exists()
+    assert (handoff_dir / "prototype" / "Dynamic Storefronts.dc.html").exists()
+
+    raw = render_storefront_preview(
+        segment_id="SEG-001",
+        featured_skus="SKU-0001,SKU-0006",
+        hero_headline="Nordic Comfort for London Living",
+        theme_style="Nordic_Minimal",
+        discount_pct=15,
+        banner_copy="London Autumn Edit",
+    )
+    res = json.loads(raw)
+    assert res["status"] == "SUCCESS"
+    rendered_html = Path(res["preview"]["ui_repo_path"]).read_text(encoding="utf-8")
+    for nocturne_token in ("--color-bg: #161826", "--color-surface: #232532", "--color-accent: #9184d9"):
+        assert nocturne_token in rendered_html
+
