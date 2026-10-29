@@ -19,7 +19,13 @@ interface StorefrontPreviewModalProps {
   allProducts: ProductItem[];
   discountCap?: number;
   onClose: () => void;
-  onPublished: (expId: string, layoutId?: string, bannerId?: string) => void;
+  onPublished: (
+    expId: string,
+    layoutId?: string,
+    bannerId?: string,
+    heroAssetUrl?: string
+  ) => void;
+  onHeroImageUpdated?: (expId: string, heroAssetUrl: string) => void;
 }
 
 const eur2 = new Intl.NumberFormat('en-GB', {
@@ -35,7 +41,8 @@ export const StorefrontPreviewModal: React.FC<StorefrontPreviewModalProps> = ({
   allProducts,
   discountCap = 30,
   onClose,
-  onPublished
+  onPublished,
+  onHeroImageUpdated
 }) => {
   const e = opportunity;
   const defaultMaxSafe = Math.floor(computeMaxSafeDiscountPct(e.p.marginPct) / 5) * 5;
@@ -93,8 +100,11 @@ export const StorefrontPreviewModal: React.FC<StorefrontPreviewModalProps> = ({
     .replace(/_/g, ' ')
     .toLowerCase()} this week · code ${promoCode}`;
 
+  const defaultHeroUrl = `/api/assets/hero/${e.g.id}?sku_id=${activeProduct.sku}&style_theme=${activeProduct.theme}`;
   const heroAssetSrc =
-    customHeroSrc || itemState?.heroAssetUrl || `/api/assets/hero/${e.g.id}`;
+    customHeroSrc ||
+    (selectedSkuId === e.p.sku ? itemState?.heroAssetUrl : undefined) ||
+    defaultHeroUrl;
 
   const handleRecreateHeroImage = async () => {
     const scenes = [
@@ -120,10 +130,13 @@ export const StorefrontPreviewModal: React.FC<StorefrontPreviewModalProps> = ({
       scene_description: scene,
       aspect_ratio: aspect
     });
-    const baseImgUrl = res.ui_filename
-      ? `/ui/${res.ui_filename}`
-      : res.hero_asset_url || `/api/assets/hero/${e.g.id}`;
-    setCustomHeroSrc(`${baseImgUrl}?t=${Date.now()}`);
+    const baseImgUrl =
+      res.hero_asset_url ||
+      (res.ui_filename ? `/ui/${res.ui_filename}` : defaultHeroUrl);
+    const sep = baseImgUrl.includes('?') ? '&' : '?';
+    const versionedHeroUrl = `${baseImgUrl}${sep}t=${Date.now()}`;
+    setCustomHeroSrc(versionedHeroUrl);
+    onHeroImageUpdated?.(e.id, versionedHeroUrl);
     setHeroVariationIdx(nextIdx);
     if (res.render_job?.prompt_text) {
       setHeroPromptNote(
@@ -173,7 +186,13 @@ export const StorefrontPreviewModal: React.FC<StorefrontPreviewModalProps> = ({
       setPublishError(`${res.status}: ${res.error || 'Blocked by merchandising policy'}`);
       return;
     }
-    onPublished(e.id, res.layout?.layout_id, res.promo_banner?.banner_id);
+    const persistedHeroUrl = customHeroSrc || res.hero_asset_url || heroAssetSrc;
+    onPublished(
+      e.id,
+      res.layout?.layout_id,
+      res.promo_banner?.banner_id,
+      persistedHeroUrl
+    );
   };
 
   const lowMarginDemoSku = allProducts.find((p) => p.sku === 'SKU-0022');
@@ -426,15 +445,26 @@ export const StorefrontPreviewModal: React.FC<StorefrontPreviewModalProps> = ({
                   style={{
                     aspectRatio: '4 / 3',
                     borderRadius: 'var(--radius-sm)',
-                    background: 'linear-gradient(160deg, var(--color-neutral-800), var(--color-neutral-900))',
+                    background:
+                      'radial-gradient(120px 80px at 75% 25%, var(--color-section-ghost), transparent 70%), linear-gradient(160deg, var(--color-section), var(--color-neutral-900))',
                     display: 'flex',
-                    alignItems: 'flex-end',
+                    flexDirection: 'column',
+                    justifyContent: 'space-between',
                     padding: 8,
                     fontSize: 10,
-                    color: 'var(--color-neutral-500)'
+                    color: 'var(--color-neutral-300)',
+                    border: '1px solid var(--color-divider)'
                   }}
                 >
-                  {p.sku}
+                  <span style={{ color: 'var(--color-accent-300)', fontSize: 9, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                    {p.cat.replace(/_/g, ' ')}
+                  </span>
+                  <span style={{ fontWeight: 500, color: 'var(--color-text)' }}>
+                    {p.shortName || p.name}
+                  </span>
+                  <span style={{ color: 'var(--color-neutral-400)', fontSize: 9 }} className="mono">
+                    {p.sku} · {p.theme.replace(/_/g, ' ')}
+                  </span>
                 </div>
                 <span style={{ fontSize: 12 }}>
                   {p.sku} · {p.name}

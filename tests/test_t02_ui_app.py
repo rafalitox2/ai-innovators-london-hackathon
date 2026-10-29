@@ -296,3 +296,63 @@ def test_cloudrun_mcp_server_serves_nocturne_ui_and_api_routes(
 
     hero_file_resp = client.get(f"/ui/{recreate_json['ui_filename']}")
     assert hero_file_resp.status_code == 200
+
+
+def test_published_storefront_hero_images_match_sku_and_persist(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Published storefronts resolve hero images for their actual SKU/theme and persist recreated hero URLs."""
+    monkeypatch.setenv("SEED_OFFLINE_MODE", "1")
+    from app.ui_server import T02_UI_DIR, create_ui_app
+
+    # Clean up any leftover test hero file for SEG-074 before testing
+    for ext in (".png", ".svg"):
+        candidate = T02_UI_DIR / f"hero_SEG-074{ext}"
+        if candidate.exists():
+            candidate.unlink()
+
+    client = TestClient(create_ui_app(include_adk_web=False))
+
+    # 1. Pre-published EXP-0074 (SEG-074, SKU-0074, Biophilic_Zen) must render SKU-0074/Biophilic_Zen, not hardcoded SKU-0057
+    hero_resp = client.get("/api/assets/hero/SEG-074")
+    assert hero_resp.status_code == 200
+    svg_text = hero_resp.text
+    assert "SKU-0074" in svg_text
+    assert "BIOPHILIC_ZEN" in svg_text
+    assert "SKU-0057" not in svg_text
+
+    # 2. Explicit sku_id and style_theme query params override segment defaults when switching SKU in modal
+    custom_sku_resp = client.get(
+        "/api/assets/hero/SEG-074?sku_id=SKU-0081&style_theme=Nordic_Minimal"
+    )
+    assert custom_sku_resp.status_code == 200
+    assert "SKU-0081" in custom_sku_resp.text
+    assert "NORDIC_MINIMAL" in custom_sku_resp.text
+
+    # 3. Publishing an opportunity returns a persisted hero_asset_url matching the published SKU and segment
+    pub_resp = client.post(
+        "/api/opportunities/publish",
+        json={
+            "experiment_id": "EXP-0074",
+            "segment_id": "SEG-074",
+            "featured_skus": "SKU-0074,SKU-0001",
+            "hero_headline": "Biophilic Zen Desks for European Workspaces",
+            "theme_style": "Biophilic_Zen",
+            "discount_pct": 15,
+            "banner_copy": "15% off ergonomic desks this week",
+            "sku_id": "SKU-0074",
+        },
+    )
+    assert pub_resp.status_code == 200
+    pub_json = pub_resp.json()
+    assert pub_json["status"] == "SUCCESS"
+    assert "hero_asset_url" in pub_json
+    assert "SEG-074" in pub_json["hero_asset_url"]
+
+    # Clean up generated test hero file
+    for ext in (".png", ".svg"):
+        candidate = T02_UI_DIR / f"hero_SEG-074{ext}"
+        if candidate.exists():
+            candidate.unlink()
+
+

@@ -188,15 +188,31 @@ export const App: React.FC = () => {
     });
   };
 
-  const handlePublishOpportunity = async (expId: string) => {
+  const handleHeroImageUpdated = (expId: string, heroAssetUrl: string) => {
+    setItems((prev) => ({
+      ...prev,
+      [expId]: {
+        ...(prev[expId] || { status: 'review' }),
+        heroAssetUrl
+      }
+    }));
+  };
+
+  const handlePublishOpportunity = async (
+    expId: string,
+    _layoutId?: string,
+    _bannerId?: string,
+    customHeroAssetUrl?: string
+  ) => {
     const opp = data.low.find((e) => e.id === expId);
+    let publishedHeroUrl = customHeroAssetUrl || items[expId]?.heroAssetUrl;
     if (opp) {
       const maxSafe = computeMaxSafeDiscountPct(opp.p.marginPct);
       const disc =
         items[expId]?.discountPct ??
         Math.max(5, Math.min(DISCOUNT_CAP, maxSafe, Math.floor((opp.p.marginPct * 0.4) / 5) * 5));
       const code = `${opp.g.city.slice(0, 3).toUpperCase()}${disc}`;
-      await publishStorefrontOpportunity({
+      const pubRes = await publishStorefrontOpportunity({
         experiment_id: opp.id,
         segment_id: opp.g.id,
         featured_skus: opp.p.sku,
@@ -206,6 +222,11 @@ export const App: React.FC = () => {
         banner_copy: `${disc}% off ${opp.p.cat.replace(/_/g, ' ').toLowerCase()} this week · code ${code}`,
         sku_id: opp.p.sku
       });
+      if (!publishedHeroUrl) {
+        publishedHeroUrl =
+          pubRes.hero_asset_url ||
+          `/api/assets/hero/${opp.g.id}?sku_id=${opp.p.sku}&style_theme=${opp.p.theme}`;
+      }
     }
     setPreviewExpId(null);
     setItems((prev) => ({
@@ -215,7 +236,8 @@ export const App: React.FC = () => {
         status: 'published',
         day: 20,
         progress: 1,
-        opened: true
+        opened: true,
+        ...(publishedHeroUrl ? { heroAssetUrl: publishedHeroUrl } : {})
       }
     }));
   };
@@ -1094,7 +1116,10 @@ export const App: React.FC = () => {
           allProducts={data.products}
           discountCap={DISCOUNT_CAP}
           onClose={() => setPreviewExpId(null)}
-          onPublished={(expId) => handlePublishOpportunity(expId)}
+          onPublished={(expId, layoutId, bannerId, heroAssetUrl) =>
+            handlePublishOpportunity(expId, layoutId, bannerId, heroAssetUrl)
+          }
+          onHeroImageUpdated={handleHeroImageUpdated}
         />
       )}
 

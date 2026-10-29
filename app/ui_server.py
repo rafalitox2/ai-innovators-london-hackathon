@@ -610,7 +610,7 @@ def register_ui_routes(app: FastAPI) -> None:
             "max_safe_discount_pct": max_safe_disc,
             "banner_copy": banner_copy,
             "hero_headline": headline,
-            "hero_asset_url": f"/api/assets/hero/{g['id']}",
+            "hero_asset_url": f"/api/assets/hero/{g['id']}?sku_id={p['sku']}&style_theme={p['theme']}",
             "hero_render": hero_res.get("render_job", {}),
             "preview": preview_res.get("preview", {}),
         }
@@ -636,9 +636,14 @@ def register_ui_routes(app: FastAPI) -> None:
                 theme_style=req.theme_style,
             )
         )
+        seg_clean = "".join(c for c in req.segment_id if c.isalnum() or c in "-_")
+        hero_asset_url = (
+            f"/api/assets/hero/{seg_clean}?sku_id={req.sku_id}&style_theme={req.theme_style}"
+        )
         return {
             "status": "SUCCESS",
             "experiment_id": req.experiment_id,
+            "hero_asset_url": hero_asset_url,
             "layout": layout_res.get("layout", {}),
             "promo_banner": banner_res.get("promo_banner", {}),
         }
@@ -710,21 +715,102 @@ def register_ui_routes(app: FastAPI) -> None:
         )
         return json.loads(raw)
 
-    @app.get("/api/assets/hero/{segment_id}")
-    def api_hero_asset(segment_id: str) -> Response:
-        seg_clean = "".join(c for c in segment_id if c.isalnum() or c in "-_")
-        for ext, media in ((".png", "image/png"), (".svg", "image/svg+xml")):
-            candidate = T02_UI_DIR / f"hero_{seg_clean}{ext}"
-            if candidate.exists():
-                return FileResponse(candidate, media_type=media)
+    def _resolve_hero_sku_and_theme(
+        seg_clean: str,
+        sku_id: str = "",
+        style_theme: str = "",
+    ) -> tuple[str, str, str]:
+        raw_products = _read_csv("products_catalog")
+        products_by_sku = {
+            r["sku_id"].strip().upper(): r
+            for r in raw_products
+            if r["sku_id"].strip().upper() != "SKU-0017"
+            and not contains_injection_marker(r.get("description", ""))
+        }
 
-        # Generate on-demand fallback SVG if not yet rendered
+        target_sku = sku_id.strip().upper()
+        if not target_sku or target_sku not in products_by_sku:
+            raw_experiments = _read_csv("storefront_experiments")
+            seg_exps = [
+                r
+                for r in raw_experiments
+                if r["segment_id"].strip().upper() == seg_clean.upper()
+                and r["sku_id"].strip().upper() in products_by_sku
+            ]
+            # Prefer pre-published experiments in INITIAL_PUBLISHED_ITEMS when resolving segment default
+            published_seg_exps = [
+                r for r in seg_exps if r["experiment_id"].strip() in INITIAL_PUBLISHED_ITEMS
+            ]
+            chosen_exp = (published_seg_exps or seg_exps or [None])[0]
+            if chosen_exp is not None:
+                target_sku = chosen_exp["sku_id"].strip().upper()
+
+        if not target_sku or target_sku not in products_by_sku:
+            raw_segments = _read_csv("audience_segments")
+            seg_row = next(
+                (r for r in raw_segments if r["segment_id"].strip().upper() == seg_clean.upper()),
+                None,
+            )
+            pref_theme = (
+                style_theme.strip()
+                or (seg_row["preferred_style"].strip() if seg_row else "")
+                or "Mediterranean_Warm"
+            )
+            matching_prod = next(
+                (
+                    r
+                    for r in products_by_sku.values()
+                    if r["style_theme"].strip().lower() == pref_theme.lower()
+                ),
+                None,
+            )
+            target_sku = matching_prod["sku_id"].strip().upper() if matching_prod else "SKU-0057"
+
+        prod_row = products_by_sku.get(target_sku) or products_by_sku["SKU-0057"]
+        resolved_sku = prod_row["sku_id"].strip()
+        resolved_theme = style_theme.strip() or prod_row["style_theme"].strip()
+        scene_desc = (
+            f"Editorial {resolved_theme.replace('_', ' ')} interior featuring {prod_row['product_name'].strip()}"
+        )
+        return resolved_sku, resolved_theme, scene_desc
+
+    @app.get("/api/assets/hero/{segment_id}")
+    def api_hero_asset(
+        segment_id: str,
+        sku_id: str = "",
+        style_theme: str = "",
+    ) -> Response:
+        seg_clean = "".join(c for c in segment_id if c.isalnum() or c in "-_")
+        resolved_sku, resolved_theme, scene_desc = _resolve_hero_sku_and_theme(
+            seg_clean=seg_clean,
+            sku_id=sku_id,
+            style_theme=style_theme,
+        )
+
+        existing_candidates = [
+            T02_UI_DIR / f"hero_{seg_clean}{ext}"
+            for ext in (".png", ".svg")
+            if (T02_UI_DIR / f"hero_{seg_clean}{ext}").exists()
+        ]
+        if existing_candidates:
+            # Prefer the most recently modified file so newly rendered .svg files are not shadowed by older .png files
+            newest = max(existing_candidates, key=lambda p: p.stat().st_mtime)
+            suffix = newest.suffix.lower()
+            media = "image/png" if suffix == ".png" else "image/svg+xml"
+            if suffix == ".svg":
+                svg_content = newest.read_text(encoding="utf-8", errors="ignore")
+                if resolved_sku in svg_content and resolved_theme.upper() in svg_content:
+                    return FileResponse(newest, media_type=media)
+            elif not sku_id.strip():
+                return FileResponse(newest, media_type=media)
+
+        # Generate on-demand hero asset matched to the storefront's actual SKU & style theme
         res = json.loads(
             generate_hero_lifestyle_image(
-                sku_id="SKU-0057",
+                sku_id=resolved_sku,
                 segment_id=seg_clean,
-                style_theme="Mediterranean_Warm",
-                scene_description="Editorial European interior",
+                style_theme=resolved_theme,
+                scene_description=scene_desc,
                 aspect_ratio="16:9",
             )
         )
@@ -758,7 +844,10 @@ def register_ui_routes(app: FastAPI) -> None:
         ui_asset_path = job.get("ui_asset_path") or job.get("asset_path") or ""
         if ui_asset_path:
             res["ui_filename"] = Path(ui_asset_path).name
-            res["hero_asset_url"] = f"/ui/{Path(ui_asset_path).name}"
+            seg_clean = "".join(c for c in req.segment_id if c.isalnum() or c in "-_")
+            res["hero_asset_url"] = (
+                f"/api/assets/hero/{seg_clean}?sku_id={req.sku_id}&style_theme={req.style_theme}"
+            )
         return res
 
     @app.post("/api/chat")

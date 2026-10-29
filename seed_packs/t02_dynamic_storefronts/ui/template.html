@@ -368,8 +368,10 @@
           const data = await resp.json();
           const job = data.render_job || {};
           const imgSlot = document.getElementById("hero-img-slot");
-          if (imgSlot && data.ui_filename) {
-            imgSlot.innerHTML = '<img src="/ui/' + data.ui_filename + '?t=' + Date.now() + '" alt="Hero lifestyle render" />';
+          const heroUrl = data.hero_asset_url || (data.ui_filename ? "/ui/" + data.ui_filename : "");
+          if (imgSlot && heroUrl) {
+            const sep = heroUrl.includes("?") ? "&" : "?";
+            imgSlot.innerHTML = '<img src="' + heroUrl + sep + 't=' + Date.now() + '" alt="Hero lifestyle render" onerror="if(this.src.includes(\'/ui/\'))this.src=this.src.replace(\'/ui/\',\'/\')" />';
           }
           if (promptBox && job.prompt_text) {
             promptBox.innerHTML = "<strong style='color: var(--color-accent-300);'>Google Image Endpoint (" + (job.image_model || "env:GEMINI_IMAGE_MODEL") + " · v" + variationIdx + "):</strong> " + job.prompt_text;
