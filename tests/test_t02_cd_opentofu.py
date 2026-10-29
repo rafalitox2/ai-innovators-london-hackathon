@@ -22,6 +22,8 @@ def test_cd_github_actions_and_cloudbuild_config() -> None:
 
     for expected in (
         "google-github-actions/auth@v2",
+        "CLOUDSDK_AUTH_CREDENTIAL_FILE_OVERRIDE",
+        "GOOGLE_APPLICATION_CREDENTIALS",
         "t02-dynamic-storefronts-mcp",
         "make deploy PACK=t02",
         "make test-remote",

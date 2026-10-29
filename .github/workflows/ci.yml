@@ -83,16 +83,34 @@ jobs:
       - name: Install Python 3.12 dependencies (ADK + Vertex AI + FastMCP)
         run: make setup
 
-      - name: Authenticate to Google Cloud (WIF OIDC or Sandbox ADC)
+      - name: Authenticate to Google Cloud (WIF OIDC)
+        if: vars.GCP_WORKLOAD_IDENTITY_PROVIDER != ''
         id: auth
         uses: google-github-actions/auth@v2
         with:
           workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
           service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
-          credentials_json: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER == '' && secrets.GCP_CREDENTIALS_JSON || '' }}
 
       - name: Set up Google Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
+
+      - name: Authenticate to Google Cloud (Sandbox ADC / Credentials JSON)
+        if: vars.GCP_WORKLOAD_IDENTITY_PROVIDER == ''
+        env:
+          GCP_CREDENTIALS_JSON: ${{ secrets.GCP_CREDENTIALS_JSON }}
+        run: |
+          if [ -z "${GCP_CREDENTIALS_JSON}" ]; then
+            echo "::error::Neither vars.GCP_WORKLOAD_IDENTITY_PROVIDER nor secrets.GCP_CREDENTIALS_JSON is configured."
+            exit 1
+          fi
+          CRED_FILE="${RUNNER_TEMP}/gcp_adc_credentials.json"
+          printf '%s' "${GCP_CREDENTIALS_JSON}" > "${CRED_FILE}"
+          chmod 600 "${CRED_FILE}"
+          python3 -c 'import json, sys; data = json.load(open(sys.argv[1])); assert "type" in data' "${CRED_FILE}"
+          echo "GOOGLE_APPLICATION_CREDENTIALS=${CRED_FILE}" >> "$GITHUB_ENV"
+          echo "CLOUDSDK_AUTH_CREDENTIAL_FILE_OVERRIDE=${CRED_FILE}" >> "$GITHUB_ENV"
+          echo "CLOUDSDK_CORE_PROJECT=${GOOGLE_CLOUD_PROJECT}" >> "$GITHUB_ENV"
+          CLOUDSDK_AUTH_CREDENTIAL_FILE_OVERRIDE="${CRED_FILE}" gcloud auth print-access-token >/dev/null
 
       - name: Build & Deploy FastMCP Server on Google Cloud Run (europe-west1)
         run: |
