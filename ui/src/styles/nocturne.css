@@ -1,11 +1,12 @@
 :root {
-  --color-bg: #14151d;
-  --color-panel: #1b1d28;
+  --color-bg: #161826;
+  --color-surface: #232532;
   --color-panel-2: #21222e;
   --color-text: #e9e9ed;
   --color-text-muted: #9a9cab;
   --color-text-subtle: #70728a;
   --color-accent: #9184d9;
+  --color-section: #262a60;
 
   --color-accent-100: #eceaf8;
   --color-accent-200: #dad6f1;
@@ -207,7 +208,7 @@ a:hover {
 /* ---------- Cards: flat, quiet panels ---------- */
 
 .card {
-  background: var(--color-panel);
+  background: var(--color-surface);
   color: var(--color-text);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
@@ -228,7 +229,7 @@ a:hover {
 }
 
 .card-interactive:hover {
-  background: color-mix(in srgb, var(--color-panel) 88%, var(--color-accent) 8%);
+  background: color-mix(in srgb, var(--color-surface) 88%, var(--color-accent) 8%);
   border-color: var(--color-border-strong);
   transform: translateY(-2px);
 }
@@ -619,7 +620,7 @@ a:hover {
   font-size: var(--text-sm);
   line-height: var(--line-height-body);
   color: var(--color-text);
-  background: var(--color-panel);
+  background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-left: 2px solid var(--color-neutral-500);
   border-radius: var(--radius-md);
@@ -665,7 +666,7 @@ a:hover {
   width: min(420px, 100%);
   display: flex;
   flex-direction: column;
-  background: var(--color-panel);
+  background: var(--color-surface);
   border-left: 1px solid var(--color-border);
   z-index: 41;
 }

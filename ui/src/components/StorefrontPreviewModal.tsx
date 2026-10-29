@@ -199,7 +199,7 @@ export const StorefrontPreviewModal: React.FC<StorefrontPreviewModalProps> = ({
           width: 'min(900px, 100%)',
           maxHeight: '92vh',
           overflow: 'auto',
-          background: 'var(--color-panel)',
+          background: 'var(--color-surface)',
           border: '1px solid var(--color-border)',
           borderRadius: 'var(--radius-lg)',
           boxShadow: 'var(--shadow-modal)',
