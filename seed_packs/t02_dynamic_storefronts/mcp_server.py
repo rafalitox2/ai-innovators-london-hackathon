@@ -287,9 +287,39 @@ def generate_hero_lifestyle_image(
         product_name = _sanitize_text(str(sku_row.get("product_name", sku_clean)))
         category = _sanitize_text(str(sku_row.get("category", "Design_Collection")))
 
+        seg_row = next(
+            (r for r in _read_csv_rows("audience_segments") if r.get("segment_id", "").lower() == seg_clean.lower()),
+            {
+                "segment_id": seg_clean,
+                "segment_name": f"{seg_clean}_Default",
+                "region": "UK_London",
+                "preferred_style": theme_clean,
+                "device_type": "Desktop_Web",
+                "avg_order_value_eur": "450.00",
+                "conversion_rate_pct": "3.50",
+            },
+        )
+        audience_segment_name = _sanitize_text(str(seg_row.get("segment_name", seg_clean)))
+        audience_region = _sanitize_text(str(seg_row.get("region", "UK_London")))
+        audience_preferred_style = _sanitize_text(str(seg_row.get("preferred_style", theme_clean)))
+        audience_device = _sanitize_text(str(seg_row.get("device_type", "Desktop_Web")))
+        audience_aov_eur = float(seg_row.get("avg_order_value_eur", 450.0) or 450.0)
+        audience_cr_pct = float(seg_row.get("conversion_rate_pct", 3.5) or 3.5)
+        audience_context: dict[str, Any] = {
+            "segment_id": seg_clean,
+            "segment_name": audience_segment_name,
+            "region": audience_region,
+            "preferred_style": audience_preferred_style,
+            "device_type": audience_device,
+            "avg_order_value_eur": audience_aov_eur,
+            "conversion_rate_pct": audience_cr_pct,
+        }
+
         prompt_text = (
             f"AtelierNova editorial hero photograph ({ratio_clean}): {product_name} ({sku_clean}, {category}) "
-            f"styled in {theme_clean} aesthetic for segment {seg_clean}. Scene: {scene_clean}."
+            f"styled in {theme_clean} aesthetic for segment {seg_clean} ({audience_segment_name}, "
+            f"region={audience_region}, preferred_style={audience_preferred_style}, device={audience_device}, "
+            f"AOV=€{audience_aov_eur:.2f}). Scene: {scene_clean}."
         )
 
         use_offline = os.environ.get("SEED_OFFLINE_MODE", "").lower() in {"1", "true", "yes"}
@@ -370,6 +400,8 @@ def generate_hero_lifestyle_image(
             "aspect_ratio": ratio_clean,
             "image_model": image_model,
             "generation_mode": generation_mode,
+            "prompt_text": prompt_text,
+            "audience_context": audience_context,
             "asset_path": str(asset_path),
             "ui_asset_path": ui_asset_path_str,
             "rendered_at": datetime.now(timezone.utc).isoformat(),
@@ -477,6 +509,11 @@ def render_storefront_preview(
         ui_dir = _PACK_DIR / "ui"
         template_path = ui_dir / "template.html"
         region_str = str(seg_row.get("region", "EU"))
+        segment_name_str = str(seg_row.get("segment_name", seg_clean))
+        preferred_style_str = str(seg_row.get("preferred_style", theme_clean))
+        device_type_str = str(seg_row.get("device_type", "Desktop_Web"))
+        aov_eur_str = str(seg_row.get("avg_order_value_eur", "450.00"))
+        primary_sku_str = sku_list[0] if sku_list else "SKU-0001"
         hero_image_html = ""
         for ext in (".png", ".svg"):
             candidate_hero = ui_dir / f"hero_{seg_clean}{ext}"
@@ -489,7 +526,12 @@ def render_storefront_preview(
             tpl = template_path.read_text(encoding="utf-8")
             doc = (
                 tpl.replace("{{SEGMENT_ID}}", html.escape(seg_clean))
+                .replace("{{SEGMENT_NAME}}", html.escape(segment_name_str))
                 .replace("{{REGION}}", html.escape(region_str))
+                .replace("{{PREFERRED_STYLE}}", html.escape(preferred_style_str))
+                .replace("{{DEVICE_TYPE}}", html.escape(device_type_str))
+                .replace("{{AOV_EUR}}", html.escape(aov_eur_str))
+                .replace("{{PRIMARY_SKU}}", html.escape(primary_sku_str))
                 .replace("{{THEME_STYLE}}", html.escape(theme_clean))
                 .replace("{{HERO_HEADLINE}}", html.escape(headline_clean))
                 .replace("{{HERO_IMAGE_HTML}}", hero_image_html)
