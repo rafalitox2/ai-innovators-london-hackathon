@@ -10,7 +10,7 @@
     "mcp_service": {
       "name": "projects/expedition-dn26lon-5922/locations/europe-west1/services/t02-dynamic-storefronts-mcp",
       "displayName": "T02 Dynamic Storefronts MCP Server",
-      "description": "Table 2 (t02_dynamic_storefronts) FastMCP Server hosted on Google Cloud Run providing 9 MCP tools: publish_storefront_layout, queue_visual_asset_render, update_promo_banner, generate_hero_lifestyle_image, render_storefront_preview, sync_campaign_with_t01, save_merchandising_memory, recall_merchandising_memory, route_merchandising_task.",
+      "description": "Table 2 (t02_dynamic_storefronts) FastMCP Server hosted on Google Cloud Run providing 10 MCP tools: publish_storefront_layout, queue_visual_asset_render, update_promo_banner, generate_hero_lifestyle_image, render_storefront_preview, sync_campaign_with_t01, save_merchandising_memory, recall_merchandising_memory, route_merchandising_task, register_gemini_enterprise_agent.",
       "interfaces": [
         {
           "url": "https://t02-dynamic-storefronts-mcp-d2lv3suxga-ew.a.run.app/sse",
@@ -21,13 +21,13 @@
         "type": "NO_SPEC"
       },
       "createTime": "2026-10-29T15:38:36.973713841Z",
-      "updateTime": "2026-10-29T16:25:45.382715211Z",
+      "updateTime": "2026-10-29T17:08:18.270319663Z",
       "registryResource": "projects/633924037012/locations/europe-west1/mcpServers/agentregistry-00000000-0000-0000-53aa-f9cc4d6a1d28"
     },
     "mcp_server_entity": {
       "name": "projects/633924037012/locations/europe-west1/mcpServers/agentregistry-00000000-0000-0000-53aa-f9cc4d6a1d28",
       "displayName": "T02 Dynamic Storefronts MCP Server",
-      "description": "Table 2 (t02_dynamic_storefronts) FastMCP Server hosted on Google Cloud Run providing 9 MCP tools: publish_storefront_layout, queue_visual_asset_render, update_promo_banner, generate_hero_lifestyle_image, render_storefront_preview, sync_campaign_with_t01, save_merchandising_memory, recall_merchandising_memory, route_merchandising_task.",
+      "description": "Table 2 (t02_dynamic_storefronts) FastMCP Server hosted on Google Cloud Run providing 10 MCP tools: publish_storefront_layout, queue_visual_asset_render, update_promo_banner, generate_hero_lifestyle_image, render_storefront_preview, sync_campaign_with_t01, save_merchandising_memory, recall_merchandising_memory, route_merchandising_task, register_gemini_enterprise_agent.",
       "interfaces": [
         {
           "url": "https://t02-dynamic-storefronts-mcp-d2lv3suxga-ew.a.run.app/sse",
@@ -46,7 +46,7 @@
     "agent_service": {
       "name": "projects/expedition-dn26lon-5922/locations/europe-west1/services/t02-dynamic-storefronts-agent",
       "displayName": "T02 Dynamic Storefronts ADK Agent",
-      "description": "Table 2 Dynamic Storefront Engine ADK Agent deployed on Vertex AI Agent Runtime (projects/633924037012/locations/europe-west1/reasoningEngines/5876565294532526080), paired with Cloud Run MCP (https://t02-dynamic-storefronts-mcp-d2lv3suxga-ew.a.run.app), and exposing BigQuery/merchandising read tools (find_catalog_products, get_storefront_performance, get_audience_segments, recommend_storefront_optimization).",
+      "description": "Table 2 Dynamic Storefront Engine ADK Agent deployed on Vertex AI Agent Runtime (projects/633924037012/locations/europe-west1/reasoningEngines/5876565294532526080), paired with Cloud Run MCP (https://t02-dynamic-storefronts-mcp-d2lv3suxga-ew.a.run.app), and exposing BigQuery/merchandising read tools (find_catalog_products, get_storefront_performance, get_audience_segments, recommend_storefront_optimization, query_merchandising_knowledge_graph).",
       "interfaces": [
         {
           "url": "https://europe-west1-aiplatform.googleapis.com/v1/projects/633924037012/locations/europe-west1/reasoningEngines/5876565294532526080",
@@ -57,7 +57,7 @@
         "type": "NO_SPEC"
       },
       "createTime": "2026-10-29T15:31:15.415608978Z",
-      "updateTime": "2026-10-29T16:25:48.125544140Z",
+      "updateTime": "2026-10-29T17:08:19.617481115Z",
       "registryResource": "projects/633924037012/locations/europe-west1/agents/agentregistry-00000000-0000-0000-fdb9-ee664e383f84"
     },
     "agent_entity": {
@@ -65,7 +65,7 @@
       "agentId": "urn:agent:projects-633924037012:projects:633924037012:locations:europe-west1:agentregistry:services:t02-dynamic-storefronts-agent",
       "location": "europe-west1",
       "displayName": "T02 Dynamic Storefronts ADK Agent",
-      "description": "Table 2 Dynamic Storefront Engine ADK Agent deployed on Vertex AI Agent Runtime (projects/633924037012/locations/europe-west1/reasoningEngines/5876565294532526080), paired with Cloud Run MCP (https://t02-dynamic-storefronts-mcp-d2lv3suxga-ew.a.run.app), and exposing BigQuery/merchandising read tools (find_catalog_products, get_storefront_performance, get_audience_segments, recommend_storefront_optimization).",
+      "description": "Table 2 Dynamic Storefront Engine ADK Agent deployed on Vertex AI Agent Runtime (projects/633924037012/locations/europe-west1/reasoningEngines/5876565294532526080), paired with Cloud Run MCP (https://t02-dynamic-storefronts-mcp-d2lv3suxga-ew.a.run.app), and exposing BigQuery/merchandising read tools (find_catalog_products, get_storefront_performance, get_audience_segments, recommend_storefront_optimization, query_merchandising_knowledge_graph).",
       "protocols": [
         {
           "type": "CUSTOM",
@@ -97,5 +97,5 @@
       }
     }
   },
-  "registered_at": "2026-10-29T16:25:50.802777+00:00"
+  "registered_at": "2026-10-29T17:08:20.613736+00:00"
 }
