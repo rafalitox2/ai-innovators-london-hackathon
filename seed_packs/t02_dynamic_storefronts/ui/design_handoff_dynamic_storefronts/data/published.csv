@@ -1,0 +1,19 @@
+published_date,sku,product_name,segment_id,segment_label,layout,prev_revenue_per_visit,prev_margin_per_visit,prev_conversion_rate,prev_bounce_rate,new_revenue_per_visit,new_margin_per_visit,new_conversion_rate,new_bounce_rate
+2026-10-11,ANV-1392,Porto Mirror,SEG-061,Lisbon · Mobile · Urban renter,Stacked hero,1.1979,0.7237,0.00929,0.2858,3.5439,2.1411,0.02747,0.2085
+2026-10-12,ANV-1392,Porto Mirror,SEG-055,Amsterdam · Mobile · Gift shopper,Shop-the-look,1.876,1.1334,0.01454,0.3344,2.8697,1.7338,0.02225,0.1878
+2026-10-13,ANV-1329,Vela Task Chair,SEG-008,Madrid · Desktop · New homeowner,Room scene,4.9327,2.5083,0.01678,0.4704,7.2915,3.7077,0.0248,0.3861
+2026-10-14,ANV-1511,Lido Wall Print,SEG-016,London · Desktop · Urban renter,Split hero,2.8329,1.3927,0.01583,0.2836,4.0912,2.0113,0.02286,0.18
+2026-10-15,ANV-1098,Fenn Desk Lamp,SEG-020,London · Desktop · Gift shopper,Split hero,13.3071,6.1992,0.02004,0.6825,19.3422,9.0106,0.02913,0.5918
+2026-10-15,ANV-1371,Lido Bistro Set,SEG-041,Berlin · Mobile · Urban renter,Stacked hero,3.7549,1.3063,0.00827,0.6135,10.2005,3.5487,0.02247,0.5138
+2026-10-15,ANV-1196,Tessa Serving Bowl,SEG-011,London · Mobile · Urban renter,Swipe carousel,2.147,1.3387,0.01731,0.3849,3.3348,2.0793,0.02689,0.2962
+2026-10-19,ANV-1560,Lumen Sofa,SEG-055,Amsterdam · Mobile · Gift shopper,Swipe carousel,6.387,2.1475,0.00467,0.5968,36.2661,12.1935,0.02649,0.465
+2026-10-20,ANV-1357,Oslo Pendant,SEG-054,Amsterdam · Mobile · Design enthusiast,Shop-the-look,0.9711,0.3062,0.0039,0.6274,5.3086,1.674,0.02132,0.5614
+2026-10-22,ANV-1644,Cava Desk,SEG-026,Milan · Desktop · Urban renter,Room scene,7.7389,4.0168,0.02283,0.6259,9.3795,4.8684,0.02767,0.53
+2026-10-22,ANV-1651,Lido Cushion Cover,SEG-056,Amsterdam · Desktop · Urban renter,Split hero,6.0853,1.7078,0.02494,0.3176,6.9277,1.9442,0.02839,0.18
+2026-10-25,ANV-1637,Oslo Sofa,SEG-035,Paris · Mobile · Gift shopper,Swipe carousel,17.0452,5.1128,0.01602,0.3702,24.6192,7.3847,0.02314,0.2268
+2026-10-25,ANV-1497,Oslo Desk Lamp,SEG-053,Amsterdam · Mobile · New homeowner,Swipe carousel,4.4135,2.4585,0.00972,0.343,12.6973,7.0729,0.02797,0.2087
+2026-10-26,ANV-1273,Rhea Daybed,SEG-069,Lisbon · Desktop · Design enthusiast,Split hero,10.5955,5.9147,0.01255,0.6109,25.0091,13.9608,0.02963,0.4833
+2026-10-26,ANV-1175,Nord Throw,SEG-019,London · Desktop · Design enthusiast,Split hero,4.6793,1.8779,0.02043,0.7686,6.6835,2.6823,0.02919,0.6487
+2026-10-26,ANV-1350,Mira Throw,SEG-011,London · Mobile · Urban renter,Stacked hero,6.5263,4.1981,0.02789,0.5235,6.5677,4.2247,0.02807,0.3716
+2026-10-26,ANV-1441,Kaito Carafe,SEG-048,Berlin · Desktop · New homeowner,Split hero,3.1858,0.9022,0.02569,0.764,3.4562,0.9788,0.02787,0.6898
+2026-10-27,ANV-1504,Cava Table Lamp,SEG-028,Milan · Desktop · New homeowner,Split hero,1.0426,0.6419,0.01511,0.7493,1.9909,1.2257,0.02885,0.5931
