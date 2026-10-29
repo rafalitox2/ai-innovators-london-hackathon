@@ -129,6 +129,12 @@ def publish_storefront_layout(
     Returns:
         JSON string confirming the published layout ID and live status.
     """
+    headline_clean = _sanitize_text(hero_headline)
+    if contains_injection_marker(headline_clean):
+        return json.dumps({
+            "status": "REJECTED",
+            "error": "publish_storefront_layout rejected: hero_headline contains an untrusted prompt-injection marker.",
+        })
     state = _load_state()
     layouts = state.setdefault("published_layouts", [])
     layout_id = f"LAYOUT-{1001 + len(layouts)}"
@@ -136,7 +142,7 @@ def publish_storefront_layout(
         "layout_id": layout_id,
         "segment_id": segment_id.strip(),
         "featured_skus": [s.strip() for s in featured_skus.split(",") if s.strip()],
-        "hero_headline": hero_headline.strip(),
+        "hero_headline": headline_clean,
         "theme_style": theme_style.strip(),
         "published_at": datetime.now(timezone.utc).isoformat(),
         "status": "LIVE",
@@ -162,13 +168,19 @@ def queue_visual_asset_render(
     Returns:
         JSON string with render job ID and queue status.
     """
+    scene_clean = _sanitize_text(scene_prompt)
+    if contains_injection_marker(scene_clean):
+        return json.dumps({
+            "status": "REJECTED",
+            "error": "queue_visual_asset_render rejected: scene_prompt contains an untrusted prompt-injection marker.",
+        })
     state = _load_state()
     queue = state.setdefault("render_queue", [])
     job_id = f"RENDER-{2001 + len(queue)}"
     record = {
         "render_job_id": job_id,
         "sku_id": sku_id.strip(),
-        "scene_prompt": scene_prompt.strip(),
+        "scene_prompt": scene_clean,
         "aspect_ratio": aspect_ratio.strip(),
         "queued_at": datetime.now(timezone.utc).isoformat(),
         "status": "QUEUED",
@@ -224,6 +236,13 @@ def update_promo_banner(
                     ),
                 })
 
+    banner_clean = _sanitize_text(banner_copy)
+    if contains_injection_marker(banner_clean):
+        return json.dumps({
+            "status": "REJECTED",
+            "error": "update_promo_banner rejected: banner_copy contains an untrusted prompt-injection marker.",
+        })
+
     state = _load_state()
     banners = state.setdefault("promo_banners", [])
     banner_id = f"PROMO-{3001 + len(banners)}"
@@ -232,7 +251,7 @@ def update_promo_banner(
         "segment_id": segment_id.strip(),
         "sku_id": sku_clean,
         "discount_pct": disc,
-        "banner_copy": banner_copy.strip(),
+        "banner_copy": banner_clean,
         "updated_at": datetime.now(timezone.utc).isoformat(),
         "status": "ACTIVE",
     }
