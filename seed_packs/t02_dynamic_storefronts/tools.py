@@ -16,6 +16,7 @@ from seed_packs.t02_dynamic_storefronts.guardrails import (
     compute_max_safe_discount_pct,
     contains_injection_marker,
     sanitize_description,
+    scan_args_for_injection,
 )
 from seed_packs.t02_dynamic_storefronts.mcp_server import (
     ACTION_TOOLS,
@@ -89,6 +90,9 @@ def find_catalog_products(
     Returns:
         JSON string with matching products sorted by highest margin percentage.
     """
+    flagged_key = scan_args_for_injection(locals())
+    if flagged_key is not None:
+        return json.dumps({"status": "REJECTED", "error": f"Untrusted instruction marker in {flagged_key}."})
     project, dataset = _resolve_project_and_dataset()
     cat_clean = (category or "all").strip()
     style_clean = (style_theme or "all").strip()
@@ -155,6 +159,9 @@ def get_storefront_performance(segment_id: str = "SEG-001", limit: int = 10) -> 
     Returns:
         JSON string with storefront experiment metrics for the requested segment.
     """
+    flagged_key = scan_args_for_injection(locals())
+    if flagged_key is not None:
+        return json.dumps({"status": "REJECTED", "error": f"Untrusted instruction marker in {flagged_key}."})
     project, dataset = _resolve_project_and_dataset()
     seg_clean = (segment_id or "all").strip()
     use_offline = os.environ.get("SEED_OFFLINE_MODE", "").lower() in {"1", "true", "yes"}
@@ -208,6 +215,9 @@ def get_audience_segments(region: str = "all") -> str:
     Returns:
         JSON string listing audience segments ordered by conversion rate.
     """
+    flagged_key = scan_args_for_injection(locals())
+    if flagged_key is not None:
+        return json.dumps({"status": "REJECTED", "error": f"Untrusted instruction marker in {flagged_key}."})
     project, dataset = _resolve_project_and_dataset()
     reg_clean = (region or "all").strip()
     use_offline = os.environ.get("SEED_OFFLINE_MODE", "").lower() in {"1", "true", "yes"}
@@ -269,6 +279,9 @@ def recommend_storefront_optimization(
     Returns:
         JSON string with joined segment-experiment-SKU recommendations, margin headroom, and max safe discount cap (<=30%).
     """
+    flagged_key = scan_args_for_injection(locals())
+    if flagged_key is not None:
+        return json.dumps({"status": "REJECTED", "error": f"Untrusted instruction marker in {flagged_key}."})
     try:
         project, dataset = _resolve_project_and_dataset()
         reg_clean = (region or "all").strip()
@@ -461,6 +474,9 @@ def query_merchandising_knowledge_graph(
     Returns:
         JSON string containing typed knowledge graph nodes, directed relationship edges, quarantined SKUs, and a cross-category bundle with safe discount guardrails.
     """
+    flagged_key = scan_args_for_injection(locals())
+    if flagged_key is not None:
+        return json.dumps({"status": "REJECTED", "error": f"Untrusted instruction marker in {flagged_key}."})
     try:
         from seed_packs.t02_dynamic_storefronts.knowledge_graph import (
             build_segment_knowledge_graph,

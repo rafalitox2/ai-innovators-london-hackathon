@@ -19,6 +19,7 @@ from seed_packs.t02_dynamic_storefronts.guardrails import (
     compute_max_safe_discount_pct,
     contains_injection_marker,
     sanitize_description,
+    scan_args_for_injection,
 )
 
 mcp = FastMCP("t02_dynamic_storefronts_actions")
@@ -129,6 +130,9 @@ def publish_storefront_layout(
     Returns:
         JSON string confirming the published layout ID and live status.
     """
+    flagged_key = scan_args_for_injection(locals())
+    if flagged_key is not None:
+        return json.dumps({"status": "REJECTED", "error": f"Untrusted instruction marker in {flagged_key}."})
     headline_clean = _sanitize_text(hero_headline)
     if contains_injection_marker(headline_clean):
         return json.dumps({
@@ -168,6 +172,9 @@ def queue_visual_asset_render(
     Returns:
         JSON string with render job ID and queue status.
     """
+    flagged_key = scan_args_for_injection(locals())
+    if flagged_key is not None:
+        return json.dumps({"status": "REJECTED", "error": f"Untrusted instruction marker in {flagged_key}."})
     scene_clean = _sanitize_text(scene_prompt)
     if contains_injection_marker(scene_clean):
         return json.dumps({
@@ -210,6 +217,9 @@ def update_promo_banner(
     Returns:
         JSON string confirming the banner activation, or a policy/margin rejection.
     """
+    flagged_key = scan_args_for_injection(locals())
+    if flagged_key is not None:
+        return json.dumps({"status": "REJECTED", "error": f"Untrusted instruction marker in {flagged_key}."})
     disc = int(discount_pct)
     if disc < 0 or disc > MAX_DISCOUNT_PCT:
         return json.dumps({
@@ -280,6 +290,9 @@ def generate_hero_lifestyle_image(
     Returns:
         JSON string containing the generated asset file path, model metadata, and render job status.
     """
+    flagged_key = scan_args_for_injection(locals())
+    if flagged_key is not None:
+        return json.dumps({"status": "REJECTED", "error": f"Untrusted instruction marker in {flagged_key}."})
     try:
         sku_clean = (sku_id or "SKU-0001").strip()
         seg_clean = (segment_id or "SEG-001").strip()
@@ -457,6 +470,9 @@ def render_storefront_preview(
     Returns:
         JSON string with MCP UI resource URI (`ui://storefront-preview/<segment_id>`), HTML file path, and preview metadata.
     """
+    flagged_key = scan_args_for_injection(locals())
+    if flagged_key is not None:
+        return json.dumps({"status": "REJECTED", "error": f"Untrusted instruction marker in {flagged_key}."})
     try:
         disc = int(discount_pct)
         if disc < 0 or disc > MAX_DISCOUNT_PCT:
@@ -640,6 +656,9 @@ def sync_campaign_with_t01(
     Returns:
         JSON string containing the A2A protocol envelope and Table 1's staged variant and active bid confirmations.
     """
+    flagged_key = scan_args_for_injection(locals())
+    if flagged_key is not None:
+        return json.dumps({"status": "REJECTED", "error": f"Untrusted instruction marker in {flagged_key}."})
     try:
         cpm = float(target_cpm_bid_eur)
         if cpm <= 0.0 or cpm > 25.0:
@@ -739,6 +758,9 @@ def save_merchandising_memory(
     Returns:
         JSON string confirming the sanitized memory record (`MEM-6001+`) and storage backend.
     """
+    flagged_key = scan_args_for_injection(locals())
+    if flagged_key is not None:
+        return json.dumps({"status": "REJECTED", "error": f"Untrusted instruction marker in {flagged_key}."})
     try:
         seg_clean = _sanitize_text(segment_id or "").strip()
         key_clean = _sanitize_text(memory_key or "").strip()
@@ -814,6 +836,9 @@ def recall_merchandising_memory(
     Returns:
         JSON string containing matching merchandising memories sorted most-recent first.
     """
+    flagged_key = scan_args_for_injection(locals())
+    if flagged_key is not None:
+        return json.dumps({"status": "REJECTED", "error": f"Untrusted instruction marker in {flagged_key}."})
     try:
         seg_clean = (segment_id or "all").strip()
         query_clean = (query or "").strip().lower()
@@ -868,6 +893,9 @@ def route_merchandising_task(
     Returns:
         JSON string containing the model routing decision, latency/cost tier metadata, and generated output.
     """
+    flagged_key = scan_args_for_injection(locals())
+    if flagged_key is not None:
+        return json.dumps({"status": "REJECTED", "error": f"Untrusted instruction marker in {flagged_key}."})
     try:
         from seed_packs.t02_dynamic_storefronts.model_router import (
             SUPPORTED_TASK_TYPES,
@@ -951,6 +979,9 @@ def register_gemini_enterprise_agent(
     Returns:
         JSON string containing the Gemini Enterprise registration record (`GEM-ENT-8001+`), Discovery Engine endpoint URL, and `adkAgentDefinition` payload.
     """
+    flagged_key = scan_args_for_injection(locals())
+    if flagged_key is not None:
+        return json.dumps({"status": "REJECTED", "error": f"Untrusted instruction marker in {flagged_key}."})
     try:
         from seed_packs.t02_dynamic_storefronts.gemini_enterprise import (
             execute_gemini_enterprise_registration,

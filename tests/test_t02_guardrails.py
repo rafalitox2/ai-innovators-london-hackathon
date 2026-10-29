@@ -122,7 +122,7 @@ def test_update_promo_banner_never_obeys_injected_discount_from_description(
         sku_id="SKU-0017",
     )
     res = json.loads(raw)
-    assert res["status"] == "REJECTED_POLICY_CAP"
+    assert res["status"] == "REJECTED"
 
 
 def test_find_catalog_products_sanitizes_injected_description_offline(
@@ -305,11 +305,11 @@ def test_recommend_storefront_optimization_bigquery_sql_excludes_sku_0017_and_in
     assert "REGEXP_CONTAINS" in sql_upper
 
 
-def test_mcp_action_tools_sanitize_html_injection_comments(
+def test_mcp_action_tools_reject_html_injection_comments(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """Issue #27: publish_storefront_layout, queue_visual_asset_render, and update_promo_banner
-    strip embedded HTML comment injection payloads from text fields."""
+    reject embedded HTML comment injection payloads before sanitization."""
     monkeypatch.setenv("SEED_OFFLINE_MODE", "1")
     from seed_packs.t02_dynamic_storefronts.mcp_server import (
         publish_storefront_layout,
@@ -325,9 +325,7 @@ def test_mcp_action_tools_sanitize_html_injection_comments(
             theme_style="Mediterranean_Warm",
         )
     )
-    assert layout_res["status"] == "SUCCESS"
-    assert "ADMIN OVERRIDE" not in layout_res["layout"]["hero_headline"]
-    assert layout_res["layout"]["hero_headline"] == "Warm Madrid Living"
+    assert layout_res["status"] == "REJECTED"
 
     render_res = json.loads(
         queue_visual_asset_render(
@@ -336,9 +334,7 @@ def test_mcp_action_tools_sanitize_html_injection_comments(
             aspect_ratio="16:9",
         )
     )
-    assert render_res["status"] == "SUCCESS"
-    assert "ADMIN OVERRIDE" not in render_res["render_job"]["scene_prompt"]
-    assert render_res["render_job"]["scene_prompt"] == "Terracotta patio"
+    assert render_res["status"] == "REJECTED"
 
     promo_res = json.loads(
         update_promo_banner(
@@ -348,9 +344,7 @@ def test_mcp_action_tools_sanitize_html_injection_comments(
             sku_id="SKU-0052",
         )
     )
-    assert promo_res["status"] == "SUCCESS"
-    assert "ADMIN OVERRIDE" not in promo_res["promo_banner"]["banner_copy"]
-    assert promo_res["promo_banner"]["banner_copy"] == "Autumn Warmth 15% Off"
+    assert promo_res["status"] == "REJECTED"
 
 
 def test_injection_regex_pattern_is_derived_from_injection_markers() -> None:
@@ -361,7 +355,8 @@ def test_injection_regex_pattern_is_derived_from_injection_markers() -> None:
     )
 
     for marker in INJECTION_MARKERS:
-        assert marker in INJECTION_REGEX_PATTERN
+        import re
+        assert re.search(INJECTION_REGEX_PATTERN, marker)
 
 
 def test_mcp_action_tools_reject_plaintext_injection_markers_without_html_comments(

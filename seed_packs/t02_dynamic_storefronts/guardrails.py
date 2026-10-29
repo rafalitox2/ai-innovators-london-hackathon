@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+import unicodedata
 from typing import Any
 
 _HTML_COMMENT_RE = re.compile(r"<!--.*?-->", re.DOTALL)
@@ -12,9 +13,13 @@ INJECTION_MARKERS = (
     "ignore previous instructions",
     "ignore the above",
     "disregard previous instructions",
+    "system override", "developer mode", "jailbreak", "dan mode",
+    "bypass policy", "bypass guardrail", "ignore all rules",
+    "reveal system prompt", "print your instruction",
+    "<script", "javascript:", "drop table", "union select",
 )
 _INJECTION_MARKERS = INJECTION_MARKERS
-INJECTION_REGEX_PATTERN = "|".join(INJECTION_MARKERS)
+INJECTION_REGEX_PATTERN = "|".join(re.escape(marker) for marker in INJECTION_MARKERS)
 
 MAX_DISCOUNT_PCT = 30
 MARGIN_SAFETY_BUFFER_PCT = 15.0
@@ -35,8 +40,17 @@ def compute_max_safe_discount_pct(
 
 
 def contains_injection_marker(text: str | None) -> bool:
-    lowered = (text or "").lower()
-    return any(marker in lowered for marker in _INJECTION_MARKERS)
+    # This bounded denylist is defense in depth, not a parser or universal detector.
+    normalized = unicodedata.normalize("NFKC", text or "").casefold()
+    normalized = "".join(c for c in normalized if not unicodedata.category(c).startswith("C") and c != "\u00ad")
+    compact = re.sub(r"[\W_]+", "", normalized)
+    punctuation_preserved = re.sub(r"\s+", "", normalized)
+    return any(
+        (re.sub(r"[\W_]+", "", marker) in compact)
+        if marker[0].isalpha() and not marker.endswith(":")
+        else marker.replace(" ", "") in punctuation_preserved
+        for marker in _INJECTION_MARKERS
+    )
 
 
 def scan_args_for_injection(args: dict[str, Any]) -> str | None:
