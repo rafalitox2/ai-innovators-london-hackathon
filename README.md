@@ -1,5 +1,7 @@
 # AI Innovators Expedition — London 2026 Hackathon Kit
 
+[![Agent CI Gates](https://github.com/rafalitox2/ai-innovators-london-hackathon/actions/workflows/ci.yml/badge.svg)](https://github.com/rafalitox2/ai-innovators-london-hackathon/actions/workflows/ci.yml)
+
 > **Disclaimer:** *This is not an officially supported Google product. All datasets, companies, personas, scenarios, and mock action APIs in this repository are 100% synthetic and fictional.*
 
 Welcome to the official participant repository for the **AI Innovators Expedition** hands-on hackathon at **Google London (29–30 October 2026)**!
