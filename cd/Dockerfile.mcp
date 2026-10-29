@@ -1,0 +1,30 @@
+FROM python:3.12-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PYTHONPATH=/app \
+    SEED_PACK=t02 \
+    SEED_OFFLINE_MODE=0 \
+    GEMINI_MODEL=gemini-3.8-flash \
+    GEMINI_IMAGE_MODEL=gemini-3.1-flash-image \
+    PORT=8080
+
+WORKDIR /app
+
+RUN pip install --no-cache-dir \
+    "mcp==1.30.0" \
+    "uvicorn>=0.30.0" \
+    "starlette>=0.38.0" \
+    "google-genai==2.31.0" \
+    "google-cloud-bigquery==3.46.2" \
+    "google-cloud-storage==3.17.1" \
+    "pyyaml==6.0.3" \
+    "python-dotenv==1.2.4"
+
+COPY app ./app
+COPY seed_packs ./seed_packs
+COPY cd ./cd
+
+EXPOSE 8080
+
+CMD ["python", "-m", "cd.mcp_http_server"]

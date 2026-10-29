@@ -148,3 +148,6 @@ test-remote: check-venv
 
 delete: check-venv
 	$(PYTHON) -m deploy.delete $(if $(RESOURCE),--resource-name "$(RESOURCE)",)
+
+cd-deploy:
+	bash cd/deploy_cd.sh

@@ -106,6 +106,51 @@ def _assert_staging_bucket(project_id: str, staging_bucket: str) -> None:
         )
 
 
+def sync_state_from_gcs(
+    project_id: str,
+    staging_bucket: str,
+    state_path: Path,
+    *,
+    storage_client: object | None = None,
+) -> bool:
+    """Download `.deployed_agent.json` from GCS if missing locally on ephemeral CD runners."""
+    if state_path.exists():
+        return False
+    from google.cloud import storage
+
+    bucket_name = staging_bucket.replace("gs://", "").strip("/").split("/")[0]
+    client = storage_client or storage.Client(project=project_id)
+    blob = client.bucket(bucket_name).blob(".deployed_agent.json")
+    if not blob.exists():
+        return False
+    state_path.write_text(blob.download_as_text(encoding="utf-8"), encoding="utf-8")
+    print(f"[deploy] Restored {state_path.name} from gs://{bucket_name}/.deployed_agent.json")
+    return True
+
+
+def sync_state_to_gcs(
+    project_id: str,
+    staging_bucket: str,
+    state_path: Path,
+    *,
+    storage_client: object | None = None,
+) -> bool:
+    """Upload `.deployed_agent.json` to GCS so ephemeral CD runners update the same ReasoningEngine."""
+    if not state_path.exists():
+        return False
+    from google.cloud import storage
+
+    bucket_name = staging_bucket.replace("gs://", "").strip("/").split("/")[0]
+    client = storage_client or storage.Client(project=project_id)
+    blob = client.bucket(bucket_name).blob(".deployed_agent.json")
+    blob.upload_from_string(
+        state_path.read_text(encoding="utf-8"),
+        content_type="application/json",
+    )
+    print(f"[deploy] Synced {state_path.name} to gs://{bucket_name}/.deployed_agent.json")
+    return True
+
+
 def deploy_agent(
     *,
     pack_id: str | None = None,
@@ -136,6 +181,12 @@ def deploy_agent(
     if not model_name:
         raise RuntimeError("GEMINI_MODEL is not set. Set GEMINI_MODEL in .env (see .env.example).")
 
+    if check_bucket:
+        check_adc(project_id)
+        _assert_staging_bucket(project_id, staging_bucket)
+        if not create_new and not state_path.exists():
+            sync_state_from_gcs(project_id, staging_bucket, state_path)
+
     existing_resource: str | None = None
     if not create_new:
         existing_resource = load_saved_resource(
@@ -147,10 +198,6 @@ def deploy_agent(
             "NOT deleted and will no longer be tracked. Delete it with `make delete RESOURCE=...`."
         )
 
-    if check_bucket:
-        check_adc(project_id)
-        _assert_staging_bucket(project_id, staging_bucket)
-
     # Disable local stdio MCP subprocesses before constructing the pickled agent
     os.environ["ENABLE_MCP_STDIO"] = "0"
     os.environ["AGENT_RUNTIME_DEPLOY"] = "1"
@@ -161,6 +208,7 @@ def deploy_agent(
     # Note: Agent Runtime forbids passing GOOGLE_CLOUD_PROJECT or GOOGLE_CLOUD_LOCATION
     # in env_vars (they are reserved by the container runtime). We pass AGENT_ENGINE_PROJECT
     # and GEMINI_LOCATION instead.
+    mcp_server_url = resolve_env_config("MCP_SERVER_URL", default="")
     env_vars = {
         "GOOGLE_GENAI_USE_VERTEXAI": "1",
         "GOOGLE_CLOUD_AGENT_ENGINE_ENABLE_TELEMETRY": "true",
@@ -175,6 +223,8 @@ def deploy_agent(
         "ENABLE_MCP_STDIO": "0",
         "AGENT_RUNTIME_DEPLOY": "1",
     }
+    if mcp_server_url:
+        env_vars["MCP_SERVER_URL"] = mcp_server_url
 
     display_name = f"hackathon-{pack.pack_id}".replace("_", "-")
     description = f"AI Innovators Expedition Starter ({pack.title})"
@@ -236,6 +286,8 @@ def deploy_agent(
         "deployed_at": datetime.now(timezone.utc).isoformat(),
     }
     state_path.write_text(json.dumps(metadata, indent=2), encoding="utf-8")
+    if check_bucket:
+        sync_state_to_gcs(project_id, staging_bucket, state_path)
     print(f"DEPLOYED_RESOURCE_NAME: {resource_name}")
     return resource_name
 
