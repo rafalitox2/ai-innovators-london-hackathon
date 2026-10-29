@@ -415,11 +415,186 @@ def recommend_storefront_optimization(
         return json.dumps({"status": "ERROR", "error": str(exc)})
 
 
+def _min_max_norm(val: float, lo: float, hi: float) -> float:
+    if hi <= lo:
+        return 100.0
+    return round(((val - lo) / (hi - lo)) * 100.0, 2)
+
+
+def rank_skus_by_combined_metrics(
+    category: str = "all",
+    style_theme: str = "all",
+    min_stock: int = 10,
+    views_mode: str = "total",
+    limit: int = 10,
+) -> str:
+    """Rank SKUs by a combined 0-100 composite score across views, margin_pct, base_price_eur, and stock_qty.
+
+    Joins `products_catalog` with `storefront_experiments` and min-max normalizes (0-100) each of the
+    four metrics (`views`, `margin_pct`, `base_price_eur`, `stock_qty`) with equal 25% weight.
+
+    Args:
+        category: Product category filter (e.g. 'Ergonomic_Desks', 'Modular_Sofas', or 'all').
+        style_theme: Style theme filter (e.g. 'Biophilic_Zen', 'Nordic_Minimal', or 'all').
+        min_stock: Minimum stock quantity required (default 10).
+        views_mode: 'total' to sum views across all experiments for a SKU, or 'max_experiment' to use peak single-experiment views.
+        limit: Max ranked SKUs to return (default 10).
+
+    Returns:
+        JSON string with top-ranked SKUs, raw metrics, 0-100 normalized sub-scores, and combined composite score.
+    """
+    try:
+        project, dataset = _resolve_project_and_dataset()
+        cat_clean = (category or "all").strip()
+        style_clean = (style_theme or "all").strip()
+        mode_clean = (views_mode or "total").strip().lower()
+        use_max_exp = mode_clean in {"max", "max_experiment", "single", "single_experiment"}
+        lim = max(1, int(limit))
+        min_stk = int(min_stock)
+
+        raw_records: list[dict[str, Any]] = []
+        source_label = "local_csv_fallback"
+        fallback_error = ""
+
+        use_offline = os.environ.get("SEED_OFFLINE_MODE", "").lower() in {"1", "true", "yes"}
+        if project and not use_offline:
+            try:
+                client = bigquery.Client(project=project)
+                cat_table = f"`{project}.{dataset}.products_catalog`"
+                exp_table = f"`{project}.{dataset}.storefront_experiments`"
+                clauses = ["p.stock_qty >= @min_stock"]
+                params: list[Any] = [bigquery.ScalarQueryParameter("min_stock", "INT64", min_stk)]
+                if cat_clean.lower() != "all":
+                    clauses.append("LOWER(p.category) = LOWER(@cat)")
+                    params.append(bigquery.ScalarQueryParameter("cat", "STRING", cat_clean))
+                if style_clean.lower() != "all":
+                    clauses.append("LOWER(p.style_theme) = LOWER(@style)")
+                    params.append(bigquery.ScalarQueryParameter("style", "STRING", style_clean))
+                where_sql = " AND ".join(clauses)
+                sql = (
+                    f"SELECT p.sku_id, p.product_name, p.category, p.style_theme, "
+                    f"p.base_price_eur, p.stock_qty, p.margin_pct, p.hero_asset_status, "
+                    f"COALESCE(SUM(e.views), 0) AS total_views, "
+                    f"COALESCE(MAX(e.views), 0) AS max_exp_views, "
+                    f"COALESCE(SUM(e.purchases), 0) AS total_purchases, "
+                    f"COUNT(e.experiment_id) AS experiment_count "
+                    f"FROM {cat_table} p "
+                    f"LEFT JOIN {exp_table} e ON p.sku_id = e.sku_id "
+                    f"WHERE {where_sql} "
+                    f"GROUP BY p.sku_id, p.product_name, p.category, p.style_theme, "
+                    f"p.base_price_eur, p.stock_qty, p.margin_pct, p.hero_asset_status"
+                )
+                cfg = bigquery.QueryJobConfig(query_parameters=params)
+                raw_records = [dict(r.items()) for r in client.query(sql, job_config=cfg).result()]
+                source_label = f"bigquery:{project}.{dataset}.products_catalog+storefront_experiments"
+            except Exception as exc:
+                fallback_error = _bq_error_hint(exc)
+        else:
+            fallback_error = _offline_reason(project)
+
+        if not raw_records and source_label == "local_csv_fallback":
+            exp_by_sku: dict[str, list[dict[str, Any]]] = {}
+            for exp in _read_local_csv("storefront_experiments"):
+                exp_by_sku.setdefault(exp["sku_id"], []).append(exp)
+
+            for p in _read_local_csv("products_catalog"):
+                if int(p["stock_qty"]) < min_stk:
+                    continue
+                if cat_clean.lower() != "all" and p["category"].lower() != cat_clean.lower():
+                    continue
+                if style_clean.lower() != "all" and p["style_theme"].lower() != style_clean.lower():
+                    continue
+                exps = exp_by_sku.get(p["sku_id"], [])
+                raw_records.append({
+                    "sku_id": p["sku_id"],
+                    "product_name": p["product_name"],
+                    "category": p["category"],
+                    "style_theme": p["style_theme"],
+                    "base_price_eur": float(p["base_price_eur"]),
+                    "stock_qty": int(p["stock_qty"]),
+                    "margin_pct": float(p["margin_pct"]),
+                    "hero_asset_status": p["hero_asset_status"],
+                    "total_views": sum(int(x["views"]) for x in exps),
+                    "max_exp_views": max((int(x["views"]) for x in exps), default=0),
+                    "total_purchases": sum(int(x["purchases"]) for x in exps),
+                    "experiment_count": len(exps),
+                })
+
+        if not raw_records:
+            return json.dumps({
+                "status": "SUCCESS",
+                "source": source_label,
+                "count": 0,
+                "ranked_skus": [],
+            })
+
+        tot_v_vals = [float(r["total_views"]) for r in raw_records]
+        max_v_vals = [float(r["max_exp_views"]) for r in raw_records]
+        margin_vals = [float(r["margin_pct"]) for r in raw_records]
+        price_vals = [float(r["base_price_eur"]) for r in raw_records]
+        stock_vals = [float(r["stock_qty"]) for r in raw_records]
+
+        v_tot_lo, v_tot_hi = min(tot_v_vals), max(tot_v_vals)
+        v_max_lo, v_max_hi = min(max_v_vals), max(max_v_vals)
+        m_lo, m_hi = min(margin_vals), max(margin_vals)
+        p_lo, p_hi = min(price_vals), max(price_vals)
+        s_lo, s_hi = min(stock_vals), max(stock_vals)
+
+        scored: list[dict[str, Any]] = []
+        for r in raw_records:
+            v_tot_score = _min_max_norm(float(r["total_views"]), v_tot_lo, v_tot_hi)
+            v_max_score = _min_max_norm(float(r["max_exp_views"]), v_max_lo, v_max_hi)
+            m_score = _min_max_norm(float(r["margin_pct"]), m_lo, m_hi)
+            p_score = _min_max_norm(float(r["base_price_eur"]), p_lo, p_hi)
+            s_score = _min_max_norm(float(r["stock_qty"]), s_lo, s_hi)
+
+            comp_tot = round((v_tot_score + m_score + p_score + s_score) / 4.0, 2)
+            comp_max = round((v_max_score + m_score + p_score + s_score) / 4.0, 2)
+            active_views_score = v_max_score if use_max_exp else v_tot_score
+            active_combined = comp_max if use_max_exp else comp_tot
+
+            scored.append({
+                **r,
+                "views_score": active_views_score,
+                "margin_score": m_score,
+                "price_score": p_score,
+                "stock_score": s_score,
+                "combined_score": active_combined,
+                "combined_score_total_views": comp_tot,
+                "combined_score_max_exp_views": comp_max,
+            })
+
+        scored.sort(key=lambda x: float(x["combined_score"]), reverse=True)
+        top_rows = scored[:lim]
+        for idx, item in enumerate(top_rows, start=1):
+            item["rank"] = idx
+
+        payload: dict[str, Any] = {
+            "status": "SUCCESS",
+            "source": source_label,
+            "views_mode": "max_experiment" if use_max_exp else "total",
+            "weights": {
+                "views": 0.25,
+                "margin_pct": 0.25,
+                "base_price_eur": 0.25,
+                "stock_qty": 0.25,
+            },
+            "count": len(top_rows),
+            "ranked_skus": top_rows,
+        }
+        if fallback_error:
+            payload["fallback_reason"] = fallback_error
+        return json.dumps(payload, default=str)
+    except Exception as exc:
+        return json.dumps({"status": "ERROR", "error": str(exc)})
+
+
 TOOLS = [
     find_catalog_products,
     get_storefront_performance,
     get_audience_segments,
     recommend_storefront_optimization,
+    rank_skus_by_combined_metrics,
 ]
 
 __all__ = [
@@ -429,6 +604,7 @@ __all__ = [
     "get_storefront_performance",
     "get_audience_segments",
     "recommend_storefront_optimization",
+    "rank_skus_by_combined_metrics",
     "publish_storefront_layout",
     "queue_visual_asset_render",
     "update_promo_banner",

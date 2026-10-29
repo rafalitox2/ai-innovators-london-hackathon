@@ -80,3 +80,21 @@ def test_t02_render_storefront_preview_creates_ui_card_and_enforces_cap(
     )
     rejected = json.loads(rejected_raw)
     assert rejected["status"] == "REJECTED_POLICY_CAP"
+
+
+def test_t02_rank_skus_by_combined_metrics_offline(monkeypatch: pytest.MonkeyPatch) -> None:
+    """rank_skus_by_combined_metrics ranks SKUs across views, margin_pct, base_price_eur, and stock_qty."""
+    monkeypatch.setenv("SEED_OFFLINE_MODE", "1")
+    from seed_packs.t02_dynamic_storefronts.tools import rank_skus_by_combined_metrics
+
+    res_tot = json.loads(rank_skus_by_combined_metrics(min_stock=0, views_mode="total", limit=5))
+    assert res_tot["status"] == "SUCCESS"
+    assert res_tot["count"] == 5
+    assert res_tot["ranked_skus"][0]["sku_id"] == "SKU-0019"
+    assert res_tot["ranked_skus"][0]["combined_score"] == 72.91
+
+    res_max = json.loads(rank_skus_by_combined_metrics(min_stock=0, views_mode="max_experiment", limit=5))
+    assert res_max["status"] == "SUCCESS"
+    assert res_max["ranked_skus"][0]["sku_id"] == "SKU-0089"
+    assert res_max["ranked_skus"][0]["combined_score"] == 78.59
+

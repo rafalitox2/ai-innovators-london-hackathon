@@ -20,6 +20,7 @@
 - `get_storefront_performance` (BigQuery read tool in `tools.py`)
 - `get_audience_segments` (BigQuery read tool in `tools.py`)
 - `recommend_storefront_optimization` (BigQuery 3-table JOIN read tool in `tools.py`)
+- `rank_skus_by_combined_metrics` (BigQuery & CSV multi-metric composite ranking tool in `tools.py`)
 
 ### Mock Action APIs (`mcp_server.py` & `ACTION_TOOLS` in `tools.py`)
 - `publish_storefront_layout` (FastMCP stdio tool in `mcp_server.py` & `ACTION_TOOLS` in `tools.py`)
