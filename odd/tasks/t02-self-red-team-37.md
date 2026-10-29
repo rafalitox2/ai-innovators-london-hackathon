@@ -16,19 +16,24 @@ delivery_strategy: exception-ok; user approved ONE PR >400 authored lines (forec
 RDD: global ON verified; do not toggle. Assess each commit from last reviewed boundary; preflight if due/unavailable. Candidate consent remains parent-owned, never fabricated.
 ## Progress and evidence
 Prepared branch and clean tracked baseline verified. SKU-0017 actual margin 56.7/cap30; quarantine is required independently of discount (issue cap0 premise incorrect).
-Commits: T1 ce91223; T2 fe35d6c; T3 pending. Accumulated authored diff after T2: 405 lines.
+Commits: T1 ce91223; T2 fe35d6c; T3 17874e9. Accumulated authored diff after T3: 506 lines.
 Failed/skipped checks: cloud eval/deploy/test-remote intentionally skipped (not authorized).
 T1 evidence: new suite RED 60 failed/27 passed; GREEN with guardrail and memory/router suites 118 passed (1 ADK warning). Legacy sanitize-and-accept tests intentionally changed to reject; clean upsert remains tested.
 Unrelated concurrent ui/src/styles/nocturne.css edit detected and preserved/excluded.
-Next step: T2 quarantine. Initial mirror saved/read back (#1577).
+Initial mirror saved/read back (#1577).
 
 T1 commit ce91223: 214 authored lines; initial RDD assessment required untracked inventory. Preflight inventory verified; rerun excluding unrelated files: medium/under_budget (214 lines), no consent requested.
 T2 evidence: RED 53 failed/87 passed (KG assertion initially used wrong response shape, corrected); GREEN 174 passed including existing KG/guardrail suites (1 ADK warning). Six action boundaries and callback, every catalog textual field, CSV/BQ recommendation/search and KG share quarantine. BQ carries full raw catalog record before projection.
-Next step: T2 commit and T3 numeric RED.
+
 
 T2 commit fe35d6c: medium/slice_budget_reached (405 accumulated authored lines). Native preflight with verified untracked exclusions returned review.start --consent=relay; executed verbatim. Native consent required (blocking), target sha256:0c780876664febdebcc055253c475a4b34e22daf78d8df11d269548d068f603c, lineage review-5205d9ff905227cd. No consent granted/declined and no approval claimed. Parent owns response; candidate will change with T3.
 T3 RED: 46 failed/157 passed. GREEN: 203 passed (1 ADK warning). Integers required for discount signature; fractional values rejected instead of silently truncated. CPM remains fractional within (0,25]. Invalid conversions/overflow/nonfinite/bools rejected before side effects.
 Full make verify PACK=t02: FAILED, 293 passed/2 failed/2 warnings. Failures are existing UI token tests (test_t02_nocturne_ui_mockup_and_template_tokens, test_ui_react_folder_structure_and_nocturne_design_system) reading concurrent unrelated template/CSS edits (old #161826 now #14151d). Do not change their work or tests. Remaining eval schema/pack checks must be run separately because make stopped after pytest.
 Concurrent unrelated App.tsx, StorefrontPreviewModal.tsx, CSS and template edits preserved. Existing full-suite rendering regenerated tracked preview_SEG-001.html; keep out of PR.
-Next step: run remaining offline gates, commit T3, refresh native consent evidence, open one draft PR with pending RDD and honest check failures.
+Next step: parent resolves candidate-specific native review consent; keep PR draft/unmerged pending review and CI.
 Remaining offline gates: eval schema PASS (1 file, 13 cases); active packs t01/t02 + README PASS. Focused security/memory/KG/Enterprise suite: 246 passed, 1 warning. No shell scripts modified (shellcheck N/A).
+
+T2 verification follow-up: corrected KG assertions replayed against the exact pre-fix module from ce91223, loaded only in memory (no checkout changes): 2 failed as expected (SUCCESS instead of NOT_FOUND), 202 deselected. Current code GREEN: 204 adversarial tests; expanded focused suites 247 passed (1 warning). Fake-BQ KG test asserts no CSV fallback and full raw field selection.
+T3 assessment: medium/slice_budget_reached, 506 lines. Review boundary remains baseline (no consent/terminal review). Final native status/consent evidence will be collected after the evidence commit; no review approval or merge readiness claimed.
+Limitations: denylist is bounded and may reject benign literal mentions; BQ post-filtering may return fewer results than requested rather than refill from lower-ranked products. Action/callback catalog authority remains bundled CSV; live BQ/ADK/model/Enterprise execution not tested. Functional proof is offline direct calls and fake backend integration, not a transport/cloud certification.
+No new dependencies or model configuration changes. Rollback whole issue with the three fix commits plus this evidence-only follow-up. Additional concurrent cd/Dockerfile.mcp and cd/mcp_http_server.py edits are excluded.

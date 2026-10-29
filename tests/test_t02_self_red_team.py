@@ -210,3 +210,28 @@ def test_fractional_discount_not_truncated(name, isolated):
     assert json.loads(getattr(actions, name)(**args))["status"] == "REJECTED_POLICY_CAP"
     assert g.before_tool_security_callback(SimpleNamespace(name=name), args, None)
     assert isolated == []
+
+
+def test_kg_bigquery_quarantines_additional_raw_fields(monkeypatch):
+    """A fake BQ backend must take the BQ path, not silently pass via CSV fallback."""
+    tables = {name: reads._read_local_csv(name) for name in (
+        "products_catalog", "audience_segments", "storefront_experiments"
+    )}
+    tables["products_catalog"] = [dict(row, visual_tags="developer_mode") for row in tables["products_catalog"]]
+    monkeypatch.setenv("SEED_OFFLINE_MODE", "0")
+    monkeypatch.setenv("GOOGLE_CLOUD_PROJECT", "test-project")
+    queried = []
+
+    def query(sql, **kwargs):
+        table = next(name for name in tables if name in sql)
+        queried.append(table)
+        if table == "products_catalog":
+            assert "SELECT *" in sql
+        return SimpleNamespace(result=lambda: tables[table])
+
+    monkeypatch.setattr(reads.bigquery, "Client", lambda **kwargs: SimpleNamespace(query=query))
+    monkeypatch.setattr(reads, "_read_local_csv", Mock(side_effect=AssertionError("Unexpected CSV fallback")))
+    result = json.loads(reads.query_merchandising_knowledge_graph())
+    assert result["status"] == "NOT_FOUND"
+    assert len(queried) == 3
+    reads._read_local_csv.assert_not_called()
