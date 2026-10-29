@@ -239,6 +239,8 @@ def test_t02_storefront_preview_recreate_image_reads_audience_and_calls_endpoint
     assert "recreateImage" in proto_html
     assert "/api/recreate-hero-image" in proto_html
     assert "audiencePrompt" in proto_html
+    assert "style: preferredStyle" in proto_html
+    assert "cr: crPct / 100" in proto_html
 
     ok_raw = render_storefront_preview(
         segment_id="SEG-002",

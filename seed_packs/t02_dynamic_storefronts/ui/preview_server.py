@@ -22,10 +22,11 @@ class StorefrontPreviewHandler(SimpleHTTPRequestHandler):
                 raw_body = self.rfile.read(length).decode("utf-8") if length > 0 else "{}"
                 payload = json.loads(raw_body or "{}")
                 result_str = generate_hero_lifestyle_image(
-                    segment_id=str(payload.get("segment_id", "SEG-001")),
-                    primary_sku=str(payload.get("primary_sku", "SKU-0001")),
-                    scene_description=str(payload.get("scene_description", "Editorial interior lifestyle scene")),
-                    aspect_ratio=str(payload.get("aspect_ratio", "16:9")),
+                    sku_id=str(payload.get("primary_sku") or payload.get("sku_id") or "SKU-0001"),
+                    segment_id=str(payload.get("segment_id") or "SEG-001"),
+                    style_theme=str(payload.get("style_theme") or "Nordic_Minimal"),
+                    scene_description=str(payload.get("scene_description") or "Editorial interior lifestyle scene"),
+                    aspect_ratio=str(payload.get("aspect_ratio") or "16:9"),
                 )
                 body_bytes = result_str.encode("utf-8")
                 self.send_response(200)
