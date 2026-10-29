@@ -149,7 +149,7 @@ def test_render_storefront_preview_rejects_margin_violation_on_featured_sku(
 
     raw = render_storefront_preview(
         segment_id="SEG-002",
-        featured_skus="SKU-0001,SKU-0085",
+        featured_skus="SKU-0066,SKU-0085",
         hero_headline="Low Margin Guardrail Check",
         theme_style="Nordic_Minimal",
         discount_pct=30,

@@ -9,7 +9,10 @@ from pathlib import Path
 from typing import Any
 
 from google.cloud import bigquery
-from seed_packs.t02_dynamic_storefronts.guardrails import sanitize_description
+from seed_packs.t02_dynamic_storefronts.guardrails import (
+    compute_max_safe_discount_pct,
+    sanitize_description,
+)
 from seed_packs.t02_dynamic_storefronts.mcp_server import (
     ACTION_TOOLS,
     generate_hero_lifestyle_image,
@@ -382,7 +385,7 @@ def recommend_storefront_optimization(
             if not k:
                 continue
             margin_val = float(k["margin_pct"])
-            max_disc = max(0, min(30, int(margin_val - 15.0)))
+            max_disc = compute_max_safe_discount_pct(margin_val)
             joined.append({
                 "segment_id": s["segment_id"],
                 "segment_name": s["segment_name"],

@@ -215,6 +215,7 @@ def _build_mcp_stdio_toolset(mcp_module_path: str) -> Any | None:
                     args=["-m", mcp_module_path],
                     env=env,
                 ),
+                timeout=30.0,
             )
         )
     except Exception as exc:

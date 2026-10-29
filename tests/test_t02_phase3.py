@@ -115,4 +115,6 @@ def test_generate_hero_and_render_preview_embeds_hero_visual_in_ui(
     assert prev_res["status"] == "SUCCESS"
     html_doc = Path(prev_res["preview"]["ui_repo_path"]).read_text(encoding="utf-8")
     assert "hero_SEG-001." in html_doc
+    if ui_asset.suffix == ".svg":
+        ui_asset.unlink(missing_ok=True)
 

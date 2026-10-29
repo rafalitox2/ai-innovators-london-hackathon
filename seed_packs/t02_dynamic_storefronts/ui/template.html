@@ -64,6 +64,18 @@
       margin: 12px 0 0 0;
       line-height: 1.2;
     }
+    .hero-visual {
+      margin-top: 24px;
+      border-radius: 14px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+    .hero-visual img {
+      display: block;
+      width: 100%;
+      max-height: 420px;
+      object-fit: cover;
+    }
     .grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -120,6 +132,7 @@
     <div class="hero">
       <small>{{SEGMENT_ID}} • {{REGION}} • Theme: {{THEME_STYLE}}</small>
       <h1>{{HERO_HEADLINE}}</h1>
+      {{HERO_IMAGE_HTML}}
     </div>
     <div class="grid">
       {{CARDS_HTML}}
