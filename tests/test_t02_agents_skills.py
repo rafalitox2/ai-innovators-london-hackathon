@@ -38,6 +38,13 @@ EXPECTED_SKILLS: dict[str, list[str]] = {
         "make deploy",
         "make test-remote",
     ],
+    "t02-worktree-collab": [
+        "make worktree",
+        "make worktree-link",
+        "make verify",
+        "git worktree",
+        "pull_request_template.md",
+    ],
 }
 
 
@@ -99,6 +106,7 @@ def test_agents_md_documents_t02_skills_and_architecture() -> None:
         "t02-mcp-actions-a2a",
         "t02-storefront-ui-multimodal",
         "t02-eval-and-deploy",
+        "t02-worktree-collab",
         "recommend_storefront_optimization",
         "generate_hero_lifestyle_image",
         "render_storefront_preview",
@@ -120,3 +128,54 @@ def test_github_ci_workflow_triggers_on_all_branches_pr_and_manual_dispatch() ->
     push_branches = triggers["push"].get("branches", [])
     assert "**" in push_branches, "ci.yml push trigger must cover all branches ('**')"
 
+
+def test_makefile_and_gitignore_support_parallel_worktrees() -> None:
+    """Verify Makefile and .gitignore support multi-person and multi-agent git worktrees."""
+    gitignore_lines = [
+        line.strip()
+        for line in (REPO_ROOT / ".gitignore").read_text(encoding="utf-8").splitlines()
+    ]
+    assert ".venv" in gitignore_lines, ".gitignore must ignore symlinked .venv in worktrees"
+    assert ".venv/" in gitignore_lines, ".gitignore must ignore .venv/ directory"
+
+    makefile = (REPO_ROOT / "Makefile").read_text(encoding="utf-8")
+    for required_target in (
+        "MAIN_WORKTREE",
+        "worktree:",
+        "worktree-link:",
+        "worktree-list:",
+        "verify:",
+    ):
+        assert required_target in makefile, f"Makefile is missing '{required_target}' for worktree setup"
+
+
+def test_docs_logbook_and_specs_align_with_all_prs() -> None:
+    """Verify docs/ logbook and phase specs exist and cover PRs #7..#16 and worktree workflows."""
+    for doc_name in (
+        "README.md",
+        "BITACORA_T02.md",
+        "PHASE1_SPEC.md",
+        "PHASE2_SPEC.md",
+        "PHASE3_SPEC.md",
+        "PITCH_T02.md",
+    ):
+        doc_path = REPO_ROOT / "docs" / doc_name
+        assert doc_path.exists(), f"Missing documentation file: {doc_path}"
+
+    bitacora = (REPO_ROOT / "docs" / "BITACORA_T02.md").read_text(encoding="utf-8")
+    for expected_token in (
+        "#7",
+        "#8",
+        "#9",
+        "#10",
+        "#11",
+        "#12",
+        "#13",
+        "#14",
+        "#15",
+        "#16",
+        "before_tool_security_callback",
+        "make worktree",
+        "make verify",
+    ):
+        assert expected_token in bitacora, f"BITACORA_T02.md is missing '{expected_token}'"
