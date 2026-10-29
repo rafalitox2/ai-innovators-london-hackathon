@@ -60,15 +60,19 @@ Your bonus points only count once all 5 Must-Haves are shown working; otherwise 
 
 ## 3. Key Commands
 ```bash
-make setup               # Create Python 3.12 .venv and install pinned dependencies
-make seed PACK=t08       # Create BigQuery dataset & load synthetic Seed Pack tables
-make test                # Run fast offline pytest suite (loader, agent build, eval schema)
-make dev                 # Start local ADK Web UI on http://127.0.0.1:8000
-make eval                # Run ADK golden evaluations (.test.json) and print pass/fail summary
-make eval-validate       # Validate eval JSON only (no Gemini calls)
-make deploy              # Deploy (or update) agent on Vertex AI Agent Runtime (europe-west1)
-make test-remote         # Stream a live verification query to the deployed Agent Runtime agent
-make delete              # Delete the deployed Agent Runtime agent saved in .deployed_agent.json
+make setup                        # Create Python 3.12 .venv and install pinned dependencies
+make worktree BRANCH=feat/<slug>  # Create isolated git worktree (../wt-<slug>) with linked .venv & .env
+make worktree-link                # Link .venv & .env from primary worktree into current worktree
+make worktree-list                # List all active git worktrees and branches
+make verify PACK=t02              # Run full offline PR gate (pytest + eval-validate + check_packs)
+make seed PACK=t02                # Create BigQuery dataset & load synthetic Seed Pack tables
+make test                         # Run fast offline pytest suite (loader, agent build, eval schema)
+make dev                          # Start local ADK Web UI on http://127.0.0.1:8000
+make eval                         # Run ADK golden evaluations (.test.json) and print pass/fail summary
+make eval-validate                # Validate eval JSON only (no Gemini calls)
+make deploy                       # Deploy (or update) agent on Vertex AI Agent Runtime (europe-west1)
+make test-remote                  # Stream a live verification query to the deployed Agent Runtime agent
+make delete                       # Delete the deployed Agent Runtime agent saved in .deployed_agent.json
 ```
 
 ## 4. Agentic SDLC & CI/CD Bonus Practices (+1 pt Each)
@@ -102,6 +106,9 @@ Our team repository is configured for **Table 2 — Dynamic Storefront Engine** 
   - `generate_hero_lifestyle_image`: Generates a hero lifestyle visual via `GEMINI_IMAGE_MODEL` (`gemini-3.1-flash-image`).
   - `render_storefront_preview`: Renders an interactive MCP App UI preview (`ui://storefront-preview/<segment_id>`) from `seed_packs/t02_dynamic_storefronts/ui/template.html` and enforces the `<= 30%` discount cap.
   - `sync_campaign_with_t01`: Executes the `STOREFRONT_TO_CAMPAIGN_SYNC` A2A handshake with Table 1 (`expedition_t01_campaign_orchestrator`), enforcing the `<= 25.0 EUR` CPM bid guardrail.
+  - `save_merchandising_memory`: Persists sanitized cross-session merchandising notes (`MEM-6001+`) per `(segment_id, memory_key)` with revision tracking (`gcs` + local state).
+  - `recall_merchandising_memory`: Retrieves persisted cross-session merchandising memory notes filtered by `segment_id` and keyword `query`.
+  - `route_merchandising_task`: Dynamically routes merchandising tasks (`seed_packs/t02_dynamic_storefronts/model_router.py`) across open-weights `GEMMA_MODEL` (`gemma-3-27b-it`, `ultra_low` latency / `low` cost), `GEMINI_MODEL` (`multi_table_reasoning`), and `GEMINI_IMAGE_MODEL` (`hero_image_generation`).
 
 ### Workspace Rules & Antigravity Skills (`.agents/`)
 - **Domain & Security Rules**:
@@ -112,3 +119,4 @@ Our team repository is configured for **Table 2 — Dynamic Storefront Engine** 
   - `t02-mcp-actions-a2a` (`.agents/skills/t02-mcp-actions-a2a/SKILL.md`): FastMCP action tools, policy guardrails, `MCP_TOOLS` parity, and Table 1 A2A handshake (`sync_campaign_with_t01`).
   - `t02-storefront-ui-multimodal` (`.agents/skills/t02-storefront-ui-multimodal/SKILL.md`): Multimodal hero lifestyle image generation (`GEMINI_IMAGE_MODEL`) and MCP App UI storefront preview (`template.html`).
   - `t02-eval-and-deploy` (`.agents/skills/t02-eval-and-deploy/SKILL.md`): Authoring `golden.test.json` scenarios, running `make eval-validate PACK=t02`, Cloud Build (`cloudbuild.yaml`), and `make deploy` / `make test-remote`.
+  - `t02-worktree-collab` (`.agents/skills/t02-worktree-collab/SKILL.md`): Multi-person and multi-agent parallel `git worktree` orchestration (`make worktree`, `make worktree-link`, `make verify`), Spec/Eval-first TDD (`RED` → `GREEN`), and PR race-condition prevention.

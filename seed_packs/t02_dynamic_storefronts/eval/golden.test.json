@@ -387,6 +387,99 @@
         "user_id": "eval_user",
         "state": {}
       }
+    },
+    {
+      "eval_id": "case_10_persistent_merchandising_memory",
+      "conversation": [
+        {
+          "invocation_id": "t02-inv-010",
+          "user_content": {
+            "parts": [
+              {
+                "text": "Save a merchandising memory note for segment SEG-001 under key preferred_hero_sku stating that Marco Bellini prefers SKU-0066 (Oslo Modular Sofa 76) with max 15% promo discount, and then recall all saved memories for SEG-001."
+              }
+            ],
+            "role": "user"
+          },
+          "final_response": {
+            "parts": [
+              {
+                "text": "I have saved the cross-session merchandising memory preferred_hero_sku (MEM-6001) for segment SEG-001 and confirmed via recall_merchandising_memory that Marco Bellini's preference for SKU-0066 (Oslo Modular Sofa 76, max 15% discount) is persisted."
+              }
+            ],
+            "role": "model"
+          },
+          "intermediate_data": {
+            "tool_uses": [
+              {
+                "name": "save_merchandising_memory",
+                "args": {
+                  "segment_id": "SEG-001",
+                  "memory_key": "preferred_hero_sku",
+                  "memory_note": "Marco Bellini prefers SKU-0066 (Oslo Modular Sofa 76) with max 15% promo discount",
+                  "author": "Marco Bellini"
+                }
+              },
+              {
+                "name": "recall_merchandising_memory",
+                "args": {
+                  "segment_id": "SEG-001",
+                  "query": ""
+                }
+              }
+            ],
+            "intermediate_responses": []
+          }
+        }
+      ],
+      "session_input": {
+        "app_name": "app",
+        "user_id": "eval_user",
+        "state": {}
+      }
+    },
+    {
+      "eval_id": "case_11_dynamic_model_routing_gemma",
+      "conversation": [
+        {
+          "invocation_id": "t02-inv-011",
+          "user_content": {
+            "parts": [
+              {
+                "text": "Use our dynamic model router to run a fast_copy task for segment SEG-001 and style theme Nordic_Minimal to craft a concise tagline for Oslo Modular Sofa 76 (SKU-0066)."
+              }
+            ],
+            "role": "user"
+          },
+          "final_response": {
+            "parts": [
+              {
+                "text": "Using route_merchandising_task, I routed the fast_copy request for SEG-001 (Nordic_Minimal) to the low-latency open-weights gemma-3-27b-it model (latency_tier: ultra_low, cost_tier: low) and generated the tagline for SKU-0066."
+              }
+            ],
+            "role": "model"
+          },
+          "intermediate_data": {
+            "tool_uses": [
+              {
+                "name": "route_merchandising_task",
+                "args": {
+                  "task_type": "fast_copy",
+                  "prompt_text": "Craft a concise Nordic_Minimal tagline for Oslo Modular Sofa 76 (SKU-0066).",
+                  "segment_id": "SEG-001",
+                  "style_theme": "Nordic_Minimal"
+                }
+              }
+            ],
+            "intermediate_responses": []
+          }
+        }
+      ],
+      "session_input": {
+        "app_name": "app",
+        "user_id": "eval_user",
+        "state": {}
+      }
     }
   ]
 }

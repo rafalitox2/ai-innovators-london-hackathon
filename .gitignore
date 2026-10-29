@@ -1,5 +1,7 @@
-# Virtual environment & Python cache
+# Virtual environment & Python cache (supports both directory .venv/ and worktree symlink .venv)
+.venv
 .venv/
+.worktrees/
 __pycache__/
 *.py[cod]
 *$py.class
@@ -8,6 +10,9 @@ dist/
 build/
 .pytest_cache/
 .ruff_cache/
+.vscode/
+.idea/
+.DS_Store
 
 # Secrets & local environment
 .env

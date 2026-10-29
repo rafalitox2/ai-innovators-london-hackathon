@@ -146,3 +146,116 @@ def test_t02_nocturne_ui_mockup_and_template_tokens(monkeypatch: pytest.MonkeyPa
     for nocturne_token in ("--color-bg: #161826", "--color-surface: #232532", "--color-accent: #9184d9"):
         assert nocturne_token in rendered_html
 
+
+def test_t02_nocturne_mockup_uses_real_catalog_and_segment_data() -> None:
+    """Verify the Nocturne prototype and handoff data files reference real Table 2 SKUs, segments, and experiments."""
+    handoff_dir = (
+        Path(__file__).resolve().parent.parent
+        / "seed_packs"
+        / "t02_dynamic_storefronts"
+        / "ui"
+        / "design_handoff_dynamic_storefronts"
+    )
+    proto_html = (handoff_dir / "prototype" / "Dynamic Storefronts.dc.html").read_text(encoding="utf-8")
+
+    for real_token in (
+        "SKU-0001",
+        "Atelier Nordic Modular Sofas #1",
+        "SKU-0057",
+        "Atelier Mediterranean Smart Lighting #57",
+        "SKU-0100",
+        "Atelier Neo Ceramic Decor #100",
+        "SEG-001",
+        "UK_London_Nordic_Minimal_Mobile",
+        "SEG-057",
+        "UK_London_Mediterranean_Warm_Mobile",
+        "EXP-0001",
+        "EXP-0057",
+        "EXP-0120",
+        "Hero_Video_Grid",
+        "Carousel_Lookbook",
+        "Minimal_Split_Card",
+        "Interactive_Room_Bundle",
+    ):
+        assert real_token in proto_html, f"Expected real Table 2 token {real_token!r} in prototype HTML"
+
+    assert "ANV-" not in proto_html
+    assert "ADMIN OVERRIDE" not in proto_html
+
+    products_csv = (handoff_dir / "data" / "products.csv").read_text(encoding="utf-8")
+    segments_csv = (handoff_dir / "data" / "segments.csv").read_text(encoding="utf-8")
+    experiments_csv = (handoff_dir / "data" / "experiments.csv").read_text(encoding="utf-8")
+    opportunities_csv = (handoff_dir / "data" / "opportunities.csv").read_text(encoding="utf-8")
+
+    assert "SKU-0001,Atelier Nordic Modular Sofas #1" in products_csv
+    assert "ANV-" not in products_csv
+    assert "SEG-001" in segments_csv and "UK_London_Nordic_Minimal_Mobile" in segments_csv
+    assert "EXP-0001" in experiments_csv and "SKU-0001" in experiments_csv
+    assert "EXP-0057" in opportunities_csv and "Atelier Mediterranean Smart Lighting #57" in opportunities_csv
+    assert "SKU-0017" not in opportunities_csv
+
+
+def test_t02_storefront_preview_recreate_image_reads_audience_and_calls_endpoint(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Verify storefront preview has a Recreate image button, reads audience context, and enriches the Google image endpoint prompt."""
+    monkeypatch.setenv("SEED_OFFLINE_MODE", "1")
+    monkeypatch.setenv("GEMINI_IMAGE_MODEL", "custom-image-model-from-env")
+    from seed_packs.t02_dynamic_storefronts.mcp_server import (
+        generate_hero_lifestyle_image,
+        render_storefront_preview,
+    )
+
+    raw_img = generate_hero_lifestyle_image(
+        sku_id="SKU-0006",
+        segment_id="SEG-002",
+        style_theme="Mediterranean_Warm",
+        scene_description="Sunlit apartment terrace",
+        aspect_ratio="9:16",
+    )
+    img_res = json.loads(raw_img)
+    assert img_res["status"] == "SUCCESS"
+    job = img_res["render_job"]
+    assert "audience_context" in job
+    aud = job["audience_context"]
+    assert aud["segment_id"] == "SEG-002"
+    assert aud["segment_name"] == "ES_Madrid_Mediterranean_Warm_Mobile"
+    assert aud["region"] == "ES_Madrid"
+    assert aud["preferred_style"] == "Mediterranean_Warm"
+    assert aud["device_type"] == "Mobile_Android"
+    assert float(aud["avg_order_value_eur"]) == pytest.approx(420.15)
+    assert "ES_Madrid_Mediterranean_Warm_Mobile" in job["prompt_text"]
+    assert "Mobile_Android" in job["prompt_text"]
+
+    handoff_dir = (
+        Path(__file__).resolve().parent.parent
+        / "seed_packs"
+        / "t02_dynamic_storefronts"
+        / "ui"
+        / "design_handoff_dynamic_storefronts"
+    )
+    proto_html = (handoff_dir / "prototype" / "Dynamic Storefronts.dc.html").read_text(encoding="utf-8")
+    assert "Recreate image" in proto_html
+    assert "recreateImage" in proto_html
+    assert "/api/recreate-hero-image" in proto_html
+    assert "audiencePrompt" in proto_html
+
+    ok_raw = render_storefront_preview(
+        segment_id="SEG-002",
+        featured_skus="SKU-0002",
+        hero_headline="Mediterranean Light for Madrid Living",
+        theme_style="Mediterranean_Warm",
+        discount_pct=10,
+        banner_copy="Madrid Design Edit",
+    )
+    ok = json.loads(ok_raw)
+    assert ok["status"] == "SUCCESS"
+    preview_path = Path(ok["preview"]["html_path"])
+    rendered_html = preview_path.read_text(encoding="utf-8")
+    preview_path.unlink(missing_ok=True)
+    (preview_path.parent / "hero_SEG-002.svg").unlink(missing_ok=True)
+    assert "Recreate image" in rendered_html
+    assert "ES_Madrid_Mediterranean_Warm_Mobile" in rendered_html
+
+
+
