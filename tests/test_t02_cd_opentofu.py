@@ -41,8 +41,9 @@ def test_cd_github_actions_and_cloudbuild_config() -> None:
         assert expected in cb_text, f"cloudbuild.yaml is missing '{expected}'"
 
 
-def test_cd_mcp_cloudrun_http_server_endpoints() -> None:
-    """Verify cd/mcp_http_server.py exposes /healthz, /.well-known/agent.json, /preview/{segment_id}, and /sse."""
+def test_cd_mcp_cloudrun_http_server_endpoints(monkeypatch) -> None:
+    """Verify cd/mcp_http_server.py exposes /healthz, /.well-known/agent.json, /a2a, /preview/{segment_id}, and /sse."""
+    monkeypatch.setenv("SEED_OFFLINE_MODE", "1")
     from cd.mcp_http_server import build_mcp_cloudrun_app
 
     app = build_mcp_cloudrun_app()
@@ -67,12 +68,53 @@ def test_cd_mcp_cloudrun_http_server_endpoints() -> None:
     ):
         assert mcp_tool_name in health["mcp_tools"]
 
-    # 2. A2A Agent Discovery Card endpoint
-    card_res = client.get("/.well-known/agent.json")
-    assert card_res.status_code == 200
-    card = card_res.json()
-    assert card["name"] == "expedition_t02_dynamic_storefronts"
-    assert len(card["skills"]) >= 4
+    # 2. A2A Agent Discovery Card endpoints (/.well-known/agent.json, /.well-known/agent-card.json, GET /a2a)
+    for card_path in ("/.well-known/agent.json", "/.well-known/agent-card.json", "/a2a"):
+        card_res = client.get(card_path)
+        assert card_res.status_code == 200
+        card = card_res.json()
+        assert card["name"] == "expedition_t02_dynamic_storefronts"
+        assert card["url"].endswith("/a2a")
+        assert len(card["skills"]) >= 4
+
+    # 2b. Live A2A JSON-RPC 2.0 POST /a2a (message/send) and Structured Handshake POST /a2a
+    rpc_res = client.post(
+        "/a2a",
+        json={
+            "jsonrpc": "2.0",
+            "id": "rpc-test-1",
+            "method": "message/send",
+            "params": {
+                "message": {
+                    "role": "user",
+                    "parts": [{"text": "Sync campaign with T01 for SEG-057 at 12.5 EUR CPM"}],
+                }
+            },
+        },
+    )
+    assert rpc_res.status_code == 200
+    rpc_payload = rpc_res.json()
+    assert rpc_payload["jsonrpc"] == "2.0"
+    assert rpc_payload["id"] == "rpc-test-1"
+    assert rpc_payload["result"]["status"]["state"] == "completed"
+
+    hs_res = client.post(
+        "/a2a",
+        json={
+            "segment_id": "SEG-057",
+            "featured_skus": "SKU-0057,SKU-0002",
+            "hero_headline": "Warm Mediterranean light for London homes",
+            "theme_style": "Mediterranean_Warm",
+            "locale": "en-GB",
+            "event_id": "EVT-0001",
+            "channel": "Meta_Reels",
+            "target_cpm_bid_eur": 12.5,
+        },
+    )
+    assert hs_res.status_code == 200
+    hs_payload = hs_res.json()
+    assert hs_payload["status"] == "SUCCESS"
+    assert hs_payload["a2a_handshake"]["handshake_type"] == "STOREFRONT_TO_CAMPAIGN_SYNC"
 
     # 3. Interactive Storefront UI Preview endpoint on Cloud Run
     preview_res = client.get("/preview/SEG-001")
