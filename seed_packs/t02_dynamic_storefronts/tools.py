@@ -10,8 +10,10 @@ from typing import Any
 
 from google.cloud import bigquery
 from seed_packs.t02_dynamic_storefronts.guardrails import (
+    INJECTION_REGEX_PATTERN,
     before_tool_security_callback,
     compute_max_safe_discount_pct,
+    contains_injection_marker,
     sanitize_description,
 )
 from seed_packs.t02_dynamic_storefronts.mcp_server import (
@@ -318,6 +320,11 @@ def recommend_storefront_optimization(
                            ) AS rn
                     FROM {cat_tbl}
                     WHERE stock_qty >= @min_stock
+                      AND UPPER(sku_id) != 'SKU-0017'
+                      AND NOT REGEXP_CONTAINS(
+                          LOWER(IFNULL(description, '')),
+                          r'{INJECTION_REGEX_PATTERN}'
+                      )
                 )
                 SELECT
                     s.segment_id,
@@ -348,6 +355,13 @@ def recommend_storefront_optimization(
                 """
                 cfg = bigquery.QueryJobConfig(query_parameters=params)
                 rows = [dict(r.items()) for r in client.query(sql, job_config=cfg).result()]
+                for row in rows:
+                    row["recommended_product_name"] = sanitize_description(
+                        str(row.get("recommended_product_name", ""))
+                    )
+                    row["recommended_category"] = sanitize_description(
+                        str(row.get("recommended_category", ""))
+                    )
                 return json.dumps({
                     "status": "SUCCESS",
                     "source": f"bigquery_join:{project}.{dataset}.(audience_segments+storefront_experiments+products_catalog)",
@@ -374,6 +388,8 @@ def recommend_storefront_optimization(
         catalog = [
             p for p in _read_local_csv("products_catalog")
             if int(p["stock_qty"]) >= min_stk
+            and p.get("sku_id", "").strip().upper() != "SKU-0017"
+            and not contains_injection_marker(p.get("description"))
         ]
         catalog.sort(key=lambda p: (float(p["margin_pct"]), int(p["stock_qty"])), reverse=True)
         top_by_style: dict[str, dict[str, Any]] = {}
@@ -403,8 +419,8 @@ def recommend_storefront_optimization(
                 "bounce_rate_pct": float(e["bounce_rate_pct"]),
                 "purchases": int(e["purchases"]),
                 "recommended_sku_id": k["sku_id"],
-                "recommended_product_name": k["product_name"],
-                "recommended_category": k["category"],
+                "recommended_product_name": sanitize_description(k["product_name"]),
+                "recommended_category": sanitize_description(k["category"]),
                 "recommended_price_eur": float(k["base_price_eur"]),
                 "recommended_stock_qty": int(k["stock_qty"]),
                 "recommended_margin_pct": margin_val,
