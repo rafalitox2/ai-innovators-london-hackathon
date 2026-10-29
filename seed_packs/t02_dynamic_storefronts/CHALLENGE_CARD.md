@@ -19,11 +19,14 @@
 - `find_catalog_products` (BigQuery read tool in `tools.py`)
 - `get_storefront_performance` (BigQuery read tool in `tools.py`)
 - `get_audience_segments` (BigQuery read tool in `tools.py`)
+- `recommend_storefront_optimization` (BigQuery 3-table JOIN read tool in `tools.py`)
 
 ### Mock Action APIs (`mcp_server.py` & `ACTION_TOOLS` in `tools.py`)
 - `publish_storefront_layout` (FastMCP stdio tool in `mcp_server.py` & `ACTION_TOOLS` in `tools.py`)
 - `queue_visual_asset_render` (FastMCP stdio tool in `mcp_server.py` & `ACTION_TOOLS` in `tools.py`)
 - `update_promo_banner` (FastMCP stdio tool in `mcp_server.py` & `ACTION_TOOLS` in `tools.py`)
+- `generate_hero_lifestyle_image` (FastMCP multimodal hero lifestyle asset tool in `mcp_server.py` & `ACTION_TOOLS` in `tools.py`)
+- `render_storefront_preview` (FastMCP interactive UI storefront preview tool in `mcp_server.py` & `ACTION_TOOLS` in `tools.py`)
 
 ## Minimum Playable Scope (~3.5 Hours Build Time)
 Build an ADK agent connected to `seed_t02` and the `t02_dynamic_storefronts` MCP server that: (1) queries catalog products by category, style theme, and stock level, (2) analyzes storefront experiment bounce and conversion rates by audience segment, and (3) publishes updated layouts, visual asset render jobs, and promo banners within discount policy limits.

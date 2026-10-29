@@ -227,7 +227,7 @@
           "final_response": {
             "parts": [
               {
-                "text": "For region ES_Madrid, segments with high bounce rate (>=55%) include SEG-002 and SEG-010, with recommended high-margin replacement SKUs and safe discount limits."
+                "text": "For region ES_Madrid, segments with high bounce rate (>=55%) include SEG-042 (70.9% bounce, recommended SKU-0052 with 62.3% margin) and SEG-066 / SEG-026 (recommended SKU-0066 with 63.7% margin and max safe discount 30%)."
               }
             ],
             "role": "model"

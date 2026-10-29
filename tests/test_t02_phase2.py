@@ -27,7 +27,7 @@ def test_t02_recommend_storefront_optimization_offline(monkeypatch: pytest.Monke
 def test_t02_generate_hero_lifestyle_image_reads_env_model(monkeypatch: pytest.MonkeyPatch) -> None:
     """generate_hero_lifestyle_image uses GEMINI_IMAGE_MODEL from env and never raises."""
     monkeypatch.setenv("SEED_OFFLINE_MODE", "1")
-    monkeypatch.setenv("GEMINI_IMAGE_MODEL", "gemini-3.1-flash-image")
+    monkeypatch.setenv("GEMINI_IMAGE_MODEL", "custom-image-model-from-env")
     from seed_packs.t02_dynamic_storefronts.mcp_server import generate_hero_lifestyle_image
 
     raw = generate_hero_lifestyle_image(
@@ -42,7 +42,7 @@ def test_t02_generate_hero_lifestyle_image_reads_env_model(monkeypatch: pytest.M
     job = res["render_job"]
     assert job["sku_id"] == "SKU-0006"
     assert job["segment_id"] == "SEG-001"
-    assert job["image_model"] == "gemini-3.1-flash-image"
+    assert job["image_model"] == "custom-image-model-from-env"
     assert Path(job["asset_path"]).exists()
 
 
