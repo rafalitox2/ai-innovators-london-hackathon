@@ -10,6 +10,7 @@ from typing import Any
 
 from google.cloud import bigquery
 from seed_packs.t02_dynamic_storefronts.guardrails import (
+    before_tool_security_callback,
     compute_max_safe_discount_pct,
     sanitize_description,
 )
@@ -431,9 +432,12 @@ TOOLS = [
     recommend_storefront_optimization,
 ]
 
+BEFORE_TOOL_CALLBACK = before_tool_security_callback
+
 __all__ = [
     "TOOLS",
     "ACTION_TOOLS",
+    "BEFORE_TOOL_CALLBACK",
     "find_catalog_products",
     "get_storefront_performance",
     "get_audience_segments",
