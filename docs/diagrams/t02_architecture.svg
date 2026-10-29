@@ -30,19 +30,20 @@
 
   <path class="edge flow" d="M227,429 L350,429" stroke="#2dd4bf" marker-end="url(#m2)"/>
   <path class="edge flow" d="M564,429 L670,429" stroke="#2dd4bf" marker-end="url(#m2)"/>
-  <path class="edge flow" d="M840,409 C920,350 950,310 960,291" stroke="#2dd4bf" marker-end="url(#mw)"/>
-  <path class="edge flow" d="M840,449 C920,500 945,560 950,599" stroke="#2dd4bf" marker-end="url(#mw)"/>
+  <path class="edge flow" d="M840,409 C920,350 950,310 960,291" stroke="#2dd4bf" marker-end="url(#m2)"/>
+  <path class="edge flow" d="M840,449 C920,500 945,560 950,599" stroke="#2dd4bf" marker-end="url(#m2)"/>
 
-  <path class="edge fall" d="M980,330 C760,440 420,610 380,805" stroke="#eab308" marker-end="url(#m3)"/>
-  <path class="edge flow" d="M1072,320 C1072,500 850,650 705,805" stroke="#eab308" marker-end="url(#m3)"/>
-  <path class="edge flow" d="M1072,633 C1065,700 1050,760 1042,805" stroke="#eab308" marker-end="url(#m3)"/>
-  <path class="edge flow" d="M1132,620 C1200,680 1240,750 1258,805" stroke="#eab308" marker-end="url(#m3)"/>
-  <path class="edge flow" d="M1162,610 C1300,660 1390,740 1420,805" stroke="#eab308" marker-end="url(#m3)"/>
+  <path class="edge fall" d="M980,346 C760,450 420,610 380,805" stroke="#eab308" marker-end="url(#m3)"/>
+  <path class="edge flow" d="M1072,336 C1072,500 850,650 705,805" stroke="#eab308" marker-end="url(#m3)"/>
+  <path class="edge flow" d="M1072,651 C1065,710 1050,765 1042,805" stroke="#eab308" marker-end="url(#m3)"/>
+  <path class="edge flow" d="M1132,645 C1200,690 1240,755 1258,805" stroke="#eab308" marker-end="url(#m3)"/>
+  <path class="edge flow" d="M1162,638 C1300,670 1390,745 1420,805" stroke="#eab308" marker-end="url(#m3)"/>
 
   <circle r="5" fill="#60a5fa"><animateMotion dur="3s" repeatCount="indefinite" path="M232,90 L375,90 M585,90 L725,90 M925,90 L1040,90"/></circle>
   <circle r="5" fill="#2dd4bf"><animateMotion dur="2.6s" repeatCount="indefinite" path="M227,429 L350,429 M564,429 L670,429 M840,409 C920,350 950,310 960,291"/></circle>
   <circle r="5" fill="#2dd4bf"><animateMotion dur="2.6s" begin="1.3s" repeatCount="indefinite" path="M227,429 L350,429 M564,429 L670,429 M840,449 C920,500 945,560 950,599"/></circle>
-  <circle r="4.5" fill="#eab308"><animateMotion dur="2.2s" begin=".5s" repeatCount="indefinite" path="M1072,633 C1065,700 1050,760 1042,805"/></circle>
+  <circle r="4.5" fill="#eab308"><animateMotion dur="2.4s" begin="0s" repeatCount="indefinite" path="M1072,336 C1072,500 850,650 705,805"/></circle>
+  <circle r="4.5" fill="#eab308"><animateMotion dur="2.2s" begin=".8s" repeatCount="indefinite" path="M1072,651 C1065,710 1050,765 1042,805"/></circle>
 
   <g><rect x="82" y="68" width="150" height="44" rx="8" fill="#161b22" stroke="#30363d"/><rect x="82" y="68" width="4" height="44" fill="#60a5fa"/>
     <text class="title" x="157" y="88" text-anchor="middle">GitHub</text>
@@ -67,13 +68,15 @@
   <g><rect x="670" y="398" width="190" height="62" rx="8" fill="#1c1410" stroke="#f87171" stroke-width="1.4"/>
     <text class="title gatetitle" x="765" y="423" text-anchor="middle">⬥ Guardrail callback</text>
     <text class="sub" x="765" y="441" text-anchor="middle">before_tool_security_callback</text></g>
-  <g><rect x="954" y="262" width="235" height="58" rx="8" fill="#161b22" stroke="#30363d"/><rect x="954" y="262" width="4" height="58" fill="#2dd4bf"/>
-    <text class="title" x="1072" y="286" text-anchor="middle">BigQuery read tools</text>
-    <text class="sub" x="1072" y="304" text-anchor="middle">catalog · performance · recommend</text></g>
-  <g><rect x="947" y="565" width="250" height="68" rx="8" fill="#161b22" stroke="#30363d"/><rect x="947" y="565" width="4" height="68" fill="#2dd4bf"/>
-    <text class="title" x="1072" y="588" text-anchor="middle">MCP action tools</text>
-    <text class="sub" x="1072" y="604" text-anchor="middle">promo banner · preview render</text>
-    <text class="sub" x="1072" y="617" text-anchor="middle">hero image · A2A sync</text></g>
+  <g><rect x="954" y="262" width="235" height="74" rx="8" fill="#161b22" stroke="#30363d"/><rect x="954" y="262" width="4" height="74" fill="#2dd4bf"/>
+    <text class="title" x="1072" y="284" text-anchor="middle">BigQuery read tools</text>
+    <text class="sub" x="1072" y="300" text-anchor="middle">catalog · segments</text>
+    <text class="sub" x="1072" y="313" text-anchor="middle">performance · recommend</text></g>
+  <g><rect x="947" y="565" width="250" height="86" rx="8" fill="#161b22" stroke="#30363d"/><rect x="947" y="565" width="4" height="86" fill="#2dd4bf"/>
+    <text class="title" x="1072" y="586" text-anchor="middle">MCP action tools</text>
+    <text class="sub" x="1072" y="602" text-anchor="middle">layout publish · queue render</text>
+    <text class="sub" x="1072" y="615" text-anchor="middle">promo banner · preview render</text>
+    <text class="sub" x="1072" y="628" text-anchor="middle">hero image · A2A sync</text></g>
 
   <g><rect x="282" y="809" width="170" height="44" rx="8" fill="#161b22" stroke="#30363d"/><rect x="282" y="809" width="4" height="44" fill="#eab308"/>
     <text class="title" x="367" y="829" text-anchor="middle" font-size="13">Local CSV fallback</text>
