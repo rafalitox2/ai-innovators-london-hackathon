@@ -7,6 +7,7 @@ import json
 import math
 import os
 from pathlib import Path
+import time
 from typing import Any
 
 from fastapi import FastAPI, HTTPException
@@ -24,6 +25,8 @@ from seed_packs.t02_dynamic_storefronts.guardrails import (
 )
 from seed_packs.t02_dynamic_storefronts.mcp_server import (
     MCP_TOOLS as T02_MCP_TOOLS,
+    _load_state,
+    _save_state,
     generate_hero_lifestyle_image,
     publish_storefront_layout,
     queue_visual_asset_render,
@@ -85,6 +88,9 @@ class PublishOpportunityRequest(BaseModel):
     discount_pct: int = Field(default=15)
     banner_copy: str = Field(default="15% off smart lighting this week")
     sku_id: str = Field(default="SKU-0057")
+    hero_asset_url: str = Field(default="")
+    published_by: str = Field(default="rafalitox2")
+    published_by_avatar: str = Field(default="")
 
 
 class GuardrailValidateRequest(BaseModel):
@@ -120,6 +126,66 @@ class RecreateHeroImageRequest(BaseModel):
         default="Golden-hour architectural wide shot tailored to regional apartment aesthetic"
     )
     aspect_ratio: str = Field(default="16:9")
+
+
+class AuthSessionRequest(BaseModel):
+    username: str = Field(default="rafalitox2")
+    name: str = Field(default="Rafael Hormigo")
+    avatar_url: str = Field(default="https://github.com/rafalitox2.png")
+    role: str = Field(default="Lead Engineer & Merchandiser")
+    auth_method: str = Field(default="demo_sso")
+
+
+TEAM_ROSTER = [
+    {
+        "username": "rafalitox2",
+        "name": "Rafael Hormigo",
+        "role": "Lead Engineer & Merchandiser",
+        "avatar_url": "https://github.com/rafalitox2.png",
+        "company": "AtelierNova · Table 2 Lead",
+        "bio": "Full-stack Agentic Engineering & Multimodal Merchandising",
+    },
+    {
+        "username": "BorjaIP",
+        "name": "Borja Irigoyen",
+        "role": "Cloud Platform & CD Lead",
+        "avatar_url": "https://github.com/BorjaIP.png",
+        "company": "AtelierNova · Platform Team",
+        "bio": "Cloud Run, CI/CD, OpenTofu and Infrastructure Automation",
+    },
+    {
+        "username": "carlosescribano-ai",
+        "name": "Carlos Escribano",
+        "role": "AI Architect & Multi-Agent Lead",
+        "avatar_url": "https://github.com/carlosescribano-ai.png",
+        "company": "AtelierNova · AI Labs",
+        "bio": "Vertex AI Agent Runtime & Model Orchestration",
+    },
+    {
+        "username": "jportell",
+        "name": "Jordi Portell",
+        "role": "ML & Knowledge Graph Specialist",
+        "avatar_url": "https://github.com/jportell.png",
+        "company": "AtelierNova · Data Science",
+        "bio": "Merchandising Knowledge Graphs & Semantic Recommendation",
+    },
+    {
+        "username": "joshsmith-samy",
+        "name": "Josh Smith",
+        "role": "Creative AI & AdTech Lead",
+        "avatar_url": "https://github.com/joshsmith-samy.png",
+        "company": "AtelierNova · Growth",
+        "bio": "Tribe A2A Handshake & Autonomous Creative Campaigns",
+    },
+    {
+        "username": "marco-bellini",
+        "name": "Marco Bellini",
+        "role": "Head of Digital Merchandising",
+        "avatar_url": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
+        "company": "AtelierNova Home & Lifestyle",
+        "bio": "D2C Digital Merchandising & Conversion Optimization across Europe",
+    },
+]
 
 
 def _read_csv(name: str) -> list[dict[str, str]]:
@@ -495,6 +561,44 @@ def register_ui_routes(app: FastAPI) -> None:
             "tools": tool_names,
         }
 
+    @app.get("/api/auth/github/config")
+    def api_auth_github_config() -> dict[str, Any]:
+        client_id = os.environ.get("GITHUB_CLIENT_ID", "").strip()
+        redirect_uri = os.environ.get("GITHUB_REDIRECT_URI", "").strip() or "/ui"
+        return {
+            "status": "SUCCESS",
+            "enabled": True,
+            "client_id": client_id,
+            "redirect_uri": redirect_uri,
+            "demo_mode": not bool(client_id),
+            "default_org": "AtelierNova Home & Lifestyle",
+        }
+
+    @app.get("/api/auth/team")
+    def api_auth_team() -> dict[str, Any]:
+        return {
+            "status": "SUCCESS",
+            "team": TEAM_ROSTER,
+            "total": len(TEAM_ROSTER),
+        }
+
+    @app.post("/api/auth/session")
+    def api_auth_session(req: AuthSessionRequest) -> dict[str, Any]:
+        clean_user = req.username.strip().lstrip("@") or "guest"
+        return {
+            "status": "SUCCESS",
+            "session": {
+                "token": f"gh_sess_{clean_user}_{int(time.time())}",
+                "username": clean_user,
+                "name": req.name or clean_user,
+                "avatar_url": req.avatar_url or f"https://github.com/{clean_user}.png",
+                "role": req.role or "Merchandiser",
+                "auth_method": req.auth_method or "demo_sso",
+                "org": "AtelierNova Home & Lifestyle",
+                "authenticated_at": int(time.time()),
+            },
+        }
+
     @app.get("/api/dashboard")
     def api_dashboard() -> dict[str, Any]:
         return _build_dashboard_payload()
@@ -610,7 +714,7 @@ def register_ui_routes(app: FastAPI) -> None:
             "max_safe_discount_pct": max_safe_disc,
             "banner_copy": banner_copy,
             "hero_headline": headline,
-            "hero_asset_url": f"/api/assets/hero/{g['id']}",
+            "hero_asset_url": f"/api/assets/hero/{g['id']}?sku_id={p['sku']}&style_theme={p['theme']}",
             "hero_render": hero_res.get("render_job", {}),
             "preview": preview_res.get("preview", {}),
         }
@@ -636,11 +740,33 @@ def register_ui_routes(app: FastAPI) -> None:
                 theme_style=req.theme_style,
             )
         )
+        resolved_hero_url = (
+            req.hero_asset_url.strip()
+            or f"/api/assets/hero/{req.segment_id}?sku_id={req.sku_id}&style_theme={req.theme_style}"
+        )
+        layout_obj = layout_res.get("layout", {})
+        if isinstance(layout_obj, dict):
+            layout_obj["published_by"] = req.published_by
+            layout_obj["published_by_avatar"] = req.published_by_avatar
+            try:
+                state = _load_state()
+                for entry in reversed(state.get("published_layouts", [])):
+                    if entry.get("layout_id") == layout_obj.get("layout_id"):
+                        entry["published_by"] = req.published_by
+                        entry["published_by_avatar"] = req.published_by_avatar
+                        break
+                _save_state(state)
+            except Exception:
+                pass
         return {
             "status": "SUCCESS",
             "experiment_id": req.experiment_id,
-            "layout": layout_res.get("layout", {}),
+            "sku_id": req.sku_id,
+            "hero_asset_url": resolved_hero_url,
+            "layout": layout_obj,
             "promo_banner": banner_res.get("promo_banner", {}),
+            "published_by": req.published_by,
+            "published_by_avatar": req.published_by_avatar,
         }
 
     @app.post("/api/guardrails/validate")
@@ -711,20 +837,79 @@ def register_ui_routes(app: FastAPI) -> None:
         return json.loads(raw)
 
     @app.get("/api/assets/hero/{segment_id}")
-    def api_hero_asset(segment_id: str) -> Response:
+    def api_hero_asset(segment_id: str, sku_id: str = "", style_theme: str = "") -> Response:
         seg_clean = "".join(c for c in segment_id if c.isalnum() or c in "-_")
-        for ext, media in ((".png", "image/png"), (".svg", "image/svg+xml")):
-            candidate = T02_UI_DIR / f"hero_{seg_clean}{ext}"
-            if candidate.exists():
-                return FileResponse(candidate, media_type=media)
+        sku_clean = "".join(c for c in sku_id if c.isalnum() or c in "-_").strip()
+        theme_clean = "".join(c for c in style_theme if c.isalnum() or c in "-_").strip()
 
-        # Generate on-demand fallback SVG if not yet rendered
+        existing_candidates = [
+            T02_UI_DIR / f"hero_{seg_clean}{ext}"
+            for ext in (".png", ".svg")
+            if (T02_UI_DIR / f"hero_{seg_clean}{ext}").exists()
+        ]
+        if existing_candidates:
+            newest = max(existing_candidates, key=lambda p: p.stat().st_mtime)
+            media = "image/png" if newest.suffix.lower() == ".png" else "image/svg+xml"
+            if not sku_clean:
+                return FileResponse(newest, media_type=media)
+            if (
+                newest.suffix.lower() == ".svg"
+                and sku_clean.upper() in newest.read_text(encoding="utf-8", errors="ignore").upper()
+            ):
+                return FileResponse(newest, media_type=media)
+
+        raw_products = _read_csv("products_catalog")
+        raw_segments = _read_csv("audience_segments")
+        raw_experiments = _read_csv("storefront_experiments")
+        prod_by_sku = {r["sku_id"].strip().upper(): r for r in raw_products}
+        seg_row = next(
+            (r for r in raw_segments if r["segment_id"].strip().upper() == seg_clean.upper()),
+            None,
+        )
+
+        resolved_sku = sku_clean.upper() if sku_clean else ""
+        if not resolved_sku or resolved_sku == "SKU-0017":
+            matching_exps = [
+                e
+                for e in raw_experiments
+                if e.get("segment_id", "").strip().upper() == seg_clean.upper()
+                and e.get("sku_id", "").strip().upper() != "SKU-0017"
+            ]
+            pub_exp = next(
+                (e for e in matching_exps if e.get("experiment_id", "").strip() in INITIAL_PUBLISHED_ITEMS),
+                matching_exps[0] if matching_exps else None,
+            )
+            if pub_exp is not None:
+                resolved_sku = pub_exp["sku_id"].strip().upper()
+            elif seg_row is not None:
+                pref_style = seg_row.get("preferred_style", "Nordic_Minimal").strip()
+                style_prod = next(
+                    (
+                        r
+                        for r in raw_products
+                        if r.get("style_theme", "").strip() == pref_style
+                        and r.get("sku_id", "").strip().upper() != "SKU-0017"
+                    ),
+                    None,
+                )
+                resolved_sku = style_prod["sku_id"].strip().upper() if style_prod else "SKU-0001"
+            else:
+                resolved_sku = "SKU-0001"
+
+        prod_row = prod_by_sku.get(resolved_sku)
+        resolved_theme = (
+            theme_clean
+            or (prod_row.get("style_theme", "").strip() if prod_row else "")
+            or (seg_row.get("preferred_style", "").strip() if seg_row else "")
+            or "Nordic_Minimal"
+        )
+
         res = json.loads(
             generate_hero_lifestyle_image(
-                sku_id="SKU-0057",
+                sku_id=resolved_sku,
                 segment_id=seg_clean,
-                style_theme="Mediterranean_Warm",
-                scene_description="Editorial European interior",
+                style_theme=resolved_theme,
+                scene_description=f"Editorial {resolved_theme.replace('_', ' ')} European interior featuring {resolved_sku}",
                 aspect_ratio="16:9",
             )
         )
