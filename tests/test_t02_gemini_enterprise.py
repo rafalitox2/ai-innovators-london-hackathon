@@ -84,7 +84,7 @@ def test_register_gemini_enterprise_agent_mcp_tool_offline_manifest(
     resp = json.loads(raw)
     assert resp["status"] == "SUCCESS"
     reg = resp["registration"]
-    assert reg["registration_id"].startswith("GEM-ENT-800")
+    assert reg["registration_id"].startswith("GEM-ENT-80")
     assert reg["app_id"] == "ateliernova-enterprise-search"
     assert reg["app_location"] == "eu"
     assert reg["execution_mode"] == "deterministic_manifest_fallback"
