@@ -219,3 +219,37 @@ def test_repository_cleaned_to_t02_challenge_and_official_docs() -> None:
         "STARTER.md",
     ], f"docs/ must contain only official docs (PREWORK.md, STARTER.md) and T02 docs, found: {doc_md_files}"
 
+
+def test_root_readme_is_t02_focused_and_challenge_md_preserves_original_brief() -> None:
+    """Verify CHALLENGE.md contains the full original challenge brief and README.md focuses on Table 2."""
+    challenge_md_path = REPO_ROOT / "CHALLENGE.md"
+    assert challenge_md_path.exists(), "Missing CHALLENGE.md at repository root"
+    challenge_md = challenge_md_path.read_text(encoding="utf-8")
+    for expected in (
+        "AI Innovators Expedition — London 2026 Hackathon Kit",
+        "Challenge Card — Table 2: Visual Content Creator & Dynamic Storefronts",
+        "The 5 Must-Haves",
+        "Hackathon Rules, Scoring & Awards",
+    ):
+        assert expected in challenge_md, f"CHALLENGE.md is missing '{expected}'"
+
+    readme_md = (REPO_ROOT / "README.md").read_text(encoding="utf-8")
+    for expected_t02_token in (
+        "CHALLENGE.md",
+        "https://t02-dynamic-storefronts-mcp-d2lv3suxga-ew.a.run.app",
+        "docs/diagrams/t02_architecture.svg",
+        "flowchart TB",
+        "flowchart LR",
+        "seed_packs/t02_dynamic_storefronts/",
+        "app/",
+        "ui/",
+        "cd/",
+        "deploy/",
+        "eval/",
+        "tests/",
+        ".agents/",
+        ".github/",
+    ):
+        assert expected_t02_token in readme_md, f"README.md is missing '{expected_t02_token}'"
+
+
