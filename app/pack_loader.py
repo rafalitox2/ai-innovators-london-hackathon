@@ -73,7 +73,10 @@ class LoadedSeedPack:
     pack_dir: Path | None
     tools: list[Any] = field(default_factory=list)
     mcp_stdio_attached: bool = False
+    before_model_callback: Any = None
     before_tool_callback: Any = None
+    after_tool_callback: Any = None
+    after_model_callback: Any = None
 
 
 class SeedPackLoader:
@@ -181,7 +184,10 @@ class SeedPackLoader:
         module_prefix = f"seed_packs.{pack_dir.name}"
         tools_mod = importlib.import_module(f"{module_prefix}.tools")
         raw_tools = list(vars(tools_mod).get("TOOLS", []))
+        pack_before_model_callback = vars(tools_mod).get("BEFORE_MODEL_CALLBACK")
         pack_before_tool_callback = vars(tools_mod).get("BEFORE_TOOL_CALLBACK")
+        pack_after_tool_callback = vars(tools_mod).get("AFTER_TOOL_CALLBACK")
+        pack_after_model_callback = vars(tools_mod).get("AFTER_MODEL_CALLBACK")
 
         mcp_server_mod = raw_cfg.get("mcp_server")
         mcp_server_str = str(mcp_server_mod).strip() if mcp_server_mod else None
@@ -228,5 +234,8 @@ class SeedPackLoader:
             pack_dir=pack_dir,
             tools=final_tools,
             mcp_stdio_attached=mcp_attached,
+            before_model_callback=pack_before_model_callback,
             before_tool_callback=pack_before_tool_callback,
+            after_tool_callback=pack_after_tool_callback,
+            after_model_callback=pack_after_model_callback,
         )

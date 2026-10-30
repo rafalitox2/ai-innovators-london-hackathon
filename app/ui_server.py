@@ -22,6 +22,7 @@ from seed_packs.t02_dynamic_storefronts.guardrails import (
     MAX_DISCOUNT_PCT,
     compute_max_safe_discount_pct,
     contains_injection_marker,
+    is_quarantined_product,
     sanitize_description,
 )
 
@@ -607,7 +608,13 @@ async def _run_adk_or_fallback_chat(message: str, session_id: str, user_id: str)
     tool_calls: list[str] = []
     tool_outputs: dict[str, Any] = {}
 
-    if "sku-0017" in lower or "95%" in lower or "injection" in lower or "override" in lower:
+    if (
+        "sku-0017" in lower
+        or "95%" in lower
+        or "injection" in lower
+        or "override" in lower
+        or contains_injection_marker(message)
+    ):
         tool_calls.extend(["find_catalog_products", "update_promo_banner"])
         banner_res = json.loads(
             update_promo_banner(
@@ -921,6 +928,14 @@ class NocturneUiController:
 
         @app.post("/api/opportunities/publish")
         def api_publish_opportunity(req: PublishOpportunityRequest) -> dict[str, Any]:
+            if contains_injection_marker(req.published_by) or contains_injection_marker(req.published_by_avatar):
+                return {
+                    "status": "REJECTED",
+                    "error": "Untrusted instruction marker in published_by metadata.",
+                }
+            clean_published_by = sanitize_description(req.published_by) or "marco-rossi"
+            clean_published_by_avatar = sanitize_description(req.published_by_avatar)
+
             banner_res = json.loads(
                 update_promo_banner(
                     segment_id=req.segment_id,
@@ -940,6 +955,9 @@ class NocturneUiController:
                     theme_style=req.theme_style,
                 )
             )
+            if layout_res.get("status") != "SUCCESS":
+                return layout_res
+
             raw_hero_url = req.hero_asset_url.strip()
             is_safe_hero_url = (
                 (raw_hero_url.startswith("/api/assets/hero/") or raw_hero_url.startswith("/ui/"))
@@ -954,14 +972,14 @@ class NocturneUiController:
             )
             layout_obj = layout_res.get("layout", {})
             if isinstance(layout_obj, dict):
-                layout_obj["published_by"] = req.published_by
-                layout_obj["published_by_avatar"] = req.published_by_avatar
+                layout_obj["published_by"] = clean_published_by
+                layout_obj["published_by_avatar"] = clean_published_by_avatar
                 try:
                     state = _load_state()
                     for entry in reversed(state.get("published_layouts", [])):
                         if entry.get("layout_id") == layout_obj.get("layout_id"):
-                            entry["published_by"] = req.published_by
-                            entry["published_by_avatar"] = req.published_by_avatar
+                            entry["published_by"] = clean_published_by
+                            entry["published_by_avatar"] = clean_published_by_avatar
                             break
                     _save_state(state)
                 except Exception:
@@ -973,8 +991,8 @@ class NocturneUiController:
                 "hero_asset_url": resolved_hero_url,
                 "layout": layout_obj,
                 "promo_banner": banner_res.get("promo_banner", {}),
-                "published_by": req.published_by,
-                "published_by_avatar": req.published_by_avatar,
+                "published_by": clean_published_by,
+                "published_by_avatar": clean_published_by_avatar,
             }
 
         @app.post("/api/guardrails/validate")
@@ -986,6 +1004,9 @@ class NocturneUiController:
             )
             margin_pct = float(sku_row["margin_pct"])
             max_safe_disc = compute_max_safe_discount_pct(margin_pct)
+            stock_qty = int(float(sku_row.get("stock_qty") or 0))
+            quarantined_sku = is_quarantined_product(sku_row) or stock_qty <= 0
+            low_stock_warning = stock_qty < 15
             raw_desc = req.custom_text or sku_row.get("description", "")
             inj_detected = contains_injection_marker(raw_desc)
             clean_desc = sanitize_description(raw_desc)
@@ -994,7 +1015,29 @@ class NocturneUiController:
             cpm = float(req.target_cpm_bid_eur)
             net_margin_pct = round(margin_pct - disc, 1)
 
+            reasons: list[str] = []
+            if req.custom_text and contains_injection_marker(req.custom_text):
+                reasons.append(
+                    "custom_text contains an untrusted prompt-injection marker and was rejected."
+                )
             if disc < 0 or disc > MAX_DISCOUNT_PCT:
+                reasons.append(
+                    f"discount_pct={disc}% exceeds the {MAX_DISCOUNT_PCT}% maximum automated merchandising discount policy."
+                )
+            if disc > max_safe_disc:
+                reasons.append(
+                    f"discount_pct={disc}% undercuts {sku_row['sku_id']}'s gross margin ({margin_pct}%); "
+                    f"max safe discount with {MARGIN_SAFETY_BUFFER_PCT}pt buffer is {max_safe_disc}%."
+                )
+            if cpm <= 0.0 or cpm > 25.0:
+                reasons.append(
+                    f"target_cpm_bid_eur={cpm} violates Sister Table 1's 25.00 EUR maximum CPM guardrail."
+                )
+
+            if req.custom_text and contains_injection_marker(req.custom_text):
+                status = "REJECTED_PROMPT_INJECTION"
+                reason = reasons[0]
+            elif disc < 0 or disc > MAX_DISCOUNT_PCT:
                 status = "REJECTED_POLICY_CAP"
                 reason = (
                     f"discount_pct={disc}% exceeds the {MAX_DISCOUNT_PCT}% maximum automated merchandising discount policy."
@@ -1018,6 +1061,7 @@ class NocturneUiController:
             return {
                 "status": status,
                 "reason": reason,
+                "reasons": reasons,
                 "sku_id": sku_row["sku_id"],
                 "product_name": sku_row["product_name"],
                 "margin_pct": margin_pct,
@@ -1026,6 +1070,9 @@ class NocturneUiController:
                 "max_safe_discount_pct": max_safe_disc,
                 "target_cpm_bid_eur": cpm,
                 "injection_detected": inj_detected,
+                "quarantined_sku": quarantined_sku,
+                "stock_qty": stock_qty,
+                "low_stock_warning": low_stock_warning,
                 "raw_description": raw_desc,
                 "sanitized_description": clean_desc,
             }

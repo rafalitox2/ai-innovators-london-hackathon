@@ -13,6 +13,9 @@ from google.cloud import bigquery
 from seed_packs.t02_dynamic_storefronts.guardrails import (
     INJECTION_REGEX_PATTERN,
     MARGIN_SAFETY_BUFFER_PCT,
+    after_model_security_callback,
+    after_tool_security_callback,
+    before_model_security_callback,
     before_tool_security_callback,
     compute_max_safe_discount_pct,
     contains_injection_marker,
@@ -189,6 +192,9 @@ def get_storefront_performance(segment_id: str = "SEG-001", limit: int = 10) -> 
             )
             cfg = bigquery.QueryJobConfig(query_parameters=params)
             rows = [dict(r.items()) for r in client.query(sql, job_config=cfg).result()]
+            for row in rows:
+                row["hero_headline"] = sanitize_description(row.get("hero_headline"))
+            rows = [row for row in rows if not is_quarantined_product(row)]
             return json.dumps({
                 "status": "SUCCESS",
                 "source": f"bigquery:{project}.{dataset}.storefront_experiments",
@@ -201,10 +207,15 @@ def get_storefront_performance(segment_id: str = "SEG-001", limit: int = 10) -> 
     else:
         fallback_error = _offline_reason(project)
 
-    rows = [
-        r for r in _read_local_csv("storefront_experiments")
-        if seg_clean.lower() == "all" or r["segment_id"].lower() == seg_clean.lower()
-    ][: int(limit)]
+    cleaned_rows: list[dict[str, Any]] = []
+    for r in _read_local_csv("storefront_experiments"):
+        if seg_clean.lower() != "all" and r["segment_id"].lower() != seg_clean.lower():
+            continue
+        row = dict(r)
+        row["hero_headline"] = sanitize_description(row.get("hero_headline"))
+        if not is_quarantined_product(row):
+            cleaned_rows.append(row)
+    rows = cleaned_rows[: int(limit)]
     return json.dumps({
         "status": "SUCCESS",
         "source": "local_csv_fallback",
@@ -245,6 +256,8 @@ def get_audience_segments(region: str = "all") -> str:
             )
             cfg = bigquery.QueryJobConfig(query_parameters=params)
             rows = [dict(r.items()) for r in client.query(sql, job_config=cfg).result()]
+            for row in rows:
+                row["segment_name"] = sanitize_description(row.get("segment_name"))
             return json.dumps({
                 "status": "SUCCESS",
                 "source": f"bigquery:{project}.{dataset}.audience_segments",
@@ -261,6 +274,8 @@ def get_audience_segments(region: str = "all") -> str:
         r for r in _read_local_csv("audience_segments")
         if reg_clean.lower() == "all" or r["region"].lower() == reg_clean.lower()
     ][:20]
+    for row in rows:
+        row["segment_name"] = sanitize_description(row.get("segment_name"))
     return json.dumps({
         "status": "SUCCESS",
         "source": "local_csv_fallback",
@@ -581,12 +596,18 @@ TOOLS = [
     query_merchandising_knowledge_graph,
 ]
 
+BEFORE_MODEL_CALLBACK = before_model_security_callback
 BEFORE_TOOL_CALLBACK = before_tool_security_callback
+AFTER_TOOL_CALLBACK = after_tool_security_callback
+AFTER_MODEL_CALLBACK = after_model_security_callback
 
 __all__ = [
     "TOOLS",
     "ACTION_TOOLS",
+    "BEFORE_MODEL_CALLBACK",
     "BEFORE_TOOL_CALLBACK",
+    "AFTER_TOOL_CALLBACK",
+    "AFTER_MODEL_CALLBACK",
     "find_catalog_products",
     "get_storefront_performance",
     "get_audience_segments",

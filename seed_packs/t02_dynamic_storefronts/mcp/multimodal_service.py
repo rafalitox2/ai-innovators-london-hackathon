@@ -31,6 +31,8 @@ def _sanitize_identifier(val: str | None, default: str) -> str:
 class MultimodalHeroService:
     """Generates hero lifestyle visuals using GEMINI_IMAGE_MODEL or offline SVG fallbacks."""
 
+    VALID_ASPECT_RATIOS = frozenset({"16:9", "1:1", "9:16", "4:3", "3:4"})
+
     def __init__(
         self,
         state_store: McpStateStore,
@@ -40,6 +42,10 @@ class MultimodalHeroService:
         self.state_store = state_store
         self.pack_dir = pack_dir or Path(__file__).resolve().parent.parent
         self.catalog_repo = catalog_repo or CatalogCsvRepository(self.pack_dir / "data")
+
+    def contains_injection(self, text: str | None) -> bool:
+        """Return True if text contains any prompt-injection marker."""
+        return contains_injection_marker(text)
 
     def _upload_bytes_to_gcs(self, data: bytes, destination_blob: str, content_type: str = "image/png") -> str:
         """Upload raw image bytes to GCS staging bucket if configured."""
@@ -77,7 +83,18 @@ class MultimodalHeroService:
             seg_clean = _sanitize_identifier(segment_id, "SEG-001")
             theme_clean = _sanitize_identifier(style_theme, "Nordic_Minimal")
             scene_clean = sanitize_description(scene_description or "Sunlit modern European living space")
-            ratio_clean = (aspect_ratio or "16:9").strip()
+            if self.contains_injection(scene_clean):
+                return json.dumps({
+                    "status": "REJECTED",
+                    "error": "generate_hero_lifestyle_image rejected: scene_description contains an untrusted prompt-injection marker.",
+                })
+            raw_ratio = (aspect_ratio or "16:9").strip()
+            if self.contains_injection(raw_ratio):
+                return json.dumps({
+                    "status": "REJECTED",
+                    "error": "generate_hero_lifestyle_image rejected: aspect_ratio contains an untrusted prompt-injection marker.",
+                })
+            ratio_clean = raw_ratio if raw_ratio in self.VALID_ASPECT_RATIOS else "16:9"
 
             from app.loader import resolve_env_config
 
