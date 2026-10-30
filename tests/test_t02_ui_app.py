@@ -677,4 +677,16 @@ def test_ui_design_skills_audit_and_playwright_suite() -> None:
     assert playwright_cfg.exists(), "Missing ui/playwright.config.ts"
     assert playwright_spec.exists(), "Missing ui/e2e/ux-ui-audit.spec.ts"
 
+    # 6. Hero image must not have blend/opacity filters and must provide a real photo zoom/pinch-to-zoom lightbox
+    assert "--img-blend: lighten" not in css_text, (
+        "Dark mode must not apply mix-blend-mode: lighten filter to hero images"
+    )
+    assert 'data-testid="real-photo-lightbox"' in modal_text, (
+        "StorefrontPreviewModal must provide a full-resolution real photo lightbox with zoom/pinch-to-zoom"
+    )
+    assert "onTouchMove" in modal_text and "onWheel" in modal_text, (
+        "Real photo viewer must support pinch-to-zoom touch gestures and wheel/trackpad zoom"
+    )
+
+
 

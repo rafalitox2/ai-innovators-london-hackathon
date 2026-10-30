@@ -162,10 +162,124 @@ test.describe('AtelierNova Table 2 — UX/UI & Design Skills Playwright Audit', 
     await expect(dialog).toHaveAttribute('aria-modal', 'true');
     await expect(dialog).toContainText('EXP-0057');
 
+    // Verify Hero Lifestyle Image has NO filter, NO blend-mode, and 100% opacity in Light & Dark modes
+    const heroImg = dialog.getByTestId('hero-preview-image');
+    await expect(heroImg).toBeVisible();
+    const heroStyleBefore = await heroImg.evaluate((el: HTMLImageElement) => {
+      const cs = window.getComputedStyle(el);
+      return {
+        filter: cs.filter,
+        mixBlendMode: cs.mixBlendMode,
+        opacity: cs.opacity,
+        naturalWidth: el.naturalWidth,
+      };
+    });
+    expect(heroStyleBefore.filter).toBe('none');
+    expect(heroStyleBefore.mixBlendMode).toBe('normal');
+    expect(heroStyleBefore.opacity).toBe('1');
+    expect(heroStyleBefore.naturalWidth).toBeGreaterThan(0);
+
     // Recreate Hero Lifestyle Image via GEMINI_IMAGE_MODEL
     const recreateBtn = dialog.getByRole('button', { name: /Recreate image/i }).first();
     await recreateBtn.click();
     await expect(dialog.getByText(/Hero lifestyle render \(v2\)/i)).toBeVisible();
+
+    const heroStyleAfter = await heroImg.evaluate((el: HTMLImageElement) => {
+      const cs = window.getComputedStyle(el);
+      return {
+        filter: cs.filter,
+        mixBlendMode: cs.mixBlendMode,
+        opacity: cs.opacity,
+        src: el.getAttribute('src') || '',
+      };
+    });
+    expect(heroStyleAfter.filter).toBe('none');
+    expect(heroStyleAfter.mixBlendMode).toBe('normal');
+    expect(heroStyleAfter.opacity).toBe('1');
+    expect(heroStyleAfter.src).toContain('hero_SEG-057');
+
+    // Open Real Photo Lightbox & verify Zoom + Pinch-to-Zoom + Open Original
+    await dialog.getByTestId('view-real-photo-btn').click();
+    const lightbox = page.getByTestId('real-photo-lightbox');
+    await expect(lightbox).toBeVisible();
+
+    const lightboxImg = page.getByTestId('real-photo-lightbox-img');
+    await expect(lightboxImg).toBeVisible();
+    const lightboxComputed = await lightboxImg.evaluate((el: HTMLImageElement) => {
+      const cs = window.getComputedStyle(el);
+      return {
+        objectFit: cs.objectFit,
+        filter: cs.filter,
+        mixBlendMode: cs.mixBlendMode,
+        opacity: cs.opacity,
+        naturalWidth: el.naturalWidth,
+      };
+    });
+    expect(lightboxComputed.objectFit).toBe('contain');
+    expect(lightboxComputed.filter).toBe('none');
+    expect(lightboxComputed.mixBlendMode).toBe('normal');
+    expect(lightboxComputed.opacity).toBe('1');
+    expect(lightboxComputed.naturalWidth).toBeGreaterThan(0);
+
+    // 1. Button zoom in (+ -> 150%)
+    await expect(page.getByTestId('lightbox-zoom-level')).toHaveText('100%');
+    await page.getByTestId('lightbox-zoom-in').click();
+    await expect(page.getByTestId('lightbox-zoom-level')).toHaveText('150%');
+
+    // 2. Reset zoom (-> 100%) and double-click stage (-> 250%)
+    await page.getByTestId('lightbox-zoom-reset').click();
+    await expect(page.getByTestId('lightbox-zoom-level')).toHaveText('100%');
+    await page.getByTestId('lightbox-stage').dblclick();
+    await expect(page.getByTestId('lightbox-zoom-level')).toHaveText('250%');
+
+    // 3. Simulate 2-finger pinch-to-zoom gesture on the stage (distance 100px -> 200px from 100% -> 200%)
+    await page.getByTestId('lightbox-zoom-reset').click();
+    await page.getByTestId('lightbox-stage').evaluate((stageEl) => {
+      const makeTouch = (id: number, x: number, y: number) =>
+        new Touch({
+          identifier: id,
+          target: stageEl,
+          clientX: x,
+          clientY: y,
+          pageX: x,
+          pageY: y,
+        });
+      const tStart1 = makeTouch(1, 200, 200);
+      const tStart2 = makeTouch(2, 300, 200); // dist = 100
+      stageEl.dispatchEvent(
+        new TouchEvent('touchstart', {
+          bubbles: true,
+          cancelable: true,
+          touches: [tStart1, tStart2],
+        })
+      );
+      const tMove1 = makeTouch(1, 150, 200);
+      const tMove2 = makeTouch(2, 350, 200); // dist = 200 (2x pinch)
+      stageEl.dispatchEvent(
+        new TouchEvent('touchmove', {
+          bubbles: true,
+          cancelable: true,
+          touches: [tMove1, tMove2],
+        })
+      );
+      stageEl.dispatchEvent(
+        new TouchEvent('touchend', {
+          bubbles: true,
+          cancelable: true,
+          touches: [],
+        })
+      );
+    });
+    await expect(page.getByTestId('lightbox-zoom-level')).toHaveText('200%');
+
+    // 4. Verify Open original link points to the generated asset
+    const openOriginalHref = await page.getByTestId('lightbox-open-original').getAttribute('href');
+    expect(openOriginalHref).toContain('hero_SEG-057');
+
+    // 5. Escape closes only the Real Photo Lightbox, keeping StorefrontPreviewModal open
+    await page.keyboard.press('Escape');
+    await expect(lightbox).toBeHidden();
+    await expect(dialog).toBeVisible();
 
     // Test <=30% Discount Cap Guardrail
     const sliders = dialog.locator('input[type="range"]');

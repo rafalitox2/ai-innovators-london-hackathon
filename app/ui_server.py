@@ -852,11 +852,27 @@ def register_ui_routes(app: FastAPI) -> None:
             media = "image/png" if newest.suffix.lower() == ".png" else "image/svg+xml"
             if not sku_clean:
                 return Response(content=newest.read_bytes(), media_type=media)
-            if (
-                newest.suffix.lower() == ".svg"
-                and sku_clean.upper() in newest.read_text(encoding="utf-8", errors="ignore").upper()
-            ):
-                return Response(content=newest.read_bytes(), media_type=media)
+            if newest.suffix.lower() == ".svg":
+                svg_upper = newest.read_text(encoding="utf-8", errors="ignore").upper()
+                if sku_clean.upper() in svg_upper and (
+                    not theme_clean or theme_clean.upper() in svg_upper
+                ):
+                    return Response(content=newest.read_bytes(), media_type=media)
+
+        if sku_clean:
+            tmp_candidates = [
+                Path(f"/tmp/t02_hero_{sku_clean}_{seg_clean}{ext}")
+                for ext in (".png", ".svg")
+                if Path(f"/tmp/t02_hero_{sku_clean}_{seg_clean}{ext}").exists()
+            ]
+            if tmp_candidates:
+                newest_tmp = max(tmp_candidates, key=lambda p: p.stat().st_mtime)
+                media_tmp = "image/png" if newest_tmp.suffix.lower() == ".png" else "image/svg+xml"
+                if newest_tmp.suffix.lower() == ".png":
+                    return Response(content=newest_tmp.read_bytes(), media_type=media_tmp)
+                svg_tmp_upper = newest_tmp.read_text(encoding="utf-8", errors="ignore").upper()
+                if not theme_clean or theme_clean.upper() in svg_tmp_upper:
+                    return Response(content=newest_tmp.read_bytes(), media_type=media_tmp)
 
         raw_products = _read_csv("products_catalog")
         raw_segments = _read_csv("audience_segments")
