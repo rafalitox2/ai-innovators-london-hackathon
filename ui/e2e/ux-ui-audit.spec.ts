@@ -395,4 +395,180 @@ test.describe('AtelierNova Table 2 — UX/UI & Design Skills Playwright Audit', 
       await expect(page.getByRole('dialog')).toBeHidden();
     }
   });
+
+  test('6. End-to-End Merchandising Lifecycle: Queue Approve -> WIP 4-Step Pipeline -> Publish with GitHub Attribution', async ({
+    page,
+  }) => {
+    await page.goto('/ui');
+
+    // 1. Sign in as @rafalitox2 so published storefront records author attribution
+    await page.getByRole('button', { name: /Sign in with GitHub/i }).click();
+    const authDialog = page.getByRole('dialog', { name: /Sign in with GitHub/i });
+    await authDialog.getByRole('button', { name: /@rafalitox2/i }).click();
+    await expect(page.getByRole('button', { name: /@rafalitox2/i })).toBeVisible();
+
+    // 2. Navigate to 02 Queue and click Approve on EXP-0057
+    await page.getByRole('link', { name: /02 Queue/i }).click();
+    const exp57Row = page.locator('tr', { hasText: 'EXP-0057' });
+    await expect(exp57Row).toBeVisible();
+    await exp57Row.getByRole('button', { name: 'Approve' }).click();
+
+    // 3. Navigate to 03 Work in progress and verify EXP-0057 completes the 4-step ADK generation pipeline
+    await page.getByRole('link', { name: /03 Work in progress/i }).click();
+    const wipRow = page.locator('tr', { hasText: 'EXP-0057' }).first();
+    await expect(wipRow).toBeVisible();
+    await expect(wipRow.getByText(/Ready · 4\/4 ADK tools verified/i)).toBeVisible({
+      timeout: 10000,
+    });
+
+    // 4. Click Open preview for EXP-0057, test Device Viewport Switcher (Desktop/Tablet/Mobile) & Scrollable Container, then Approve & publish
+    await wipRow.getByRole('button', { name: /Open preview/i }).click();
+    const previewDialog = page.getByRole('dialog');
+    await expect(previewDialog).toBeVisible();
+    const viewportGroup = previewDialog.getByRole('group', { name: 'Device Viewport Switcher' });
+    await expect(viewportGroup).toBeVisible();
+    await viewportGroup.getByRole('button', { name: /Tablet/i }).click();
+    await viewportGroup.getByRole('button', { name: /Mobile/i }).click();
+    await viewportGroup.getByRole('button', { name: /Desktop/i }).click();
+    await expect(previewDialog.locator('.storefront-scroll-viewport')).toBeVisible();
+    await previewDialog.getByRole('button', { name: /Approve & publish/i }).click();
+    await expect(previewDialog).toBeHidden();
+
+    // 5. Navigate to 04 Published and verify EXP-0057 is LIVE with @rafalitox2 attribution
+    await page.getByRole('link', { name: /04 Published/i }).click();
+    const publishedRow = page.locator('tr', { hasText: 'EXP-0057' }).first();
+    await expect(publishedRow).toBeVisible();
+    await expect(publishedRow.getByText('@rafalitox2')).toBeVisible();
+
+    // 6. Navigate to 05 Results and verify performance over time view
+    await page.getByRole('link', { name: /05 Results/i }).click();
+    await expect(page.getByRole('heading', { name: /Performance over time/i })).toBeVisible();
+  });
+
+  test('7. GitHub Profile Menu, Sign Out, Custom Handle Sign-In & Multi-Intent ADK Copilot Queries', async ({
+    page,
+  }) => {
+    await page.goto('/ui');
+
+    // 1. Sign in via team roster (@BorjaIP)
+    await page.getByRole('button', { name: /Sign in with GitHub/i }).click();
+    await page
+      .getByRole('dialog', { name: /Sign in with GitHub/i })
+      .getByRole('button', { name: /@BorjaIP/i })
+      .click();
+    const profileBtn = page.getByRole('button', { name: /@BorjaIP/i });
+    await expect(profileBtn).toBeVisible();
+
+    // 2. Open Profile dropdown menu and Sign out
+    await profileBtn.click();
+    const menu = page.getByRole('menu');
+    await expect(menu).toBeVisible();
+    await menu.getByRole('button', { name: /Sign out/i }).click();
+    await expect(page.getByRole('button', { name: /Sign in with GitHub/i })).toBeVisible();
+
+    // 3. Sign in with custom GitHub handle form
+    await page.getByRole('button', { name: /Sign in with GitHub/i }).click();
+    const authDialog = page.getByRole('dialog', { name: /Sign in with GitHub/i });
+    await authDialog.getByRole('textbox', { name: 'GitHub username' }).fill('carlosescribano-ai');
+    await authDialog.getByRole('button', { name: /^Sign in$/i }).click();
+    await expect(page.getByRole('button', { name: /@carlosescribano-ai/i })).toBeVisible();
+
+    // 4. Open ADK Copilot Drawer and test multiple tool intents + custom query
+    await page.getByRole('button', { name: '✦ ADK Copilot', exact: true }).click();
+    const copilot = page.getByRole('dialog', { name: /ADK Agent Copilot/i });
+    await expect(copilot).toBeVisible();
+
+    await copilot
+      .getByRole('button', { name: /Recommend Mediterranean_Warm SKUs with >= 15pt margin buffer/i })
+      .click();
+    await expect(copilot.getByText(/recommend_storefront_optimization/i).first()).toBeVisible();
+
+    await copilot
+      .getByRole('button', { name: /Sync campaign with Sister Table 1/i })
+      .click();
+    await expect(copilot.getByText(/sync_campaign_with_t01/i).first()).toBeVisible();
+
+    const chatInput = copilot.getByRole('textbox', { name: 'Ask ADK Copilot' });
+    await chatInput.fill('Show audience segments for London');
+    await copilot.getByRole('button', { name: 'Send' }).click();
+    await expect(copilot.getByText(/get_audience_segments/i).first()).toBeVisible();
+  });
+
+  test('8. Standalone MCP App UI Preview (/api/preview/SEG-057): Zero Filter Hero, Recreate Image & Real Photo Pinch-to-Zoom', async ({
+    page,
+  }) => {
+    await page.goto('/api/preview/SEG-057');
+
+    // Verify URI pill and segment header
+    await expect(page.getByText('URI: ui://storefront-preview/SEG-057')).toBeVisible();
+    const heroImg = page.locator('#hero-img-slot img').first();
+    await expect(heroImg).toBeVisible();
+
+    const heroComputed = await heroImg.evaluate((el: HTMLImageElement) => {
+      const cs = window.getComputedStyle(el);
+      return {
+        filter: cs.filter,
+        mixBlendMode: cs.mixBlendMode,
+        opacity: cs.opacity,
+        naturalWidth: el.naturalWidth,
+      };
+    });
+    expect(heroComputed.filter).toBe('none');
+    expect(heroComputed.mixBlendMode).toBe('normal');
+    expect(heroComputed.opacity).toBe('1');
+    expect(heroComputed.naturalWidth).toBeGreaterThan(0);
+
+    // Click View real photo button to open standalone full-resolution lightbox
+    await page.getByTestId('mcp-view-real-photo-btn').click();
+    const mcpLightbox = page.getByTestId('mcp-real-photo-lightbox');
+    await expect(mcpLightbox).toBeVisible();
+
+    const mcpLightboxImg = page.getByTestId('mcp-real-photo-lightbox-img');
+    await expect(mcpLightboxImg).toBeVisible();
+    await expect(page.getByTestId('mcp-lightbox-zoom-level')).toHaveText('100%');
+
+    // Zoom in via + button (-> 150%)
+    await page.getByTestId('mcp-lightbox-zoom-in').click();
+    await expect(page.getByTestId('mcp-lightbox-zoom-level')).toHaveText('150%');
+
+    // Simulate 2-finger pinch-to-zoom on standalone MCP stage (100% -> 200%)
+    await page.getByTestId('mcp-lightbox-zoom-reset').click();
+    await page.getByTestId('mcp-lightbox-stage').evaluate((stageEl) => {
+      const makeTouch = (id: number, x: number, y: number) =>
+        new Touch({
+          identifier: id,
+          target: stageEl,
+          clientX: x,
+          clientY: y,
+          pageX: x,
+          pageY: y,
+        });
+      stageEl.dispatchEvent(
+        new TouchEvent('touchstart', {
+          bubbles: true,
+          cancelable: true,
+          touches: [makeTouch(1, 100, 200), makeTouch(2, 200, 200)],
+        })
+      );
+      stageEl.dispatchEvent(
+        new TouchEvent('touchmove', {
+          bubbles: true,
+          cancelable: true,
+          touches: [makeTouch(1, 50, 200), makeTouch(2, 250, 200)],
+        })
+      );
+      stageEl.dispatchEvent(
+        new TouchEvent('touchend', {
+          bubbles: true,
+          cancelable: true,
+          touches: [],
+        })
+      );
+    });
+    await expect(page.getByTestId('mcp-lightbox-zoom-level')).toHaveText('200%');
+
+    // Escape closes the standalone lightbox
+    await page.keyboard.press('Escape');
+    await expect(mcpLightbox).toBeHidden();
+  });
 });

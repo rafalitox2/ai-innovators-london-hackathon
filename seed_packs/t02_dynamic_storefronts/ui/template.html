@@ -177,6 +177,10 @@
       object-fit: cover;
       border-radius: var(--radius-md);
       box-shadow: var(--shadow-sm);
+      filter: none;
+      mix-blend-mode: normal;
+      opacity: 1;
+      cursor: zoom-in;
     }
     .hero-copy {
       display: flex;
@@ -348,10 +352,13 @@
 
         <div class="hero">
           <div class="hero-visual" id="hero-visual-box">
-            <div id="hero-img-slot">{{HERO_IMAGE_HTML}}</div>
+            <div id="hero-img-slot" onclick="openRealPhotoLightbox()">{{HERO_IMAGE_HTML}}</div>
             <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap;">
               <span id="hero-caption">Hero lifestyle render · {{THEME_STYLE}} · {{SEGMENT_ID}}</span>
-              <button type="button" class="btn" style="padding: 4px 10px; font-size: 11px; cursor: pointer;" onclick="recreateHeroImage()">Recreate image</button>
+              <div style="display: flex; gap: 6px; align-items: center;">
+                <button type="button" id="view-real-photo-btn" data-testid="mcp-view-real-photo-btn" class="btn" style="padding: 4px 10px; font-size: 11px; cursor: pointer;" onclick="openRealPhotoLightbox()">🔍 View real photo</button>
+                <button type="button" class="btn" style="padding: 4px 10px; font-size: 11px; cursor: pointer;" onclick="recreateHeroImage()">Recreate image</button>
+              </div>
             </div>
             <div id="audience-prompt-box" style="font-size: 11px; color: var(--color-neutral-400); background: color-mix(in srgb, var(--color-bg) 70%, transparent); padding: 8px 10px; border-radius: var(--radius-sm); border: 1px solid var(--color-divider);">
               <strong style="color: var(--color-accent-300);">Audience Context ({{SEGMENT_ID}}):</strong> {{SEGMENT_NAME}} · Region {{REGION}} · Style {{PREFERRED_STYLE}} · Device {{DEVICE_TYPE}} · AOV €{{AOV_EUR}}
@@ -381,14 +388,112 @@
       </div>
     </div>
   </div>
+
+  <div id="mcp-photo-lightbox" data-testid="mcp-real-photo-lightbox" role="dialog" aria-modal="true" aria-label="Full-resolution hero photo viewer" style="display: none; position: fixed; inset: 0; z-index: 9999; background: rgba(10, 12, 20, 0.94); backdrop-filter: blur(8px); flex-direction: column;">
+    <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 20px; border-bottom: 1px solid rgba(255, 255, 255, 0.14); color: #f8fafc; gap: 12px; flex-wrap: wrap;">
+      <div style="font-size: 13px; font-weight: 500;">
+        {{SEGMENT_ID}} · {{PRIMARY_SKU}} ({{THEME_STYLE}}) — Real Uncropped Photo (Pinch / Scroll / Double-click to Zoom)
+      </div>
+      <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+        <button type="button" data-testid="mcp-lightbox-zoom-out" class="btn" style="cursor: pointer;" onclick="changeMcpZoom(-0.5)">−</button>
+        <span id="mcp-lightbox-zoom-level" data-testid="mcp-lightbox-zoom-level" style="min-width: 52px; text-align: center; font-variant-numeric: tabular-nums; font-size: 13px;">100%</span>
+        <button type="button" data-testid="mcp-lightbox-zoom-in" class="btn" style="cursor: pointer;" onclick="changeMcpZoom(0.5)">+</button>
+        <button type="button" data-testid="mcp-lightbox-zoom-reset" class="btn" style="cursor: pointer;" onclick="setMcpZoom(1)">Reset 100%</button>
+        <a id="mcp-lightbox-open-original" data-testid="mcp-lightbox-open-original" href="#" target="_blank" rel="noreferrer" class="btn">Open original ↗</a>
+        <button type="button" data-testid="mcp-lightbox-close" class="btn" style="cursor: pointer;" onclick="closeRealPhotoLightbox()">Close (Esc)</button>
+      </div>
+    </div>
+    <div id="mcp-lightbox-stage" data-testid="mcp-lightbox-stage" style="flex: 1; display: flex; align-items: center; justify-content: center; overflow: hidden; touch-action: none; user-select: none; padding: 24px;">
+      <img id="mcp-lightbox-img" data-testid="mcp-real-photo-lightbox-img" src="" alt="Full-resolution hero photo" style="max-width: 92vw; max-height: 82vh; width: auto; height: auto; object-fit: contain; filter: none; mix-blend-mode: normal; opacity: 1; transform-origin: center center; transition: transform 0.08s ease-out;" />
+    </div>
+  </div>
+
   <script>
     let variationIdx = 1;
+    let mcpZoom = 1;
+    let pinchStartDist = null;
+    let pinchStartScale = 1;
     const scenes = [
       "Golden-hour architectural wide shot tailored to regional apartment aesthetic",
       "Close-up artisanal material texture with warm ambient evening lighting",
       "Sunlit morning minimalist editorial composition with natural shadows",
       "Twilight gallery-style interior spotlight with city skyline backdrop"
     ];
+
+    function getActiveHeroSrc() {
+      const slotImg = document.querySelector("#hero-img-slot img");
+      if (slotImg && slotImg.getAttribute("src")) {
+        return slotImg.getAttribute("src");
+      }
+      return "/api/assets/hero/{{SEGMENT_ID}}?sku_id={{PRIMARY_SKU}}&style_theme={{THEME_STYLE}}";
+    }
+
+    function setMcpZoom(val) {
+      mcpZoom = Math.min(4, Math.max(1, Math.round(val * 100) / 100));
+      const img = document.getElementById("mcp-lightbox-img");
+      const badge = document.getElementById("mcp-lightbox-zoom-level");
+      if (img) img.style.transform = "scale(" + mcpZoom + ")";
+      if (badge) badge.textContent = Math.round(mcpZoom * 100) + "%";
+    }
+
+    function changeMcpZoom(delta) {
+      setMcpZoom(mcpZoom + delta);
+    }
+
+    function openRealPhotoLightbox() {
+      const lb = document.getElementById("mcp-photo-lightbox");
+      const img = document.getElementById("mcp-lightbox-img");
+      const link = document.getElementById("mcp-lightbox-open-original");
+      const src = getActiveHeroSrc();
+      if (img) img.src = src;
+      if (link) link.href = src;
+      setMcpZoom(1);
+      if (lb) lb.style.display = "flex";
+    }
+
+    function closeRealPhotoLightbox() {
+      const lb = document.getElementById("mcp-photo-lightbox");
+      if (lb) lb.style.display = "none";
+      setMcpZoom(1);
+    }
+
+    window.addEventListener("keydown", function(e) {
+      if (e.key === "Escape") {
+        closeRealPhotoLightbox();
+      }
+    });
+
+    (function initLightboxGestures() {
+      const stage = document.getElementById("mcp-lightbox-stage");
+      if (!stage) return;
+      stage.addEventListener("dblclick", function() {
+        setMcpZoom(mcpZoom > 1 ? 1 : 2.5);
+      });
+      stage.addEventListener("wheel", function(e) {
+        e.preventDefault();
+        changeMcpZoom(e.deltaY < 0 ? 0.25 : -0.25);
+      }, { passive: false });
+      stage.addEventListener("touchstart", function(e) {
+        if (e.touches.length === 2) {
+          const dx = e.touches[0].clientX - e.touches[1].clientX;
+          const dy = e.touches[0].clientY - e.touches[1].clientY;
+          pinchStartDist = Math.hypot(dx, dy);
+          pinchStartScale = mcpZoom;
+        }
+      });
+      stage.addEventListener("touchmove", function(e) {
+        if (e.touches.length === 2 && pinchStartDist && pinchStartDist > 0) {
+          const dx = e.touches[0].clientX - e.touches[1].clientX;
+          const dy = e.touches[0].clientY - e.touches[1].clientY;
+          const dist = Math.hypot(dx, dy);
+          setMcpZoom(pinchStartScale * (dist / pinchStartDist));
+        }
+      });
+      stage.addEventListener("touchend", function() {
+        pinchStartDist = null;
+      });
+    })();
+
     async function recreateHeroImage() {
       const btn = document.getElementById("recreate-btn");
       const caption = document.getElementById("hero-caption");

@@ -292,6 +292,12 @@ class StorefrontActionService:
                 hero_image_html = (
                     f'<img src="/ui/{html.escape(newest_hero.name)}" alt="{html.escape(headline_clean)}" />'
                 )
+            else:
+                hero_image_html = (
+                    f'<img src="/api/assets/hero/{html.escape(seg_clean)}'
+                    f'?sku_id={html.escape(primary_sku_str)}&amp;style_theme={html.escape(theme_clean)}" '
+                    f'alt="{html.escape(headline_clean)}" />'
+                )
 
             if template_path.exists():
                 tpl = template_path.read_text(encoding="utf-8")

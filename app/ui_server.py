@@ -677,6 +677,20 @@ async def _run_adk_or_fallback_chat(message: str, session_id: str, user_id: str)
             f"Generated hero lifestyle asset (`{hero_res.get('render_job', {}).get('render_job_id')}`) and rendered storefront preview "
             f"`{prev_res.get('preview', {}).get('ui_uri')}` for `SEG-057` (`SKU-0057`, 15% discount within <=30% cap)."
         )
+    elif "audience" in lower:
+        region = "ES_Madrid" if "madrid" in lower else ("UK_London" if "london" in lower else "all")
+        tool_calls.append("get_audience_segments")
+        seg_res = json.loads(get_audience_segments(region=region))
+        tool_outputs["audience_segments"] = seg_res
+        segs = seg_res.get("segments", [])
+        lines = [
+            f"Executed `get_audience_segments(region='{region}')` ({seg_res.get('count', 0)} segments found):",
+        ]
+        for s in segs[:3]:
+            lines.append(
+                f"• `{s['segment_id']}` ({s['segment_name']} · {s['region']}): style `{s['preferred_style']}`, AOV `€{s['avg_order_value_eur']}`, CR `{s['conversion_rate_pct']}%`."
+            )
+        reply = "\n".join(lines)
     else:
         region = "ES_Madrid" if "madrid" in lower else ("UK_London" if "london" in lower else "all")
         tool_calls.extend(["recommend_storefront_optimization", "get_storefront_performance"])
@@ -1136,6 +1150,15 @@ class NocturneUiController:
         def api_preview_html(segment_id: str) -> HTMLResponse:
             seg_clean = "".join(c for c in segment_id if c.isalnum() or c in "-_")
             candidate = self.service.ui_dir / f"preview_{seg_clean}.html"
+            if not candidate.exists():
+                render_storefront_preview(
+                    segment_id=seg_clean,
+                    featured_skus="SKU-0057,SKU-0002",
+                    hero_headline=f"AtelierNova Curated Storefront — {seg_clean}",
+                    theme_style="Mediterranean_Warm",
+                    discount_pct=15,
+                    banner_copy="15% off curated European design this week",
+                )
             if candidate.exists():
                 return HTMLResponse(candidate.read_text(encoding="utf-8"))
             raise HTTPException(status_code=404, detail=f"Preview HTML for {seg_clean} not found")
