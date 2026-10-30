@@ -27,14 +27,17 @@
    - [Phase 2B — Multimodal Lifestyle Visuals, UI Preview, Memory & Model Routing (`Issue #5, #21, #22` · `PR #7, #14, #15, #24, #26, #29, #30`)](#phase-2b--multimodal-lifestyle-visuals-ui-preview-memory--model-routing-issue-5-21-22--pr-7-14-15-24-26-29-30)
    - [Phase 3 — Tribe A2A Handshake with Sister Table T01 & Editable Storefront UI (`Issue #6` · `PR #9, #42`)](#phase-3--tribe-a2a-handshake-with-sister-table-t01--editable-storefront-ui-issue-6--pr-9-42)
    - [Phase 4A — Continuous Delivery on GitHub Actions, Cloud Run FastMCP & Agent Registry (`Issue #19, #20` · `PR #31, #32, #38`)](#phase-4a--continuous-delivery-on-github-actions-cloud-run-fastmcp--agent-registry-issue-19-20--pr-31-32-38)
-   - [Phase 4B — Nocturne React + TypeScript UI SPA, Live A2A Protocol & Image Resolution (`Issue #20, #34, #37, #39, #42` · `PR #33, #36, #42, #46`)](#phase-4b--nocturne-react--typescript-ui-spa-live-a2a-protocol--image-resolution-issue-20-34-37-39-42--pr-33-36-42-46)
+   - [Phase 4B — Nocturne React + TypeScript UI SPA, Live A2A Protocol & Image Resolution (`Issue #20, #34, #37, #39, #42` · `PR #33, #36, #42, #43, #46`)](#phase-4b--nocturne-react--typescript-ui-spa-live-a2a-protocol--image-resolution-issue-20-34-37-39-42--pr-33-36-42-43-46)
+   - [Phase 4C — Security Audit Remediation (`SEC-01`..`SEC-08`) & Modular OOP Architecture (`app/` + `mcp/`) (`Issue #37, #52` · `PR #40, #53, #54, #58`)](#phase-4c--security-audit-remediation-sec-01sec-08--modular-oop-architecture-app--mcp-issue-37-52--pr-40-53-54-58)
+   - [Phase 5 — Google M3 UX/UI, GitHub Team Auth, Responsive Lightbox, Viewport Switcher & Isolated ADK/A2A/Playwright Suites (`Issue #44, #47, #55` · `PR #45, #48, #49, #50, #51, #56, #57, #59, #60, #61`)](#phase-5--google-m3-uxui-github-team-auth-responsive-lightbox-viewport-switcher--isolated-adka2aplaywright-suites-issue-44-47-55--pr-45-48-49-50-51-56-57-59-60-61)
 4. [Complete Tool Catalog (`expedition_t02`)](#4-complete-tool-catalog-expedition_t02)
 5. [Golden Evaluation Suite Catalog (`golden.test.json`)](#5-golden-evaluation-suite-catalog-goldentestjson)
 6. [Master Traceability Matrices](#6-master-traceability-matrices)
-   - [6.1 GitHub Issues Traceability Matrix (All 17 Issues)](#61-github-issues-traceability-matrix-all-17-issues)
-   - [6.2 Pull Requests Traceability Matrix (All 26 Merged PRs)](#62-pull-requests-traceability-matrix-all-26-merged-prs)
-   - [6.3 Bonus Points Unlocked Matrix (11+ Verified Bonuses)](#63-bonus-points-unlocked-matrix-11-verified-bonuses)
+   - [6.1 GitHub Issues Traceability Matrix (All 19 Closed Issues)](#61-github-issues-traceability-matrix-all-19-closed-issues)
+   - [6.2 Pull Requests Traceability Matrix (All 41 Merged PRs)](#62-pull-requests-traceability-matrix-all-41-merged-prs)
+   - [6.3 Bonus Points Unlocked Matrix (13+ Verified Bonuses)](#63-bonus-points-unlocked-matrix-13-verified-bonuses)
 7. [Verification & Audit Runbook](#7-verification--audit-runbook)
+8. [Self Red Team & Security Audit Conclusions (`Issue #37, #52` / `PR #40, #53`)](#8-self-red-team--security-audit-conclusions-issue-37-52--pr-40-53)
 
 ---
 
@@ -84,12 +87,13 @@ flowchart LR
 - [`AGENTS.md`](../AGENTS.md): Global ADK guidelines, runtime constraints, and Table 2 tools/skills catalog indexed for Antigravity agents.
 - [`.agents/rules/pull-requests.md`](../.agents/rules/pull-requests.md) and [`.agents/rules/t02-domain-invariants.md`](../.agents/rules/t02-domain-invariants.md): Strict engineering rules enforcing single-task branches, empirical verification tables, and merchandising invariants.
 - [`.github/pull_request_template.md`](../.github/pull_request_template.md): Standardized template requiring *What, How, Evaluation, Process, Risks & follow-ups, Checklist*.
-- **5 Antigravity Workspace Skills in `.agents/skills/` (`PR #11`, `PR #17`):**
+- **6 Antigravity Workspace Skills in `.agents/skills/` (`PR #11`, `PR #17`, `PR #53`):**
   1. `t02-adk-bigquery`: Parameterized BigQuery SQL queries and multi-table analytics.
   2. `t02-mcp-actions-a2a`: FastMCP action tools, parity guarantees, and Tribe A2A handshakes.
   3. `t02-storefront-ui-multimodal`: Image generation via `GEMINI_IMAGE_MODEL` and HTML template rendering.
   4. `t02-eval-and-deploy`: Golden evaluation suite management, Cloud Build triggers, and Agent Runtime deployments.
   5. `t02-worktree-collab`: Parallel multi-person worktree isolation, symlinked virtualenvs, and race condition prevention.
+  6. `security-audit`: Cloudflare-adapted offensive & defensive security audit skill covering OWASP Top 10:2025, OWASP LLM01–LLM10 prompt injection, MCP tool poisoning, CORS, path traversal, DOM XSS, SSRF, and BigQuery identifier validation (`SEC-01`..`SEC-08`).
 
 #### Pillar 2 — Spec / Eval-First Development (Plan-Act-Verify & TDD)
 - No tool, guardrail, or feature is written without an upfront technical specification in `docs/` (`PHASE1_SPEC.md`, `PHASE2_SPEC.md`, `PHASE3_SPEC.md`, `PHASE4_SPEC.md`).
@@ -237,17 +241,39 @@ Concurrent development across 5 engineers and multiple AI subagents risks overwr
 
 ---
 
-### Phase 4B — Nocturne React + TypeScript UI SPA, Live A2A Protocol & Image Resolution (`Issue #20, #34, #37, #39, #42` · `PR #33, #36, #42, #46`)
+### Phase 4B — Nocturne React + TypeScript UI SPA, Live A2A Protocol & Image Resolution (`Issue #20, #34, #37, #39, #42` · `PR #33, #36, #42, #43, #46`)
 - **Status:** ✅ **COMPLETED & MERGED INTO `main`**
-- **Pull Requests:** [`PR #33`](https://github.com/rafalitox2/ai-innovators-london-hackathon/pull/33), [`PR #36`](https://github.com/rafalitox2/ai-innovators-london-hackathon/pull/36), [`PR #42`](https://github.com/rafalitox2/ai-innovators-london-hackathon/pull/42), [`PR #46`](https://github.com/rafalitox2/ai-innovators-london-hackathon/pull/46)
+- **Pull Requests:** [`PR #33`](https://github.com/rafalitox2/ai-innovators-london-hackathon/pull/33), [`PR #36`](https://github.com/rafalitox2/ai-innovators-london-hackathon/pull/36), [`PR #42`](https://github.com/rafalitox2/ai-innovators-london-hackathon/pull/42), [`PR #43`](https://github.com/rafalitox2/ai-innovators-london-hackathon/pull/43), [`PR #46`](https://github.com/rafalitox2/ai-innovators-london-hackathon/pull/46)
 - **Bonuses Unlocked:**
   - **+1 pt — Gemini Enterprise App Integration**
   - **+1 pt — Live Public A2A Protocol Endpoint (`/a2a`)**
 - **Technical Highlights:**
-  - Developed full Nocturne React + TypeScript UI SPA mounted at `/ui` and `/` on Cloud Run.
+  - Developed full Nocturne React 19 + TypeScript UI SPA mounted at `/ui` and `/` on Cloud Run.
   - Exposed live public JSON-RPC 2.0 endpoint at `/a2a` and discovery card at `/.well-known/agent.json`.
   - Registered Table 2 agent into Gemini Enterprise / Discovery Engine via `register_gemini_enterprise_agent` (`PR #36`).
-  - Resolved dynamic lifestyle hero and product image rendering across all published storefronts (`PR #46`, Issue `#39`).
+  - Resolved dynamic lifestyle hero and product image rendering across all published storefronts (`PR #43`, `PR #46`, Issue `#39`).
+
+---
+
+### Phase 4C — Security Audit Remediation (`SEC-01`..`SEC-08`) & Modular OOP Architecture (`app/` + `mcp/`) (`Issue #37, #52` · `PR #40, #53, #54, #58`)
+- **Status:** ✅ **COMPLETED & MERGED INTO `main`**
+- **Pull Requests:** [`PR #40`](https://github.com/rafalitox2/ai-innovators-london-hackathon/pull/40), [`PR #53`](https://github.com/rafalitox2/ai-innovators-london-hackathon/pull/53), [`PR #54`](https://github.com/rafalitox2/ai-innovators-london-hackathon/pull/54), [`PR #58`](https://github.com/rafalitox2/ai-innovators-london-hackathon/pull/58)
+- **Technical Highlights:**
+  - **Self Red Team Offensive Audit (`PR #40`, Issue `#37`):** Added 204 parameterized regression test cases in `tests/test_t02_self_red_team.py`, enforcing pre-sanitization raw input scanning (`scan_args_for_injection`), Unicode `NFKC` / homoglyph / separator normalization, catalog row quarantine (`is_quarantined_product`), and strict numeric validation (`validate_policy_number`).
+  - **Cloudflare `security-audit-skill` Remediation (`PR #53`, Issue `#52`):** Installed `.agents/skills/security-audit/SKILL.md` and remediated 8 security findings (`SEC-01`..`SEC-08`, verified in `tests/test_t02_security_audit.py`): explicit CORS origin allowlists, path traversal sanitization, DOM XSS escaping in `ui/template.html`, pre-sanitization HTML comment & `hero_asset_url` validation, Discovery Engine SSRF/path injection checks, trusted public URL resolution for `/.well-known/agent.json`, BigQuery SQL identifier regex validation, and defensive HTTP security headers (`X-Content-Type-Options: nosniff`, `X-Frame-Options: SAMEORIGIN`, SVG `Content-Security-Policy`).
+  - **Modular OOP Architecture (`PR #54, #58`):** Extracted single-responsibility OOP classes across `app/` (`EnvironmentConfigResolver`, `InstructionSanitizer`, `McpBridgeFactory`, `SeedPackLoader`, `AdkAgentBuilder`, `GcpPreflightValidator`, `NocturneDashboardService`, `NocturneUiController`), top-level `mcp/` (`McpCloudRunGateway` in `mcp/http_gateway.py` without shadowing the installed `mcp` PyPI SDK), and `seed_packs/t02_dynamic_storefronts/mcp/` (`T02McpController`, `McpStateStore`, `CatalogCsvRepository`, `StorefrontActionService`, `MultimodalHeroService`, `TribeA2ASyncService`, `MerchandisingMemoryService`, `EnterpriseOrchestrationService`), verified by `tests/test_t02_oop_architecture.py` and packaged in `cd/Dockerfile.mcp` (`COPY mcp ./mcp`, `PR #58`).
+
+---
+
+### Phase 5 — Google M3 UX/UI, GitHub Team Auth, Responsive Lightbox, Viewport Switcher & Isolated ADK/A2A/Playwright Suites (`Issue #44, #47, #55` · `PR #45, #48, #49, #50, #51, #56, #57, #59, #60, #61`)
+- **Status:** ✅ **COMPLETED & MERGED INTO `main`**
+- **Pull Requests:** [`PR #45`](https://github.com/rafalitox2/ai-innovators-london-hackathon/pull/45), [`PR #48`](https://github.com/rafalitox2/ai-innovators-london-hackathon/pull/48), [`PR #49`](https://github.com/rafalitox2/ai-innovators-london-hackathon/pull/49), [`PR #50`](https://github.com/rafalitox2/ai-innovators-london-hackathon/pull/50), [`PR #51`](https://github.com/rafalitox2/ai-innovators-london-hackathon/pull/51), [`PR #56`](https://github.com/rafalitox2/ai-innovators-london-hackathon/pull/56), [`PR #57`](https://github.com/rafalitox2/ai-innovators-london-hackathon/pull/57), [`PR #59`](https://github.com/rafalitox2/ai-innovators-london-hackathon/pull/59), [`PR #60`](https://github.com/rafalitox2/ai-innovators-london-hackathon/pull/60), [`PR #61`](https://github.com/rafalitox2/ai-innovators-london-hackathon/pull/61)
+- **Technical Highlights:**
+  - **GitHub OAuth / Token Team Sign-In (`PR #45`, Issue `#44`):** Added `GitHubAuthModal.tsx`, `UserNavProfile.tsx`, and backend `/api/auth/github/*` routes attributing published layouts, promo banners, and A2A syncs to the signed-in Table 2 engineer (`@rafalitox2`, `@BorjaIP`, `@carlosescribano-ai`, `@jportell`, `@joshsmith-samy`).
+  - **Google Daylight & Gemini Dark Studio M3 Themes (`PR #48`, Issue `#47`):** Dual Material Design 3 theme system (`light` / `dark`) with WCAG AA contrast tokens and `prefers-reduced-motion` support.
+  - **Mobile Responsive Layout, Real-Photo Pinch-to-Zoom Lightbox & Device Viewport Switcher (`PR #56, #57, #59, #61`, Issue `#55`):** Full mobile responsiveness across the React UI and MCP preview template, removal of colorizing blend filters on product photography, interactive `1x`–`3x` pinch-to-zoom lightbox in both the React `StorefrontPreviewModal` and standalone MCP `/preview/{segment_id}` (`ui/template.html`), and a **Device Viewport Switcher** (`Desktop 100%` / `Tablet 768px` / `Mobile 390px`) with scrollable storefront container.
+  - **Playwright E2E UX/UI Audit Suite (`PR #57, #61`, Issue `#55`):** 8 end-to-end Playwright tests (`ui/e2e/ux-ui-audit.spec.ts`) auditing desktop (`1440×900`) and mobile (`390×844`) viewports, zero horizontal overflow, lightbox zoom controls, viewport switching, and standalone MCP preview rendering.
+  - **Isolated Google ADK & Official A2A Protocol Test Suites (`PR #60`):** Dedicated offline and live GCP test suites for Google ADK (`tests/adk/`, `eval/adk_suite_runner.py`, `make test-adk`, `make test-adk-gcp`) and Official A2A Protocol (`tests/a2a/`, `eval/a2a_suite_runner.py`, `make test-a2a`, `make test-a2a-gcp`), raising total offline pytest coverage to **393+ tests**.
 
 ---
 
@@ -299,31 +325,33 @@ The golden evaluation suite at `seed_packs/t02_dynamic_storefronts/eval/golden.t
 
 ## 6. Master Traceability Matrices
 
-### 6.1 GitHub Issues Traceability Matrix (All 17 Issues)
+### 6.1 GitHub Issues Traceability Matrix (All 19 Closed Issues)
 
 | Issue # | Title | Phase | Target Branch | Merged PR(s) | Status | Key Deliverable Artifacts |
 | :-: | :--- | :---: | :--- | :-: | :---: | :--- |
-| **`#1`** | `🗺️ [MASTER PLAN] Hoja de Ruta y Reparto de Bonus — Mesa T02` | All | `main` | `#8, #11, #13, #17, #25` | **CLOSED** | Master road map, architecture design, and worktree setup. |
+| **`#1`** | `🗺️ [MASTER PLAN] Hoja de Ruta y Reparto de Bonus — Mesa T02` | All | `main` | `#8, #11, #13, #17, #25, #49, #50, #51` | **CLOSED** | Master road map, architecture design, worktree setup, and full English documentation suite. |
 | **`#2`** | `⚡ [Bonus +2 pts] Fase 1A: CI/CD Pipeline + Agentic SDLC Practices` | 1A | `feat/ci-github-actions` | `#8, #16` | **CLOSED** | Split CI/CD (`.github/workflows/ci.yml`, `cloudbuild.yaml`), PR template, and rules. |
 | **`#3`** | `🛡️ [Bonus +1 pt] Fase 1B: Security & Guardrails (Defensa contra Discount Injection 95%)` | 1B | `feat/security-guardrails` | `#10, #12` | **CLOSED** | 3-layer defense in `guardrails.py` (`sanitize_description`, margin buffer, `before_tool_callback`). |
 | **`#4`** | `📊 [Bonus +1 pt] Fase 2A: BigQuery Multi-Table JOIN & Optimización de Segmentos` | 2A | `feat/phase2-bq-multimodal-ui` | `#7` | **CLOSED** | `recommend_storefront_optimization` parameterized BigQuery CTE join. |
 | **`#5`** | `🎨 [Bonus +2 pts] Fase 2B: Multimodalidad (gemini-3.1-flash-image) + Storefront UI Preview` | 2B | `feat/phase2-bq-multimodal-ui` | `#7, #14, #15, #24, #29, #30` | **CLOSED** | `generate_hero_lifestyle_image`, `render_storefront_preview`, and UI preview cards. |
-| **`#6`** | `🤝 [Bonus +1 pt & Pitch] Fase 3: Tribe A2A con Mesa T01 + 2 Slides & Demo (5:00)` | 3 | `feat/phase3-tribe-a2a` | `#9, #42` | **CLOSED** | `sync_campaign_with_t01` A2A handshake with Table 1 and pitch runbook (`docs/PITCH_T02.md`). |
-| **`#19`** | `🚀 [Fase 4A - CI/CD +1 pt & Eval] CD Real en GitHub Actions (WIF OIDC) + Cloud Build + Live Golden Eval` | 4A | `feat/cd-opentofu-cloudrun-registry` | `#31, #32, #38` | **CLOSED** | Cloud Run FastMCP deployment, automated CD workflow, and Agent Registry integration. |
-| **`#20`** | `🌐 [Bonus +1 pt: Cloud Run] Desplegar Escaparate Nocturne UI + Live Preview Server en Google Cloud Run` | 4B | `feat/nocturne-react-ui` | `#33` | **CLOSED** | Nocturne React 18 SPA compiled and hosted on Cloud Run at `/ui` and `/`. |
+| **`#6`** | `🤝 [Bonus +1 pt & Pitch] Fase 3: Tribe A2A con Mesa T01 + 2 Slides & Demo (5:00)` | 3 | `feat/phase3-tribe-a2a` | `#9, #42, #60` | **CLOSED** | `sync_campaign_with_t01` A2A handshake with Table 1, live `/a2a` server, isolated A2A suite, and pitch runbook (`docs/PITCH_T02.md`). |
+| **`#19`** | `🚀 [Fase 4A - CI/CD +1 pt & Eval] CD Real en GitHub Actions (WIF OIDC) + Cloud Build + Live Golden Eval` | 4A | `feat/cd-opentofu-cloudrun-registry` | `#31, #32, #38, #58` | **CLOSED** | Cloud Run FastMCP deployment, automated CD workflow, `Dockerfile.mcp` with `mcp/`, and Agent Registry integration. |
+| **`#20`** | `🌐 [Bonus +1 pt: Cloud Run] Desplegar Escaparate Nocturne UI + Live Preview Server en Google Cloud Run` | 4B | `feat/nocturne-react-ui` | `#33, #54` | **CLOSED** | Nocturne React 19 SPA + OOP `McpCloudRunGateway` hosted on Cloud Run at `/ui` and `/`. |
 | **`#21`** | `🧠 [Bonus +1 pt: Memory] Memoria Persistente Cross-Session de Merchandising` | 2B | `feat/memory-and-model-routing` | `#26` | **CLOSED** | `save_merchandising_memory`, `recall_merchandising_memory`, GCS state sync. |
 | **`#22`** | `🔀 [Bonus +1 pt: Model Routing & Gemma] Enrutador Dinámico de Modelos por Tarea/Complejidad` | 2B | `feat/memory-and-model-routing` | `#26` | **CLOSED** | `model_router.py` dynamic tiering between `gemma-3-27b-it` and `gemini-3.8-flash`. |
 | **`#23`** | `🕸️ [Bonus +1 pt: Knowledge Graph] Grafo de Conocimiento de Estilos, Segmentos y Bundles Cross-Sell` | 2A | `feat/knowledge-graph-bundles` | `#35` | **CLOSED** | `knowledge_graph.py` semantic property graph and `query_merchandising_knowledge_graph`. |
 | **`#27`** | `🚨 [Security Alert] Prompt Injection Payload Detected in products_catalog.csv (SKU-0017)` | 1B | `fix/issue-27-sku-0017-quarantine` | `#28` | **CLOSED** | Strict quarantine of `SKU-0017` in BigQuery SQL queries and MCP action tools. |
 | **`#34`** | `🏢 [Bonus +1 pt: Gemini Enterprise App] Registro e Integración del Agente T02 en Gemini Enterprise` | 4B | `feat/gemini-enterprise-app` | `#36` | **CLOSED** | `register_gemini_enterprise_agent` registering ADK agent into Discovery Engine. |
-| **`#37`** | `🛡️ [Security & VAR Self-Red-Team] Auditoría Ofensiva Multi-Vector y Blindaje Total de Guardrails T02` | 1B / 4B | `fix/t02-self-red-team-37` | `#40` | **OPEN** | Multi-vector offensive audit hardening raw input, boundary callbacks, and numeric bounds. |
-| **`#39`** | `🐛 [t02_dynamic_storefronts] Fix mismatched, unpersisted, and broken hero/product images on published storefronts` | 4B | `fix/issue-39-published-storefront-images` | `#46` | **CLOSED** | Fixed dynamic hero image resolution, SVG fallback generator, and GCS persistence. |
-| **`#44`** | `✨ [t02_dynamic_storefronts] Add GitHub Authentication & Team Member Sign-in to Nocturne UI` | 4B | `feat/github-auth-login` | `#45` | **OPEN** | GitHub OAuth / token sign-in for team members in Nocturne UI. |
-| **`#47`** | `Mejora de diseño UX/UI con tema de Google` | 4B | `feat/issue-47-google-style-ui-ux` | `#48` | **OPEN** | Google Material Design styling updates for Nocturne UI. |
+| **`#37`** | `🛡️ [Security & VAR Self-Red-Team] Auditoría Ofensiva Multi-Vector y Blindaje Total de Guardrails T02` | 4C | `fix/t02-self-red-team-37` | `#40` | **CLOSED** | Multi-vector offensive audit (204 test cases) hardening raw input, boundary callbacks, and numeric bounds. |
+| **`#39`** | `🐛 [t02_dynamic_storefronts] Fix mismatched, unpersisted, and broken hero/product images on published storefronts` | 4B | `fix/issue-39-published-storefront-images` | `#43, #46` | **CLOSED** | Fixed dynamic hero image resolution, SVG fallback generator, and GCS persistence. |
+| **`#44`** | `✨ [t02_dynamic_storefronts] Add GitHub Authentication & Team Member Sign-in to Nocturne UI` | 5 | `feat/github-auth-login` | `#45` | **CLOSED** | GitHub OAuth / token sign-in and team member session attribution in Nocturne UI. |
+| **`#47`** | `Mejora de diseño UX/UI con tema de Google` | 5 | `feat/issue-47-google-style-ui-ux` | `#48` | **CLOSED** | Google Daylight & Gemini Dark Studio Material Design 3 theme system for Nocturne UI. |
+| **`#52`** | `🔒 [Security] Auditoría y remediación de vulnerabilidades con Cloudflare security-audit-skill` | 4C | `fix/security-audit-remediation` | `#53` | **CLOSED** | Remediated 8 full-stack vulnerabilities (`SEC-01`..`SEC-08`) and added `.agents/skills/security-audit/SKILL.md`. |
+| **`#55`** | `Auditoría E2E de UX/UI con Playwright y remediación con Design Skills` | 5 | `feat/playwright-ux-ui-audit` | `#56, #57, #59, #61` | **CLOSED** | 8 Playwright E2E UX/UI tests, mobile responsive design, device viewport switcher, and `1x`–`3x` photo lightbox. |
 
 ---
 
-### 6.2 Pull Requests Traceability Matrix (All 26 Merged PRs)
+### 6.2 Pull Requests Traceability Matrix (All 41 Merged PRs)
 
 | PR # | Branch / Worktree | Closed Issue(s) | TDD Cycle (RED -> GREEN) | Status | Summary of Technical Changes |
 | :---: | :--- | :---: | :---: | :---: | :--- |
@@ -351,28 +379,43 @@ The golden evaluation suite at `seed_packs/t02_dynamic_storefronts/eval/golden.t
 | **[`#35`](https://github.com/rafalitox2/ai-innovators-london-hackathon/pull/35)** | `feat/knowledge-graph-bundles` | `#23` | `90eb0d9` -> `b608bab` | **MERGED** (`52e3698`) | Merchandising Knowledge Graph (`knowledge_graph.py`) and cross-sell bundling tool, case 12. |
 | **[`#36`](https://github.com/rafalitox2/ai-innovators-london-hackathon/pull/36)** | `feat/gemini-enterprise-app` | `#34` | `5c5a766` -> `a7afac9` | **MERGED** (`32a237e`) | Gemini Enterprise / Discovery Engine registration manifest and MCP action tool, case 13. |
 | **[`#38`](https://github.com/rafalitox2/ai-innovators-london-hackathon/pull/38)** | `fix/cd-github-actions-sandbox-adc-auth` | `#19` | Direct Fix | **MERGED** (`1aeaa9d`) | Supported sandbox `authorized_user` ADC credentials in GitHub Actions continuous delivery. |
+| **[`#40`](https://github.com/rafalitox2/ai-innovators-london-hackathon/pull/40)** | `fix/t02-self-red-team-37` | `#37` | TDD Red -> Green | **MERGED** (`3996081`) | Self Red Team hardening (204 regression cases): raw input scan, Unicode NFKC normalization, SKU quarantine, numeric policy bounds. |
 | **[`#42`](https://github.com/rafalitox2/ai-innovators-london-hackathon/pull/42)** | `feat/a2a-live-endpoint` | `#6` | `85d5635` -> `a726076` | **MERGED** (`a726076`) | Public live `/a2a` JSON-RPC 2.0 endpoint and `/.well-known/agent.json` discovery card. |
+| **[`#43`](https://github.com/rafalitox2/ai-innovators-london-hackathon/pull/43)** | `fix/published-storefront-images` | `#39` | TDD Red -> Green | **MERGED** (`1900ace`) | Resolved hero and product images on published storefronts across preview and UI routes. |
+| **[`#45`](https://github.com/rafalitox2/ai-innovators-london-hackathon/pull/45)** | `feat/github-auth-login` | `#44` | TDD Red -> Green | **MERGED** (`d237d9b`) | GitHub OAuth & personal token authentication with Table 2 team member session attribution in Nocturne UI. |
 | **[`#46`](https://github.com/rafalitox2/ai-innovators-london-hackathon/pull/46)** | `fix/issue-39-published-storefront-images` | `#39` | `561ede0` -> `68a68ce` | **MERGED** (`b07cc3b`) | Fixed mismatched, unpersisted, and broken hero/product images across published storefronts. |
+| **[`#48`](https://github.com/rafalitox2/ai-innovators-london-hackathon/pull/48)** | `feat/issue-47-google-style-ui-ux` | `#47` | TDD Red -> Green | **MERGED** (`81ff54a`) | Google Daylight & Gemini Dark Studio Material Design 3 theme system and UX/UI polish. |
+| **[`#49`](https://github.com/rafalitox2/ai-innovators-london-hackathon/pull/49)** | `docs/t02-readme-gcp-architecture` | `#1` | Direct Docs | **MERGED** (`ce32807`) | Added GCP infrastructure and Tribe A2A SVG diagrams (`t02_gcp_infrastructure.svg`, `t02_a2a_integration.svg`). |
+| **[`#50`](https://github.com/rafalitox2/ai-innovators-london-hackathon/pull/50)** | `docs/complete-english-traceability-and-logbook` | `#1` | Direct Docs | **MERGED** (`a43d7da`) | Translated all documentation to English and added complete project traceability logbook. |
+| **[`#51`](https://github.com/rafalitox2/ai-innovators-london-hackathon/pull/51)** | `docs/t02-readme-and-challenge` | `#1` | `03c1d88` | **MERGED** (`656c327`) | Extracted original challenge brief to `CHALLENGE.md` and focused root `README.md` on Table 2. |
+| **[`#53`](https://github.com/rafalitox2/ai-innovators-london-hackathon/pull/53)** | `fix/security-audit-remediation` | `#52` | `65ae1bf` | **MERGED** (`6aad45b`) | Remediated 8 vulnerabilities (`SEC-01`..`SEC-08`) via Cloudflare `security-audit-skill` + `test_t02_security_audit.py`. |
+| **[`#54`](https://github.com/rafalitox2/ai-innovators-london-hackathon/pull/54)** | `feat/t02-oop-mcp-app-architecture` | `#20` | `3b3ae6b` | **MERGED** (`c4396a5`) | Extracted top-level `mcp/` package and modular OOP class architecture for `app/` and `seed_packs/t02_dynamic_storefronts/mcp/`. |
+| **[`#56`](https://github.com/rafalitox2/ai-innovators-london-hackathon/pull/56)** | `feat/ui-mobile-responsive` | `#55` | `4cdc001` | **MERGED** (`425ffcd`) | Complete mobile responsive layout across Auth modal, `UserNavProfile`, React UI, and MCP preview template. |
+| **[`#57`](https://github.com/rafalitox2/ai-innovators-london-hackathon/pull/57)** | `feat/playwright-ux-ui-audit` | `#55` | `6ceded9` -> `45dfb0e` | **MERGED** (`533d8f7`) | Playwright E2E UX/UI audit suite, design-skill remediation, and real-photo `1x`–`3x` pinch-to-zoom lightbox. |
+| **[`#58`](https://github.com/rafalitox2/ai-innovators-london-hackathon/pull/58)** | `fix/cd-dockerfile-mcp-package` | `#19` | `c26df2a` | **MERGED** (`b21c095`) | Included top-level `mcp/` package (`COPY mcp ./mcp`) in `cd/Dockerfile.mcp` for Cloud Run startup. |
+| **[`#59`](https://github.com/rafalitox2/ai-innovators-london-hackathon/pull/59)** | `feat/ui-viewport-switcher-scrollable-storefront` | `#55` | `db292da` | **MERGED** (`a630c72`) | Added device viewport switcher (`Desktop 100%` / `Tablet 768px` / `Mobile 390px`) and scrollable storefront container. |
+| **[`#60`](https://github.com/rafalitox2/ai-innovators-london-hackathon/pull/60)** | `feat/t02-adk-and-a2a-test-suites` | `#6, #19` | `b1dc44f` | **MERGED** (`a8f666b`) | Added isolated Google ADK & GCP (`tests/adk/`, `eval/adk_suite_runner.py`) and Official A2A Protocol (`tests/a2a/`, `eval/a2a_suite_runner.py`) test suites. |
+| **[`#61`](https://github.com/rafalitox2/ai-innovators-london-hackathon/pull/61)** | `feat/e2e-full-suite-and-mcp-lightbox` | `#55` | `826cf76` | **MERGED** (`11ca613`) | Expanded Playwright E2E suite to 8 tests, added standalone MCP preview `1x`–`3x` lightbox (`ui/template.html`) & Cloud Run gateway tests. |
 
 ---
 
-### 6.3 Bonus Points Unlocked Matrix (11+ Verified Bonuses)
+### 6.3 Bonus Points Unlocked Matrix (13+ Verified Bonuses)
 
 | # | Targeted Bonus Capability | Phase | Tracking Issue | Merged PR(s) | Verification Command / Target | Production Evidence |
 | :-: | :--- | :-: | :---: | :-: | :--- | :--- |
 | **1** | **Automated CI/CD Pipeline** (`+1 pt`) | 1A | `#2` | `#8, #16` | GitHub Actions PR Gate | 33s runtime on every push/PR without exported keys. |
-| **2** | **Agentic SDLC Practices** (`+1 pt`) | 1A / All | `#1, #2` | `#8, #11, #13, #17, #25` | `pytest tests/test_t02_agents_skills.py` | 3/3 Pillars demonstrated: 5 Skills, TDD Red-Green, Worktrees. |
-| **3** | **Security & Guardrails** (`+1 pt`) | 1B | `#3, #27` | `#10, #12, #28` | `pytest tests/test_t02_guardrails.py` | 26 tests passing; intercepts `SKU-0017` injection and margin breaches. |
+| **2** | **Agentic SDLC Practices** (`+1 pt`) | 1A / All | `#1, #2` | `#8, #11, #13, #17, #25, #53` | `pytest tests/test_t02_agents_skills.py` | 3/3 Pillars demonstrated: 6 Skills, TDD Red-Green, Worktrees. |
+| **3** | **Security & Guardrails** (`+1 pt`) | 1B / 4C | `#3, #27, #37, #52` | `#10, #12, #28, #40, #53` | `pytest tests/test_t02_guardrails.py tests/test_t02_self_red_team.py tests/test_t02_security_audit.py` | 250+ security tests passing; intercepts `SKU-0017` injection, margin breaches, and `SEC-01`..`SEC-08`. |
 | **4** | **BigQuery Multi-Table Analytics** (`+1 pt`) | 2A | `#4` | `#7, #28` | `make eval PACK=t02` (`case_06`) | 3-table analytical join filtering by bounce rate and ranking margin. |
 | **5** | **Margin Policy & Governance** (`+1 pt`) | 2A / 1B | `#4, #3` | `#7, #10` | `pytest tests/test_t02_guardrails.py` | Rejects `SKU-0085` under margin buffer; caps bids at 25 EUR. |
-| **6** | **Multimodality (Image Generation)** (`+1 pt`) | 2B | `#5` | `#7, #29` | `pytest tests/test_t02_phase2.py` | Generates lifestyle hero assets with `gemini-3.1-flash-image`. |
-| **7** | **MCP Generative UI Storefront Preview** (`+1 pt`)| 2B / 3 | `#5, #6` | `#7, #9, #15, #24, #29` | `make eval-validate PACK=t02` (`case_07`) | Renders `ui://storefront-preview/<seg>` HTML card with net margin. |
+| **6** | **Multimodality (Image Generation)** (`+1 pt`) | 2B | `#5` | `#7, #29, #43, #46` | `pytest tests/test_t02_phase2.py` | Generates lifestyle hero assets with `gemini-3.1-flash-image`. |
+| **7** | **MCP Generative UI Storefront Preview** (`+1 pt`)| 2B / 3 / 5 | `#5, #6, #55` | `#7, #9, #15, #24, #29, #61` | `make eval-validate PACK=t02` (`case_07`) | Renders `ui://storefront-preview/<seg>` HTML card with net margin & `1x`–`3x` lightbox. |
 | **8** | **Persistent Cross-Session Memory** (`+1 pt`) | 2B | `#21` | `#26` | `pytest tests/test_t02_memory_and_routing.py` | Persists merchandising notes in `.state.json` synchronized to GCS. |
-| **9** | **Tribe Agent-to-Agent (A2A) Handshake** (`+1 pt`)| 3 / 4A | `#6` | `#9, #42` | `curl -X POST .../a2a` | Live JSON-RPC 2.0 handshake synchronizing ad variants with Table 1. |
+| **9** | **Tribe Agent-to-Agent (A2A) Handshake** (`+1 pt`)| 3 / 4A / 5 | `#6` | `#9, #42, #60` | `make test-a2a` & `curl -X POST .../a2a` | Live JSON-RPC 2.0 handshake synchronizing ad variants with Table 1. |
 | **10** | **Dynamic Model Router & Gemma** (`+1 pt`) | 2B | `#22` | `#26` | `pytest tests/test_t02_memory_and_routing.py` | Routes copy tasks to `gemma-3-27b-it` and reasoning to `gemini-3.8-flash`. |
 | **11** | **Merchandising Knowledge Graph** (`+1 pt`) | 2A | `#23` | `#35` | `pytest tests/test_t02_knowledge_graph.py` | Traverses property graph and constructs 3-item cross-sell bundles. |
 | **12** | **Gemini Enterprise Integration** (`+1 pt`) | 4B | `#34` | `#36` | `pytest tests/test_t02_gemini_enterprise.py` | Registers Table 2 agent into Discovery Engine in `eu` location. |
-| **13** | **Cloud Run MCP & Nocturne UI** (`+1 pt`) | 4A / 4B | `#19, #20` | `#31, #33` | `curl -fsSL .../health` | Multi-stage Docker container serving UI and FastMCP on Cloud Run. |
+| **13** | **Cloud Run MCP & Nocturne UI** (`+1 pt`) | 4A / 4B / 5 | `#19, #20, #44, #47, #55` | `#31, #33, #45, #48, #54, #56, #57, #58, #59, #61` | `curl -fsSL .../health` & `npx playwright test` | 2-stage Docker container serving React 19 UI (Auth, Themes, Viewport Switcher, Lightbox) & FastMCP on Cloud Run. |
 
 ---
 
@@ -381,25 +424,36 @@ The golden evaluation suite at `seed_packs/t02_dynamic_storefronts/eval/golden.t
 To execute full verification locally or against live cloud infrastructure:
 
 ```bash
-# 1. Complete offline verification gate (95 unit tests + 13 golden eval schema validations + pack checks)
+# 1. Complete offline verification gate (393+ unit/ADK/A2A/security tests + 13 golden eval schema validations + pack checks)
 make verify PACK=t02
 
-# 2. Run unit tests across all 10 modules (passes in ~2.5 seconds)
+# 2. Run all offline pytest modules (19 test modules across root, tests/adk/, and tests/a2a/)
 make test
 
-# 3. Validate ADK Golden Evaluation dataset schema
+# 3. Run isolated Google ADK Agent & Evaluator suite (offline or live GCP)
+make test-adk
+make test-adk-gcp
+
+# 4. Run isolated Official A2A Protocol & Tribe Handshake suite (offline or live GCP)
+make test-a2a
+make test-a2a-gcp
+
+# 5. Run Playwright E2E UX/UI audit suite (8 tests across Desktop 1440x900 & Mobile 390x844)
+cd ui && npx playwright test
+
+# 6. Validate ADK Golden Evaluation dataset schema
 make eval-validate PACK=t02
 
-# 4. Execute live evaluation against Vertex AI Gemini 3.8 Flash & BigQuery
+# 7. Execute live evaluation against Vertex AI Gemini 3.8 Flash & BigQuery
 make eval PACK=t02
 
-# 5. Check live Cloud Run FastMCP service health
+# 8. Check live Cloud Run FastMCP service health
 curl -fsSL "https://t02-dynamic-storefronts-mcp-d2lv3suxga-ew.a.run.app/health"
 
-# 6. Check live A2A Agent Discovery Card
+# 9. Check live A2A Agent Discovery Card
 curl -fsSL "https://t02-dynamic-storefronts-mcp-d2lv3suxga-ew.a.run.app/.well-known/agent.json"
 
-# 7. Execute live A2A JSON-RPC Tribe Handshake with Table 1
+# 10. Execute live A2A JSON-RPC Tribe Handshake with Table 1
 curl -fsSL -X POST "https://t02-dynamic-storefronts-mcp-d2lv3suxga-ew.a.run.app/a2a" \
   -H "Content-Type: application/json" \
   -d '{
@@ -414,18 +468,28 @@ curl -fsSL -X POST "https://t02-dynamic-storefronts-mcp-d2lv3suxga-ew.a.run.app/
     }
   }'
 
-# 8. Verify remote Vertex AI Agent Runtime ReasoningEngine in europe-west1
+# 11. Verify remote Vertex AI Agent Runtime ReasoningEngine in europe-west1
 make test-remote
 ```
 
 ---
 
-## 8. Self Red Team Conclusions (Issue #37 / PR #40)
+## 8. Self Red Team & Security Audit Conclusions (`Issue #37, #52` / `PR #40, #53`)
 
-We executed an adversarial Self Red Team audit (`Astra — Security Engineer`) across the entire Table 2 perimeter and integrated 204 parameterized regression test cases in [`tests/test_t02_self_red_team.py`](../tests/test_t02_self_red_team.py):
+We executed two comprehensive security audits across the entire Table 2 perimeter:
 
-- **Pre-sanitization raw input inspection**: All 8 write/action MCP tools and `before_tool_security_callback` now inspect raw arguments via `scan_args_for_injection()` before `sanitize_untrusted_text()` strips injection markers.
-- **Unicode & obfuscation hardening**: `contains_injection_marker()` normalizes via `NFKC`, strips invisible/format Unicode characters (`\u200b`..`\u206f`, `\u00ad`, `\ufeff`), and collapses separator-obfuscated keywords (`A.D.M.I.N`, `O-V-E-R-R-I-D-E`, `[SYSTEM]`).
-- **Complete `SKU-0017` & poisoned catalog quarantine**: `quarantine_action_args()` and `is_quarantined_product()` block `SKU-0017` and any catalog row containing injection markers across all 6 SKU-bearing MCP actions, BigQuery analytical tools (`SELECT *` / `TO_JSON_STRING(p)`), and the Merchandising Knowledge Graph.
-- **Strict numeric policy validation**: `validate_policy_number()` rejects `bool`, `NaN`, `±Inf`, fractional discounts (`integral=True`), and non-positive CPM bids (`<= 0`).
+1. **Adversarial Self Red Team Audit (`Issue #37` / `PR #40` — 204 Regression Cases in [`tests/test_t02_self_red_team.py`](../tests/test_t02_self_red_team.py))**:
+   - **Pre-sanitization raw input inspection**: All write/action MCP tools and `before_tool_security_callback` inspect raw arguments via `scan_args_for_injection()` before `sanitize_untrusted_text()` strips injection markers.
+   - **Unicode & obfuscation hardening**: `contains_injection_marker()` normalizes via `NFKC`, strips invisible/format Unicode characters (`\u200b`..`\u206f`, `\u00ad`, `\ufeff`), and collapses separator-obfuscated keywords (`A.D.M.I.N`, `O-V-E-R-R-I-D-E`, `[SYSTEM]`).
+   - **Complete `SKU-0017` & poisoned catalog quarantine**: `quarantine_action_args()` and `is_quarantined_product()` block `SKU-0017` and any catalog row containing injection markers across all SKU-bearing MCP actions, BigQuery analytical tools (`SELECT *` / `TO_JSON_STRING(p)`), and the Merchandising Knowledge Graph.
+   - **Strict numeric policy validation**: `validate_policy_number()` rejects `bool`, `NaN`, `±Inf`, fractional discounts (`integral=True`), and non-positive CPM bids (`<= 0`).
+2. **Cloudflare `security-audit-skill` Full-Stack Audit (`Issue #52` / `PR #53` — `SEC-01`..`SEC-08` in [`tests/test_t02_security_audit.py`](../tests/test_t02_security_audit.py))**:
+   - **`SEC-01` (CORS Hardening)**: Replaced wildcard `allow_origins=["*"]` + `allow_credentials=True` with explicit origin allowlists (`ALLOWED_CORS_ORIGINS`).
+   - **`SEC-02` (Path Traversal Prevention)**: Sanitized `sku_id` and `segment_id` filesystem identifiers in `generate_hero_lifestyle_image` and `render_storefront_preview`.
+   - **`SEC-03` (DOM XSS Prevention)**: Replaced unescaped `innerHTML` with `escapeHtml()` / `textContent` and escaped `</script>` sequences in `ui/template.html`.
+   - **`SEC-04` (Boundary Callback & URL Scheme Validation)**: Restricted `hero_asset_url` to `https://`, `/static/`, or `data:image/svg+xml` (blocking `javascript:`, `data:text/html`, `file://`).
+   - **`SEC-05` (SSRF & Path Injection Prevention)**: Enforced strict regex validation on `project_id`, `location`, `engine_id`, and `agent_id` in `gemini_enterprise.py`.
+   - **`SEC-06` (Trusted Host Resolution)**: Prevented untrusted `Host` header reflection in `/.well-known/agent.json`.
+   - **`SEC-07` (BigQuery SQL Identifier Validation)**: Validated dataset and project identifiers against `^[A-Za-z0-9_.-]+$` before SQL table path construction in `tools.py`.
+   - **`SEC-08` (Defensive HTTP Headers)**: Added `X-Content-Type-Options: nosniff`, `X-Frame-Options: SAMEORIGIN`, `Referrer-Policy: strict-origin-when-cross-origin`, and SVG `Content-Security-Policy` headers across both FastAPI servers.
 

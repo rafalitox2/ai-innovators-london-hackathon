@@ -11,15 +11,16 @@
 
 Judges and evaluators can interact with Table 2 across three live interfaces:
 
-### 1. Production Nocturne React UI Dashboard
+### 1. Production Nocturne React 19 UI Dashboard
 - **Live Cloud URL**: [https://t02-dynamic-storefronts-mcp-d2lv3suxga-ew.a.run.app/ui](https://t02-dynamic-storefronts-mcp-d2lv3suxga-ew.a.run.app/ui)
 - **Features**:
-  - Real-time catalog & audience segment selector (Madrid, London, Berlin, Paris).
-  - Instant gross margin inspector with safety caps.
-  - Interactive Storefront Preview modal with audience-aware hero image regeneration.
-  - Embedded ADK Copilot chat drawer connecting directly to Vertex AI Agent Runtime.
+  - **GitHub Team Sign-In (`PR #45`)**: Quick sign-in and OAuth/personal token authentication attributing published layouts, promo banners, and A2A syncs to Table 2 team members (`@rafalitox2`, `@BorjaIP`, `@carlosescribano-ai`, `@jportell`, `@joshsmith-samy`).
+  - **Google Daylight & Gemini Dark Studio M3 Themes (`PR #48`)**: Instant theme toggle with WCAG AA contrast tokens and responsive mobile/desktop layout (`PR #56`).
+  - **Real-Time Catalog, Audience Segment & Guardrail Simulator**: Ranked bounce opportunities (Madrid, London, Berlin, Paris) and live simulation of `SKU-0017` injection quarantine and `SKU-0085` margin floors.
+  - **Interactive Storefront Preview Modal with Device Viewport Switcher & Lightbox (`PR #57, #59, #61`)**: Audience-aware hero image regeneration, **Device Viewport Switcher** (`Desktop 100%` / `Tablet 768px` / `Mobile 390px`) with scrollable storefront container, and **Real-Photo Pinch-to-Zoom Lightbox (`1x`–`3x`)**.
+  - **Embedded ADK Copilot Chat Drawer**: Connects directly to the `expedition_t02` ADK agent on Vertex AI Agent Runtime.
 
-### 2. Live Generative Storefront Preview Card
+### 2. Live Generative Storefront Preview Card (with `1x`–`3x` Photo Lightbox)
 - **Live Cloud URL**: [https://t02-dynamic-storefronts-mcp-d2lv3suxga-ew.a.run.app/preview/SEG-001](https://t02-dynamic-storefronts-mcp-d2lv3suxga-ew.a.run.app/preview/SEG-001)
 - **Local Fallback**:
   ```bash
@@ -96,7 +97,10 @@ Judges and evaluators can interact with Table 2 across three live interfaces:
 
 ### Minute 2:45 – 3:00 | Engineering Excellence & Cloud Deployment
 - **Golden Evaluation**: 13/13 golden test cases passed at 100% (`tool_trajectory_avg_score=1.00`).
-- **Comprehensive Unit Testing**: 95 unit tests passing in 2.5 seconds.
+- **Comprehensive Automated Testing**:
+  - **393+ offline `pytest` tests** across 19 modules (including isolated Google ADK suite `make test-adk`, Official A2A Protocol suite `make test-a2a`, 204 Self Red Team cases, and 8 Cloudflare `security-audit-skill` checks `SEC-01`..`SEC-08`).
+  - **8 Playwright E2E UX/UI audit tests** (`cd ui && npx playwright test`) verifying desktop & mobile viewports, zero horizontal overflow, viewport switching, and `1x`–`3x` photo lightbox.
+- **Engineering Traceability**: **41 merged Pull Requests** and **19 closed GitHub Issues** built via Spec/Eval-first TDD (`RED` → `GREEN`) and isolated `git worktree` collaboration.
 - **Production Infrastructure**:
   - Live on **Google Cloud Run**: `https://t02-dynamic-storefronts-mcp-d2lv3suxga-ew.a.run.app/ui`
   - Deployed in **Vertex AI Agent Runtime**: `projects/633924037012/locations/europe-west1/reasoningEngines/5876565294532526080`

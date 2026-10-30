@@ -51,6 +51,6 @@ GOOGLE_CLOUD_PROJECT=<your-project-id> .venv/bin/python -m seed_packs.t02_dynami
 # Validate active seed packs (YAML, CSV row counts, TOOLS signatures, MCP_TOOLS, EvalSet JSON, Challenge Cards)
 .venv/bin/python -m seed_packs.check_packs
 
-# Run the ADK evaluation suite against Table 2's 9 golden cases
+# Run the ADK evaluation suite against Table 2's 13 golden cases
 make eval PACK=t02
 ```
