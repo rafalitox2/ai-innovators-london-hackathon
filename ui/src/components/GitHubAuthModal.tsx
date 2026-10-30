@@ -104,20 +104,8 @@ export const GitHubAuthModal: React.FC<GitHubAuthModalProps> = ({
       }}
     >
       <div
-        className="dialog card"
+        className="dialog card auth-dialog-card"
         onClick={(e) => e.stopPropagation()}
-        style={{
-          width: '100%',
-          maxWidth: '560px',
-          background: 'var(--color-bg)',
-          borderRadius: 'var(--radius-md)',
-          border: '1px solid var(--color-border)',
-          boxShadow: '0 24px 48px rgba(0, 0, 0, 0.6), 0 0 0 1px var(--color-section-ghost)',
-          padding: '28px',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '20px'
-        }}
       >
         {/* Modal Header */}
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
@@ -223,13 +211,7 @@ export const GitHubAuthModal: React.FC<GitHubAuthModalProps> = ({
             Select Team Member (Table 2 Hackathon Roster)
           </div>
 
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(2, 1fr)',
-              gap: '8px'
-            }}
-          >
+          <div className="auth-team-grid">
             {team.map((member) => (
               <button
                 key={member.username}
@@ -316,8 +298,8 @@ export const GitHubAuthModal: React.FC<GitHubAuthModalProps> = ({
           >
             Or Enter Any GitHub Username
           </div>
-          <form onSubmit={handleCustomLogin} style={{ display: 'flex', gap: '8px' }}>
-            <div style={{ position: 'relative', flex: 1 }}>
+          <form onSubmit={handleCustomLogin} className="auth-custom-form">
+            <div style={{ position: 'relative', flex: '1 1 180px' }}>
               <span
                 style={{
                   position: 'absolute',
@@ -394,17 +376,7 @@ export const GitHubAuthModal: React.FC<GitHubAuthModalProps> = ({
         )}
 
         {/* Footer info */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            fontSize: '11px',
-            color: 'var(--color-neutral-500)',
-            borderTop: '1px solid var(--color-divider)',
-            paddingTop: '12px'
-          }}
-        >
+        <div className="auth-footer">
           <span>AtelierNova D2C Design · Creative AI Tribe</span>
           <span>Table 2 Expedition London</span>
         </div>
