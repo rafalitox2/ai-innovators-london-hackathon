@@ -33,7 +33,7 @@ endif
 
 PACK ?= $(SEED_PACK)
 
-.PHONY: help setup check-venv seed dev eval eval-validate test test-adk test-a2a test-adk-gcp test-a2a-gcp verify worktree worktree-link worktree-list deploy test-remote delete ui-install ui-dev ui-build ui-api
+.PHONY: help setup check-venv seed dev eval eval-validate test test-adk test-a2a test-mcp benchmark-mcp test-adk-gcp test-a2a-gcp benchmark-mcp-gcp verify worktree worktree-link worktree-list deploy test-remote delete ui-install ui-dev ui-build ui-api
 
 help:
 	@echo "AI Innovators Expedition — Starter & Multi-Worktree Commands:"
@@ -53,8 +53,11 @@ help:
 	@echo "  make test                     Run fast offline unit tests (pytest)"
 	@echo "  make test-adk                 Run isolated ADK Agent & GCP evaluator suite (offline)"
 	@echo "  make test-a2a                 Run isolated A2A Protocol & Tribe handshake suite (offline)"
+	@echo "  make test-mcp                 Run isolated FastMCP SDK, OOP services & Gateway suite (offline)"
+	@echo "  make benchmark-mcp            Run MCP Latency (p50/p95/p99), Throughput & Concurrency Benchmark"
 	@echo "  make test-adk-gcp             Run Live GCP ADK suite (Vertex AI Eval + BigQuery dry-run + Agent Engine)"
 	@echo "  make test-a2a-gcp             Run Live GCP A2A suite (Cloud Run OIDC + JSON-RPC 2.0 + Tribe Sync)"
+	@echo "  make benchmark-mcp-gcp        Run Live GCP Cloud Run MCP Latency & Throughput Benchmark"
 	@echo "  make deploy [PACK=t02]        Deploy/update the agent on Vertex AI Agent Runtime"
 	@echo "                                (ARGS=--create-new forces a second, new agent)"
 	@echo "  make test-remote [PROMPT=..]  Send a live verification query to the deployed agent"
@@ -119,6 +122,14 @@ test-a2a: check-venv
 	$(PYTHON) -m pytest tests/a2a -v
 	$(PYTHON) -m eval.a2a_suite_runner --mode offline
 
+test-mcp: check-venv
+	@echo "=== Running Isolated FastMCP SDK, OOP Services & Gateway Suite ==="
+	$(PYTHON) -m pytest tests/mcp -v
+
+benchmark-mcp: check-venv
+	@echo "=== Running MCP Latency (p50/p95/p99), Throughput & Concurrency Benchmark ==="
+	$(PYTHON) -m eval.mcp_benchmark_runner --mode offline $(ARGS)
+
 test-adk-gcp: check-venv
 	@echo "=== Running Live GCP ADK Suite (Vertex AI Eval + BigQuery Dry-Run + Agent Engine) ==="
 	SEED_PACK="$(or $(PACK),t02)" $(PYTHON) -m eval.adk_suite_runner --mode gcp --pack "$(or $(PACK),t02)" $(ARGS)
@@ -126,6 +137,10 @@ test-adk-gcp: check-venv
 test-a2a-gcp: check-venv
 	@echo "=== Running Live GCP A2A Suite (Cloud Run OIDC + JSON-RPC 2.0 + Tribe Sync) ==="
 	$(PYTHON) -m eval.a2a_suite_runner --mode gcp $(ARGS)
+
+benchmark-mcp-gcp: check-venv
+	@echo "=== Running Live GCP Cloud Run MCP Latency & Throughput Benchmark ==="
+	$(PYTHON) -m eval.mcp_benchmark_runner --mode gcp $(ARGS)
 
 verify: check-venv
 	@echo "=== [1/3] Offline unit test suite (pytest) ==="
