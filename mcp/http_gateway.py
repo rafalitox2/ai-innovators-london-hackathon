@@ -51,6 +51,7 @@ class McpCloudRunGateway:
         self._adk_tools = adk_tools
         self.repo_root = repo_root or _REPO_ROOT
         self.ui_dir = self.repo_root / "seed_packs" / "t02_dynamic_storefronts" / "ui"
+        self._a2a_tasks: dict[str, dict[str, Any]] = {}
 
     @property
     def mcp_tools(self) -> list[Callable[..., Any]]:
