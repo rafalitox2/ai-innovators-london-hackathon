@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   computeMaxSafeDiscountPct,
   ExperimentOpportunity,
@@ -67,6 +67,32 @@ export const StorefrontPreviewModal: React.FC<StorefrontPreviewModalProps> = ({
   const [heroVariationIdx, setHeroVariationIdx] = useState<number>(1);
   const [customHeroSrc, setCustomHeroSrc] = useState<string | null>(null);
   const [heroPromptNote, setHeroPromptNote] = useState<string | null>(null);
+  const [lightboxOpen, setLightboxOpen] = useState<boolean>(false);
+  const [lightboxSrc, setLightboxSrc] = useState<string>('');
+  const [lightboxCaption, setLightboxCaption] = useState<string>('');
+  const [zoomLevel, setZoomLevel] = useState<number>(1);
+  const [panOffset, setPanOffset] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+  const pinchStartDistRef = useRef<number | null>(null);
+  const pinchStartZoomRef = useRef<number>(1);
+  const dragStartRef = useRef<{ x: number; y: number; origX: number; origY: number } | null>(null);
+
+  const openPhotoLightbox = (src: string, captionText: string) => {
+    setLightboxSrc(src);
+    setLightboxCaption(captionText);
+    setZoomLevel(1);
+    setPanOffset({ x: 0, y: 0 });
+    setLightboxOpen(true);
+  };
+
+  const clampZoom = (val: number) => Math.min(4, Math.max(1, Number(val.toFixed(2))));
+
+  const updateZoom = (nextZoom: number) => {
+    const clamped = clampZoom(nextZoom);
+    setZoomLevel(clamped);
+    if (clamped <= 1) {
+      setPanOffset({ x: 0, y: 0 });
+    }
+  };
 
   const activeProduct =
     allProducts.find((p) => p.sku === selectedSkuId) || e.p;
@@ -216,6 +242,21 @@ export const StorefrontPreviewModal: React.FC<StorefrontPreviewModalProps> = ({
   const lowMarginDemoSku = allProducts.find((p) => p.sku === 'SKU-0022');
   const injectionDemoSku = allProducts.find((p) => p.sku === 'SKU-0017');
 
+  useEffect(() => {
+    const handleKeyDown = (ev: KeyboardEvent) => {
+      if (ev.key === 'Escape') {
+        if (lightboxOpen) {
+          ev.stopPropagation();
+          setLightboxOpen(false);
+          return;
+        }
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [lightboxOpen, onClose]);
+
   return (
     <div
       className="modal-backdrop"
@@ -223,6 +264,9 @@ export const StorefrontPreviewModal: React.FC<StorefrontPreviewModalProps> = ({
     >
       <div
         className="modal-card"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="storefront-modal-title"
         onClick={(ev) => ev.stopPropagation()}
       >
         <div className="google-ribbon" aria-hidden="true" />
@@ -242,11 +286,24 @@ export const StorefrontPreviewModal: React.FC<StorefrontPreviewModalProps> = ({
             >
               ✦ Storefront variant · {e.layout} · ui://storefront-preview/{e.g.id}
             </span>
-            <span style={{ fontSize: 16, fontWeight: 600 }}>
+            <span id="storefront-modal-title" style={{ fontSize: 16, fontWeight: 600 }}>
               {e.id} · {e.g.label}
             </span>
           </div>
           <div className="modal-topbar-actions">
+            <button
+              type="button"
+              className="btn btn-ghost"
+              data-testid="view-real-photo-topbar-btn"
+              onClick={() =>
+                openPhotoLightbox(
+                  heroAssetSrc,
+                  `${activeProduct.name} (${activeProduct.sku}) · ${activeProduct.theme.replace(/_/g, ' ')} (v${heroVariationIdx})`
+                )
+              }
+            >
+              View real photo
+            </button>
             <button
               type="button"
               className="btn btn-secondary"
@@ -305,8 +362,7 @@ export const StorefrontPreviewModal: React.FC<StorefrontPreviewModalProps> = ({
                 display: 'flex',
                 alignItems: 'flex-end',
                 padding: 16,
-                background:
-                  'radial-gradient(400px 260px at 70% 30%, rgba(66,133,244,0.28), transparent 70%), linear-gradient(160deg, #1b263b, #0f172a)',
+                background: '#0f172a',
                 color: '#f8fafd',
                 fontSize: 11,
                 overflow: 'hidden'
@@ -316,15 +372,25 @@ export const StorefrontPreviewModal: React.FC<StorefrontPreviewModalProps> = ({
                 <img
                   src={heroAssetSrc}
                   alt={headline}
-                  className="lighten"
+                  data-testid="hero-preview-image"
+                  title="Click to inspect full real photo & zoom"
                   onError={() => setHeroImgFailed(true)}
+                  onClick={() =>
+                    openPhotoLightbox(
+                      heroAssetSrc,
+                      `${activeProduct.name} (${activeProduct.sku}) · ${activeProduct.theme.replace(/_/g, ' ')} (v${heroVariationIdx})`
+                    )
+                  }
                   style={{
                     position: 'absolute',
                     inset: 0,
                     width: '100%',
                     height: '100%',
                     objectFit: 'cover',
-                    opacity: 0.92
+                    opacity: 1,
+                    filter: 'none',
+                    mixBlendMode: 'normal',
+                    cursor: 'zoom-in'
                   }}
                 />
               )}
@@ -347,15 +413,31 @@ export const StorefrontPreviewModal: React.FC<StorefrontPreviewModalProps> = ({
                     Hero lifestyle render (v{heroVariationIdx}) · {activeProduct.theme.replace(/_/g, ' ')} ·{' '}
                     {activeProduct.name}
                   </span>
-                  <button
-                    type="button"
-                    className="btn btn-secondary"
-                    style={{ padding: '4px 10px', fontSize: 11 }}
-                    disabled={recreatingHero}
-                    onClick={handleRecreateHeroImage}
-                  >
-                    {recreatingHero ? 'Recreating…' : 'Recreate image'}
-                  </button>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                    <button
+                      type="button"
+                      className="btn btn-ghost"
+                      data-testid="view-real-photo-btn"
+                      style={{ padding: '4px 10px', fontSize: 11, color: '#f8fafd', borderColor: 'rgba(248, 250, 253, 0.35)' }}
+                      onClick={() =>
+                        openPhotoLightbox(
+                          heroAssetSrc,
+                          `${activeProduct.name} (${activeProduct.sku}) · ${activeProduct.theme.replace(/_/g, ' ')} (v${heroVariationIdx})`
+                        )
+                      }
+                    >
+                      View real photo
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-secondary"
+                      style={{ padding: '4px 10px', fontSize: 11 }}
+                      disabled={recreatingHero}
+                      onClick={handleRecreateHeroImage}
+                    >
+                      {recreatingHero ? 'Recreating…' : 'Recreate image'}
+                    </button>
+                  </div>
                 </div>
                 {heroPromptNote && (
                   <span
@@ -438,12 +520,23 @@ export const StorefrontPreviewModal: React.FC<StorefrontPreviewModalProps> = ({
                     src={`/api/assets/hero/${e.g.id}?sku_id=${encodeURIComponent(p.sku)}&style_theme=${encodeURIComponent(p.theme)}`}
                     alt={p.name}
                     loading="lazy"
+                    title="Click to inspect full real photo & zoom"
+                    onClick={() =>
+                      openPhotoLightbox(
+                        `/api/assets/hero/${e.g.id}?sku_id=${encodeURIComponent(p.sku)}&style_theme=${encodeURIComponent(p.theme)}`,
+                        `${p.name} (${p.sku}) · ${p.theme.replace(/_/g, ' ')}`
+                      )
+                    }
                     style={{
                       position: 'absolute',
                       inset: 0,
                       width: '100%',
                       height: '100%',
-                      objectFit: 'cover'
+                      objectFit: 'cover',
+                      opacity: 1,
+                      filter: 'none',
+                      mixBlendMode: 'normal',
+                      cursor: 'zoom-in'
                     }}
                   />
                   <span
@@ -598,7 +691,7 @@ export const StorefrontPreviewModal: React.FC<StorefrontPreviewModalProps> = ({
           {guardrail.injection_detected && (
             <div className="alert alert-warning" style={{ padding: '10px 14px', fontSize: 12 }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                <strong style={{ fontWeight: 500, color: 'var(--color-accent-200)' }}>
+                <strong style={{ fontWeight: 600, color: 'var(--color-warning-text)' }}>
                   Prompt Injection Defense Active (SKU-0017 Sanitized)
                 </strong>
                 <span style={{ color: 'var(--color-neutral-300)' }}>
@@ -663,6 +756,237 @@ export const StorefrontPreviewModal: React.FC<StorefrontPreviewModalProps> = ({
             {guardrail.reason}
           </span>
         </div>
+
+        {/* Full-Resolution Real Photo Lightbox & Pinch-to-Zoom Inspector */}
+        {lightboxOpen && (
+          <div
+            data-testid="real-photo-lightbox"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Full resolution real photo inspector"
+            onClick={(ev) => {
+              ev.stopPropagation();
+              setLightboxOpen(false);
+            }}
+            style={{
+              position: 'fixed',
+              inset: 0,
+              zIndex: 120,
+              background: 'rgba(10, 14, 23, 0.92)',
+              backdropFilter: 'blur(10px)',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between',
+              padding: '16px 20px',
+              color: '#f8fafd',
+              userSelect: 'none'
+            }}
+          >
+            {/* Top Controls Bar */}
+            <div
+              onClick={(ev) => ev.stopPropagation()}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: 12,
+                padding: '10px 16px',
+                borderRadius: 'var(--radius-md)',
+                background: 'rgba(30, 41, 59, 0.88)',
+                border: '1px solid rgba(148, 163, 184, 0.25)'
+              }}
+            >
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <span className="mono" style={{ fontSize: 10, color: '#93c5fd', textTransform: 'uppercase' }}>
+                  Real Unfiltered Asset · Pinch or Scroll to Zoom (100% – 400%)
+                </span>
+                <span style={{ fontSize: 13, fontWeight: 600 }}>{lightboxCaption}</span>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                <button
+                  type="button"
+                  data-testid="lightbox-zoom-out"
+                  aria-label="Zoom out"
+                  className="btn btn-secondary"
+                  style={{ padding: '4px 10px', fontSize: 12 }}
+                  disabled={zoomLevel <= 1}
+                  onClick={() => updateZoom(zoomLevel - 0.5)}
+                >
+                  −
+                </button>
+                <span
+                  data-testid="lightbox-zoom-level"
+                  className="mono tabular-nums"
+                  style={{ fontSize: 12, minWidth: 48, textAlign: 'center', color: '#f8fafd' }}
+                >
+                  {Math.round(zoomLevel * 100)}%
+                </span>
+                <button
+                  type="button"
+                  data-testid="lightbox-zoom-in"
+                  aria-label="Zoom in"
+                  className="btn btn-secondary"
+                  style={{ padding: '4px 10px', fontSize: 12 }}
+                  disabled={zoomLevel >= 4}
+                  onClick={() => updateZoom(zoomLevel + 0.5)}
+                >
+                  +
+                </button>
+                <button
+                  type="button"
+                  data-testid="lightbox-zoom-reset"
+                  className="btn btn-ghost"
+                  style={{ padding: '4px 10px', fontSize: 11, color: '#f8fafd' }}
+                  onClick={() => {
+                    setZoomLevel(1);
+                    setPanOffset({ x: 0, y: 0 });
+                  }}
+                >
+                  Reset 100%
+                </button>
+                <a
+                  href={lightboxSrc}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  data-testid="lightbox-open-original"
+                  className="btn btn-ghost"
+                  style={{ padding: '4px 10px', fontSize: 11, color: '#93c5fd', textDecoration: 'none' }}
+                >
+                  Open original ↗
+                </a>
+                <button
+                  type="button"
+                  data-testid="lightbox-close"
+                  className="btn btn-primary"
+                  style={{ padding: '4px 12px', fontSize: 11 }}
+                  onClick={() => setLightboxOpen(false)}
+                >
+                  Close photo
+                </button>
+              </div>
+            </div>
+
+            {/* Interactive Pinch-to-Zoom & Pan Stage */}
+            <div
+              data-testid="lightbox-stage"
+              onClick={(ev) => ev.stopPropagation()}
+              onDoubleClick={() => {
+                if (zoomLevel > 1) {
+                  setZoomLevel(1);
+                  setPanOffset({ x: 0, y: 0 });
+                } else {
+                  setZoomLevel(2.5);
+                }
+              }}
+              onWheel={(ev) => {
+                ev.preventDefault();
+                const delta = ev.deltaY < 0 ? 0.25 : -0.25;
+                updateZoom(zoomLevel + delta);
+              }}
+              onTouchStart={(ev) => {
+                if (ev.touches.length === 2) {
+                  const dx = ev.touches[0].clientX - ev.touches[1].clientX;
+                  const dy = ev.touches[0].clientY - ev.touches[1].clientY;
+                  pinchStartDistRef.current = Math.hypot(dx, dy);
+                  pinchStartZoomRef.current = zoomLevel;
+                } else if (ev.touches.length === 1 && zoomLevel > 1) {
+                  dragStartRef.current = {
+                    x: ev.touches[0].clientX,
+                    y: ev.touches[0].clientY,
+                    origX: panOffset.x,
+                    origY: panOffset.y
+                  };
+                }
+              }}
+              onTouchMove={(ev) => {
+                if (ev.touches.length === 2 && pinchStartDistRef.current) {
+                  const dx = ev.touches[0].clientX - ev.touches[1].clientX;
+                  const dy = ev.touches[0].clientY - ev.touches[1].clientY;
+                  const dist = Math.hypot(dx, dy);
+                  const scaleRatio = dist / Math.max(1, pinchStartDistRef.current);
+                  updateZoom(pinchStartZoomRef.current * scaleRatio);
+                } else if (ev.touches.length === 1 && dragStartRef.current && zoomLevel > 1) {
+                  setPanOffset({
+                    x: dragStartRef.current.origX + (ev.touches[0].clientX - dragStartRef.current.x),
+                    y: dragStartRef.current.origY + (ev.touches[0].clientY - dragStartRef.current.y)
+                  });
+                }
+              }}
+              onTouchEnd={() => {
+                pinchStartDistRef.current = null;
+                dragStartRef.current = null;
+              }}
+              onMouseDown={(ev) => {
+                if (zoomLevel > 1) {
+                  dragStartRef.current = {
+                    x: ev.clientX,
+                    y: ev.clientY,
+                    origX: panOffset.x,
+                    origY: panOffset.y
+                  };
+                }
+              }}
+              onMouseMove={(ev) => {
+                if (dragStartRef.current && zoomLevel > 1) {
+                  setPanOffset({
+                    x: dragStartRef.current.origX + (ev.clientX - dragStartRef.current.x),
+                    y: dragStartRef.current.origY + (ev.clientY - dragStartRef.current.y)
+                  });
+                }
+              }}
+              onMouseUp={() => {
+                dragStartRef.current = null;
+              }}
+              onMouseLeave={() => {
+                dragStartRef.current = null;
+              }}
+              style={{
+                flex: 1,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                overflow: 'hidden',
+                touchAction: 'none',
+                cursor: zoomLevel > 1 ? 'grab' : 'zoom-in',
+                margin: '12px 0'
+              }}
+            >
+              <img
+                src={lightboxSrc}
+                alt={lightboxCaption}
+                data-testid="real-photo-lightbox-img"
+                draggable={false}
+                style={{
+                  maxWidth: '92vw',
+                  maxHeight: '76vh',
+                  objectFit: 'contain',
+                  opacity: 1,
+                  filter: 'none',
+                  mixBlendMode: 'normal',
+                  borderRadius: 'var(--radius-md)',
+                  boxShadow: '0 24px 64px rgba(0, 0, 0, 0.65)',
+                  transform: `translate(${panOffset.x}px, ${panOffset.y}px) scale(${zoomLevel})`,
+                  transformOrigin: 'center center',
+                  transition: pinchStartDistRef.current || dragStartRef.current ? 'none' : 'transform 140ms ease-out'
+                }}
+              />
+            </div>
+
+            {/* Bottom Help Bar */}
+            <div
+              onClick={(ev) => ev.stopPropagation()}
+              style={{
+                textAlign: 'center',
+                fontSize: 11,
+                color: '#cbd5e1'
+              }}
+            >
+              Double-click image to toggle 250% zoom · Pinch with 2 fingers or scroll wheel to zoom · Drag to pan · Press Esc to close
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

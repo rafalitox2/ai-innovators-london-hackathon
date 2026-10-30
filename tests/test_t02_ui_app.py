@@ -652,3 +652,70 @@ def test_publish_and_template_and_frontend_persist_hero_and_product_images(
     assert "sku_id=${encodeURIComponent(activeProduct.sku)}" in modal_text
     assert "sku_id=${encodeURIComponent(p.sku)}" in modal_text
 
+
+def test_ui_design_skills_audit_and_playwright_suite() -> None:
+    """Verify UI meets Impeccable / UI-UX-Pro-Max / Design-Taste craft floor, accessibility, and Playwright E2E coverage."""
+    ui_root = REPO_ROOT / "ui"
+    app_text = (ui_root / "src" / "App.tsx").read_text(encoding="utf-8")
+    modal_text = (ui_root / "src" / "components" / "StorefrontPreviewModal.tsx").read_text(
+        encoding="utf-8"
+    )
+    drawer_text = (ui_root / "src" / "components" / "AdkCopilotDrawer.tsx").read_text(
+        encoding="utf-8"
+    )
+    auth_modal_text = (ui_root / "src" / "components" / "GitHubAuthModal.tsx").read_text(
+        encoding="utf-8"
+    )
+    nav_profile_text = (ui_root / "src" / "components" / "UserNavProfile.tsx").read_text(
+        encoding="utf-8"
+    )
+    css_text = (ui_root / "src" / "styles" / "nocturne.css").read_text(encoding="utf-8")
+
+    # 1. No emoji icons in structural UI controls (design-taste-frontend §3.D / ui-ux-pro-max)
+    assert "🌙" not in app_text, "Emoji icon 🌙 should be replaced by crisp inline SVG"
+    assert "☀️" not in app_text, "Emoji icon ☀️ should be replaced by crisp inline SVG"
+
+    # 2. Dialog ARIA semantics and Escape key support on all modals and drawers (ui-ux-pro-max escape-routes)
+    for name, source in (
+        ("StorefrontPreviewModal.tsx", modal_text),
+        ("AdkCopilotDrawer.tsx", drawer_text),
+        ("GitHubAuthModal.tsx", auth_modal_text),
+    ):
+        assert 'role="dialog"' in source, f"{name} must declare role=\"dialog\""
+        assert 'aria-modal="true"' in source, f"{name} must declare aria-modal=\"true\""
+        assert "Escape" in source, f"{name} must handle Escape key dismissal"
+
+    assert 'aria-label="Ask ADK Copilot"' in drawer_text
+
+    # 3. Light-mode contrast tokens (impeccable audit.md §1 & §3): avoid low-contrast pastel tokens on light backgrounds
+    assert "#fca5a5" not in nav_profile_text
+    assert "#fca5a5" not in auth_modal_text
+
+    # 4. Craft floor & reduced motion in nocturne.css (impeccable craft-floor.md & audit.md)
+    for craft_token in (
+        ":focus-visible",
+        "::selection",
+        "prefers-reduced-motion: reduce",
+        "::-webkit-scrollbar",
+    ):
+        assert craft_token in css_text, f"Missing craft-floor CSS rule {craft_token!r} in nocturne.css"
+
+    # 5. Playwright configuration and E2E spec exist
+    playwright_cfg = ui_root / "playwright.config.ts"
+    playwright_spec = ui_root / "e2e" / "ux-ui-audit.spec.ts"
+    assert playwright_cfg.exists(), "Missing ui/playwright.config.ts"
+    assert playwright_spec.exists(), "Missing ui/e2e/ux-ui-audit.spec.ts"
+
+    # 6. Hero image must not have blend/opacity filters and must provide a real photo zoom/pinch-to-zoom lightbox
+    assert "--img-blend: lighten" not in css_text, (
+        "Dark mode must not apply mix-blend-mode: lighten filter to hero images"
+    )
+    assert 'data-testid="real-photo-lightbox"' in modal_text, (
+        "StorefrontPreviewModal must provide a full-resolution real photo lightbox with zoom/pinch-to-zoom"
+    )
+    assert "onTouchMove" in modal_text and "onWheel" in modal_text, (
+        "Real photo viewer must support pinch-to-zoom touch gestures and wheel/trackpad zoom"
+    )
+
+
+

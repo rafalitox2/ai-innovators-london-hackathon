@@ -1045,12 +1045,28 @@ class NocturneUiController:
                 newest = max(existing_candidates, key=lambda p: p.stat().st_mtime)
                 media = "image/png" if newest.suffix.lower() == ".png" else "image/svg+xml"
                 if not sku_clean:
-                    return FileResponse(newest, media_type=media)
-                if (
-                    newest.suffix.lower() == ".svg"
-                    and sku_clean.upper() in newest.read_text(encoding="utf-8", errors="ignore").upper()
-                ):
-                    return FileResponse(newest, media_type=media)
+                    return Response(content=newest.read_bytes(), media_type=media)
+                if newest.suffix.lower() == ".svg":
+                    svg_upper = newest.read_text(encoding="utf-8", errors="ignore").upper()
+                    if sku_clean.upper() in svg_upper and (
+                        not theme_clean or theme_clean.upper() in svg_upper
+                    ):
+                        return Response(content=newest.read_bytes(), media_type=media)
+
+            if sku_clean:
+                tmp_candidates = [
+                    Path(f"/tmp/t02_hero_{sku_clean}_{seg_clean}{ext}")
+                    for ext in (".png", ".svg")
+                    if Path(f"/tmp/t02_hero_{sku_clean}_{seg_clean}{ext}").exists()
+                ]
+                if tmp_candidates:
+                    newest_tmp = max(tmp_candidates, key=lambda p: p.stat().st_mtime)
+                    media_tmp = "image/png" if newest_tmp.suffix.lower() == ".png" else "image/svg+xml"
+                    if newest_tmp.suffix.lower() == ".png":
+                        return Response(content=newest_tmp.read_bytes(), media_type=media_tmp)
+                    svg_tmp_upper = newest_tmp.read_text(encoding="utf-8", errors="ignore").upper()
+                    if not theme_clean or theme_clean.upper() in svg_tmp_upper:
+                        return Response(content=newest_tmp.read_bytes(), media_type=media_tmp)
 
             raw_products = self.service.read_csv("products_catalog")
             raw_segments = self.service.read_csv("audience_segments")
@@ -1109,9 +1125,10 @@ class NocturneUiController:
             )
             asset_path_str = res.get("render_job", {}).get("ui_asset_path") or res.get("render_job", {}).get("asset_path")
             if asset_path_str and Path(asset_path_str).exists():
-                suffix = Path(asset_path_str).suffix.lower()
+                asset_path = Path(asset_path_str)
+                suffix = asset_path.suffix.lower()
                 media = "image/png" if suffix == ".png" else "image/svg+xml"
-                return FileResponse(Path(asset_path_str), media_type=media)
+                return Response(content=asset_path.read_bytes(), media_type=media)
 
             raise HTTPException(status_code=404, detail=f"Hero asset for {seg_clean} not found")
 

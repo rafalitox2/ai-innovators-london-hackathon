@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { AdkHealthResponse, sendAdkCopilotMessage } from '../services/adkClient';
 import { GitHubUser } from '../types/auth';
 
@@ -47,6 +47,17 @@ export const AdkCopilotDrawer: React.FC<AdkCopilotDrawerProps> = ({
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
 
+  useEffect(() => {
+    if (!open) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [open, onClose]);
+
   if (!open) return null;
 
   const handleSend = async (promptText?: string) => {
@@ -83,7 +94,12 @@ export const AdkCopilotDrawer: React.FC<AdkCopilotDrawerProps> = ({
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <aside className="copilot-drawer" aria-label="ADK Agent Copilot">
+      <aside
+        className="copilot-drawer"
+        role="dialog"
+        aria-modal="true"
+        aria-label="ADK Agent Copilot"
+      >
         <div className="copilot-head">
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -194,6 +210,7 @@ export const AdkCopilotDrawer: React.FC<AdkCopilotDrawerProps> = ({
         >
           <input
             type="text"
+            aria-label="Ask ADK Copilot"
             className="copilot-input"
             placeholder="Ask expedition_t02 about segments, SKUs, guardrails or A2A..."
             value={input}

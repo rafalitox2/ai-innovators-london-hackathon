@@ -70,7 +70,7 @@
   --color-success-text: #137333;
   --color-warning: #e37400;
   --color-warning-bg: #fef7e0;
-  --color-warning-text: #b06000;
+  --color-warning-text: #8f4900;
   --color-danger: #d93025;
   --color-danger-bg: #fce8e6;
   --color-danger-text: #c5221f;
@@ -190,7 +190,7 @@
   --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.4), 0 1px 2px 0 rgba(0, 0, 0, 0.3);
   --shadow-md: 0 6px 16px -2px rgba(0, 0, 0, 0.5);
   --shadow-lg: 0 20px 48px -8px rgba(0, 0, 0, 0.7);
-  --img-blend: lighten;
+  --img-blend: normal;
 }
 
 *, *::before, *::after {
@@ -205,7 +205,6 @@ body {
   font-size: 14px;
   line-height: var(--line-height-body);
   -webkit-font-smoothing: antialiased;
-  transition: background-color 220ms var(--ease-google), color 220ms var(--ease-google);
 }
 
 a {
@@ -1428,5 +1427,58 @@ a:hover {
 
   .auth-custom-form > button {
     width: 100%;
+  }
+}
+
+/* ==========================================================================
+   Impeccable Craft Floor, Accessibility Focus Rings & Reduced Motion
+   ========================================================================== */
+html,
+body {
+  overflow-x: hidden;
+  scrollbar-color: var(--color-neutral-600) var(--color-bg-subtle);
+  scrollbar-width: thin;
+}
+
+::selection {
+  background: var(--color-accent-200);
+  color: var(--color-text);
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-bg-subtle);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-neutral-600);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-neutral-500);
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+[role="switch"]:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
