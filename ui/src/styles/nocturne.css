@@ -1097,6 +1097,33 @@ a:hover {
   overflow: hidden;
 }
 
+.storefront-scroll-viewport {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.4) transparent;
+}
+
+.storefront-scroll-viewport::-webkit-scrollbar {
+  width: 6px;
+}
+
+.storefront-scroll-viewport::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.storefront-scroll-viewport::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.35);
+  border-radius: 999px;
+}
+
+.storefront-scroll-viewport::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.65);
+}
+
 .modal-store-nav {
   display: flex;
   align-items: center;
