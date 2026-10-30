@@ -853,5 +853,29 @@ def test_mcp_cloudrun_gateway_tools_invoke_and_a2a_jsonrpc(
     assert direct_bad.json()["status"] == "REJECTED_POLICY_CAP"
 
 
+def test_executive_slides_endpoints_and_standalone_deck(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Verify /slides and /presentation serve the formal HTML5 executive presentation deck."""
+    monkeypatch.setenv("SEED_OFFLINE_MODE", "1")
+    from cd.mcp_http_server import build_mcp_cloudrun_app
+    from docs.slides.server import load_deck_html
+
+    deck_html = load_deck_html()
+    assert "AtelierNova" in deck_html
+    assert "Marco Bellini" in deck_html
+    assert "70.9%" in deck_html
+
+    client = TestClient(build_mcp_cloudrun_app())
+    for route in ("/slides", "/presentation"):
+        resp = client.get(route)
+        assert resp.status_code == 200
+        assert "text/html" in resp.headers.get("content-type", "")
+        assert "AtelierNova" in resp.text
+        assert resp.headers.get("X-Content-Type-Options") == "nosniff"
+        assert resp.headers.get("X-Frame-Options") == "SAMEORIGIN"
+
+
+
 
 

@@ -1285,6 +1285,14 @@ class NocturneUiController:
                 "<!doctype html><html><body><p>Run <code>cd ui &amp;&amp; npm run build</code> to build the Nocturne UI bundle.</p></body></html>"
             )
 
+        @app.get("/slides", response_class=HTMLResponse)
+        @app.get("/presentation", response_class=HTMLResponse)
+        def serve_executive_slides() -> HTMLResponse:
+            slides_file = REPO_ROOT / "docs" / "slides" / "t02_executive_deck.html"
+            if slides_file.exists():
+                return HTMLResponse(slides_file.read_text(encoding="utf-8"))
+            raise HTTPException(status_code=404, detail="Executive slides deck not found")
+
         @app.get("/ui/{file_name}")
         def serve_ui_static_file(file_name: str) -> Response:
             safe_name = Path(file_name).name

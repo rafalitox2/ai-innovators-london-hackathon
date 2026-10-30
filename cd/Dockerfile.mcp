@@ -38,6 +38,7 @@ COPY app ./app
 COPY mcp ./mcp
 COPY seed_packs ./seed_packs
 COPY cd ./cd
+COPY docs/slides ./docs/slides
 COPY --from=ui-builder /ui/dist ./ui/dist
 
 EXPOSE 8080

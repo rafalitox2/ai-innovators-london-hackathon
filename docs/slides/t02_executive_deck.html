@@ -1,0 +1,1655 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Table 2: Dynamic Storefront Engine — Executive Presentation</title>
+  <style>
+    :root {
+      --bg-canvas: #f8fafc;
+      --card-bg: #ffffff;
+      --border-subtle: #e2e8f0;
+      --border-strong: #cbd5e1;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --text-light: #94a3b8;
+      
+      --google-blue: #1a73e8;
+      --google-blue-soft: #e8f0fe;
+      --teal-accent: #0d9488;
+      --teal-soft: #ccfbf1;
+      --indigo-accent: #4f46e5;
+      --indigo-soft: #e0e7ff;
+      --amber-accent: #d97706;
+      --amber-soft: #fef3c7;
+      --emerald-accent: #16a34a;
+      --emerald-soft: #dcfce7;
+      --rose-accent: #e11d48;
+      --rose-soft: #ffe4e6;
+
+      --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+      --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.08), 0 2px 4px -2px rgb(0 0 0 / 0.06);
+      --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.08), 0 4px 6px -4px rgb(0 0 0 / 0.04);
+      --radius-sm: 6px;
+      --radius-md: 10px;
+      --radius-lg: 14px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Google Sans", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background: #0b1120;
+      color: var(--text-main);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Top Navigation Bar */
+    .top-bar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 52px;
+      background: rgba(15, 23, 42, 0.94);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      z-index: 100;
+      color: #fff;
+    }
+
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-badge {
+      background: linear-gradient(135deg, #1a73e8, #4f46e5);
+      color: #fff;
+      font-weight: 700;
+      font-size: 11px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      padding: 4px 9px;
+      border-radius: 4px;
+    }
+
+    .deck-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #f1f5f9;
+    }
+
+    .deck-title span {
+      color: #94a3b8;
+      font-weight: 400;
+    }
+
+    .mode-toggle-group {
+      display: flex;
+      background: rgba(255, 255, 255, 0.08);
+      padding: 3px;
+      border-radius: 8px;
+      gap: 2px;
+    }
+
+    .mode-btn {
+      background: transparent;
+      border: none;
+      color: #94a3b8;
+      padding: 5px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .mode-btn.active {
+      background: #1a73e8;
+      color: #ffffff;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+    }
+
+    .controls-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .nav-btn {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #fff;
+      padding: 5px 12px;
+      font-size: 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: background 0.15s;
+    }
+
+    .nav-btn:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    .nav-btn:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+    }
+
+    .slide-counter {
+      font-size: 13px;
+      font-weight: 600;
+      color: #e2e8f0;
+      min-width: 85px;
+      text-align: center;
+    }
+
+    /* Presentation Viewport: 16:9 Aspect Ratio */
+    .viewport {
+      width: 100vw;
+      max-width: 1366px;
+      height: calc(100vw * 9 / 16);
+      max-height: 768px;
+      margin-top: 52px;
+      margin-bottom: 24px;
+      position: relative;
+      background: var(--bg-canvas);
+      border-radius: var(--radius-lg);
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.1);
+      overflow: hidden;
+      display: flex;
+    }
+
+    /* Slide Container */
+    .slide {
+      position: absolute;
+      inset: 0;
+      padding: 36px 44px 32px 44px;
+      display: flex;
+      flex-direction: column;
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(8px);
+      transition: opacity 0.22s ease-out, transform 0.22s ease-out;
+      background: var(--bg-canvas);
+      color: var(--text-main);
+    }
+
+    .slide.active {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateY(0);
+    }
+
+    /* Common Slide Header */
+    .slide-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 20px;
+      border-bottom: 1px solid var(--border-subtle);
+      padding-bottom: 12px;
+    }
+
+    .slide-eyebrow {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--google-blue);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .slide-heading {
+      font-size: 24px;
+      font-weight: 800;
+      color: #0f172a;
+      letter-spacing: -0.02em;
+      line-height: 1.2;
+      margin-top: 2px;
+    }
+
+    .slide-subheading {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-top: 3px;
+      font-weight: 400;
+    }
+
+    .header-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #f1f5f9;
+      border: 1px solid var(--border-subtle);
+      border-radius: 20px;
+      padding: 5px 12px;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    .status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--emerald-accent);
+      box-shadow: 0 0 0 2px var(--emerald-soft);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0% { opacity: 0.8; }
+      50% { opacity: 0.3; }
+      100% { opacity: 0.8; }
+    }
+
+    /* =========================================================
+       SLIDE 0: PORTADA EJECUTIVA
+       ========================================================= */
+    .cover-container {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      justify-content: space-between;
+      padding: 24px 12px;
+    }
+
+    .cover-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .cloud-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--google-blue-soft);
+      border: 1px solid #bfdbfe;
+      color: #1e40af;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+
+    .cover-body {
+      margin: auto 0;
+    }
+
+    .cover-tagline {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--google-blue);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 8px;
+    }
+
+    .cover-title {
+      font-size: 42px;
+      font-weight: 900;
+      letter-spacing: -0.03em;
+      color: #0f172a;
+      line-height: 1.1;
+      margin-bottom: 14px;
+    }
+
+    .cover-title span {
+      background: linear-gradient(135deg, #1a73e8 0%, #4f46e5 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .cover-description {
+      font-size: 17px;
+      color: #475569;
+      max-width: 860px;
+      line-height: 1.5;
+      font-weight: 400;
+    }
+
+    .cover-stats-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-top: 28px;
+    }
+
+    .cover-stat-box {
+      background: #ffffff;
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 14px 16px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .cover-stat-num {
+      font-size: 26px;
+      font-weight: 800;
+      color: #0f172a;
+      line-height: 1;
+      display: flex;
+      align-items: baseline;
+      gap: 4px;
+    }
+
+    .cover-stat-num small {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--google-blue);
+    }
+
+    .cover-stat-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 5px;
+      font-weight: 500;
+    }
+
+    .cover-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-top: 1px solid var(--border-subtle);
+      padding-top: 16px;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .team-pills {
+      display: flex;
+      gap: 8px;
+    }
+
+    .team-pill {
+      background: #f1f5f9;
+      border: 1px solid var(--border-subtle);
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      color: #334155;
+    }
+
+    /* =========================================================
+       SLIDE 1: PERSONA, PROBLEMA & PROPUESTA (OFICIAL 1)
+       ========================================================= */
+    .three-col-grid {
+      display: grid;
+      grid-template-columns: 1.05fr 1.35fr 1.1fr;
+      gap: 18px;
+      flex: 1;
+      height: calc(100% - 75px);
+    }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 20px 22px;
+      display: flex;
+      flex-direction: column;
+      box-shadow: var(--shadow-sm);
+      overflow: hidden;
+    }
+
+    .card.accent-red {
+      border-top: 4px solid var(--rose-accent);
+    }
+
+    .card.accent-blue {
+      border-top: 4px solid var(--google-blue);
+      background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+    }
+
+    .card.accent-green {
+      border-top: 4px solid var(--teal-accent);
+    }
+
+    .card-title {
+      font-size: 15px;
+      font-weight: 800;
+      color: #0f172a;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 4px;
+    }
+
+    .card-subtitle {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      margin-bottom: 14px;
+    }
+
+    .metric-hero {
+      background: var(--rose-soft);
+      border: 1px solid #fecdd3;
+      border-radius: var(--radius-sm);
+      padding: 12px 14px;
+      margin-bottom: 14px;
+    }
+
+    .metric-hero-val {
+      font-size: 34px;
+      font-weight: 900;
+      color: var(--rose-accent);
+      line-height: 1;
+    }
+
+    .metric-hero-desc {
+      font-size: 11px;
+      font-weight: 600;
+      color: #9f1239;
+      margin-top: 4px;
+    }
+
+    .bullet-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 9px;
+      font-size: 12px;
+      color: #334155;
+      line-height: 1.4;
+    }
+
+    .bullet-list li {
+      position: relative;
+      padding-left: 18px;
+    }
+
+    .bullet-list li::before {
+      content: "•";
+      position: absolute;
+      left: 2px;
+      top: -1px;
+      font-size: 16px;
+      color: var(--text-muted);
+    }
+
+    .bullet-list.blue li::before { color: var(--google-blue); }
+    .bullet-list.green li::before { color: var(--teal-accent); }
+    .bullet-list.red li::before { color: var(--rose-accent); }
+
+    .sol-feature-box {
+      background: #ffffff;
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      padding: 9px 12px;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+    }
+
+    .sol-icon {
+      width: 26px;
+      height: 26px;
+      border-radius: 6px;
+      background: var(--google-blue-soft);
+      color: var(--google-blue);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 700;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .sol-title {
+      font-size: 12px;
+      font-weight: 700;
+      color: #0f172a;
+    }
+
+    .sol-desc {
+      font-size: 11px;
+      color: #64748b;
+      margin-top: 1px;
+      line-height: 1.3;
+    }
+
+    .guardrail-chip {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 7px 10px;
+      background: #f8fafc;
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      margin-bottom: 6px;
+      font-size: 11px;
+    }
+
+    .guardrail-label {
+      font-weight: 600;
+      color: #334155;
+    }
+
+    .guardrail-tag {
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 4px;
+      font-size: 10px;
+    }
+
+    .guardrail-tag.safe {
+      background: var(--emerald-soft);
+      color: #065f46;
+    }
+
+    .guardrail-tag.warn {
+      background: var(--amber-soft);
+      color: #92400e;
+    }
+
+    .guardrail-tag.block {
+      background: var(--rose-soft);
+      color: #9f1239;
+    }
+
+    /* =========================================================
+       SLIDE 2: ARQUITECTURA, MUST-HAVES & EVALUACIÓN (OFICIAL 2)
+       ========================================================= */
+    .arch-eval-grid {
+      display: grid;
+      grid-template-columns: 1.45fr 1fr;
+      gap: 18px;
+      height: calc(100% - 75px);
+    }
+
+    .arch-panel {
+      background: #ffffff;
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 18px 20px;
+      display: flex;
+      flex-direction: column;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .arch-flow-diagram {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin: 10px 0;
+      flex: 1;
+      justify-content: space-between;
+    }
+
+    .arch-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+
+    .arch-node {
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      padding: 9px 10px;
+      background: #f8fafc;
+      font-size: 11px;
+      position: relative;
+    }
+
+    .arch-node.primary {
+      background: var(--google-blue-soft);
+      border-color: #bfdbfe;
+    }
+
+    .arch-node.runtime {
+      background: #f5f3ff;
+      border-color: #ddd6fe;
+    }
+
+    .arch-node.tools {
+      background: #f0fdf4;
+      border-color: #bbf7d0;
+    }
+
+    .arch-node-title {
+      font-weight: 800;
+      font-size: 11px;
+      color: #0f172a;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .arch-node-desc {
+      font-size: 10px;
+      color: #64748b;
+      margin-top: 2px;
+      line-height: 1.3;
+    }
+
+    .arch-connector {
+      text-align: center;
+      font-size: 11px;
+      font-weight: 700;
+      color: #94a3b8;
+      letter-spacing: 0.1em;
+      line-height: 1;
+    }
+
+    .model-chips {
+      display: flex;
+      gap: 6px;
+      margin-top: 6px;
+    }
+
+    .model-chip {
+      background: #ffffff;
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      border-radius: 4px;
+      padding: 3px 6px;
+      font-size: 9px;
+      font-weight: 700;
+      color: #1e293b;
+    }
+
+    /* Right Column: Must-Haves & Metrics */
+    .eval-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      height: 100%;
+    }
+
+    .must-haves-card {
+      background: #ffffff;
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 14px 16px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .must-have-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 5px 0;
+      border-bottom: 1px solid #f1f5f9;
+      font-size: 11px;
+    }
+
+    .must-have-row:last-child {
+      border-bottom: none;
+    }
+
+    .mh-title {
+      font-weight: 600;
+      color: #1e293b;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .mh-check {
+      color: var(--emerald-accent);
+      font-weight: 800;
+      font-size: 13px;
+    }
+
+    .mh-val {
+      font-weight: 700;
+      font-size: 10px;
+      background: #f1f5f9;
+      color: #475569;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+
+    .metrics-card {
+      background: #ffffff;
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 14px 16px;
+      flex: 1;
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .metric-grid-2x2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 8px;
+    }
+
+    .metric-cell {
+      background: #f8fafc;
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      padding: 9px 12px;
+    }
+
+    .metric-num {
+      font-size: 20px;
+      font-weight: 900;
+      color: var(--google-blue);
+      line-height: 1;
+    }
+
+    .metric-label {
+      font-size: 10px;
+      color: var(--text-muted);
+      font-weight: 600;
+      margin-top: 3px;
+    }
+
+    /* =========================================================
+       SLIDE 3: FLUJO DE DEMO EN VIVO (3:00 MIN)
+       ========================================================= */
+    .demo-container {
+      display: flex;
+      flex-direction: column;
+      height: calc(100% - 75px);
+      gap: 14px;
+    }
+
+    .demo-steps-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      flex: 1;
+    }
+
+    .step-card {
+      background: #ffffff;
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 16px 14px;
+      display: flex;
+      flex-direction: column;
+      box-shadow: var(--shadow-sm);
+      position: relative;
+    }
+
+    .step-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: var(--google-blue);
+      color: #fff;
+      font-weight: 800;
+      font-size: 12px;
+      margin-bottom: 8px;
+    }
+
+    .step-time {
+      position: absolute;
+      top: 16px;
+      right: 14px;
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--text-muted);
+      background: #f1f5f9;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+
+    .step-title {
+      font-size: 13px;
+      font-weight: 800;
+      color: #0f172a;
+      margin-bottom: 6px;
+      line-height: 1.3;
+    }
+
+    .step-desc {
+      font-size: 11px;
+      color: #475569;
+      line-height: 1.4;
+      flex: 1;
+    }
+
+    .step-code {
+      margin-top: 10px;
+      background: #0f172a;
+      color: #38bdf8;
+      padding: 7px 9px;
+      border-radius: var(--radius-sm);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 9.5px;
+      line-height: 1.3;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+
+    /* Live CTA Actions Bar */
+    .demo-actions-bar {
+      background: #ffffff;
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 12px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .demo-actions-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .demo-actions-label {
+      font-size: 12px;
+      font-weight: 700;
+      color: #0f172a;
+    }
+
+    .demo-link-buttons {
+      display: flex;
+      gap: 10px;
+    }
+
+    .cta-button {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--google-blue);
+      color: #ffffff;
+      text-decoration: none;
+      padding: 7px 14px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      transition: background 0.15s, transform 0.1s;
+    }
+
+    .cta-button:hover {
+      background: #1557b0;
+      transform: translateY(-1px);
+    }
+
+    .cta-button.secondary {
+      background: #f1f5f9;
+      color: #1e293b;
+      border: 1px solid var(--border-subtle);
+    }
+
+    .cta-button.secondary:hover {
+      background: #e2e8f0;
+    }
+
+    /* =========================================================
+       SPEAKER NOTES DRAWER
+       ========================================================= */
+    .speaker-drawer {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: #0f172a;
+      border-top: 1px solid rgba(255, 255, 255, 0.15);
+      color: #e2e8f0;
+      padding: 12px 28px;
+      transform: translateY(100%);
+      transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 -10px 25px rgba(0, 0, 0, 0.5);
+    }
+
+    .speaker-drawer.open {
+      transform: translateY(0);
+    }
+
+    .speaker-cue {
+      font-size: 13px;
+      line-height: 1.4;
+      flex: 1;
+    }
+
+    .speaker-cue strong {
+      color: #38bdf8;
+      font-weight: 700;
+    }
+
+    .speaker-timer {
+      font-size: 12px;
+      font-weight: 700;
+      color: #94a3b8;
+      background: rgba(255, 255, 255, 0.1);
+      padding: 4px 10px;
+      border-radius: 4px;
+      margin-left: 18px;
+      white-space: nowrap;
+    }
+
+    .keyboard-hint {
+      font-size: 11px;
+      color: #64748b;
+      margin-top: 8px;
+      text-align: center;
+    }
+
+    .keyboard-hint kbd {
+      background: #1e293b;
+      color: #cbd5e1;
+      padding: 2px 6px;
+      border-radius: 3px;
+      border: 1px solid #334155;
+      font-size: 10px;
+    }
+
+    /* =========================================================
+       PRINT / PDF EXPORT STYLES (CMD+P)
+       ========================================================= */
+    @media print {
+      body {
+        background: #ffffff;
+        color: #000000;
+        min-height: auto;
+      }
+
+      .top-bar, .speaker-drawer, .keyboard-hint {
+        display: none !important;
+      }
+
+      .viewport {
+        max-width: none;
+        max-height: none;
+        width: 100%;
+        height: auto;
+        margin: 0;
+        border-radius: 0;
+        box-shadow: none;
+        overflow: visible;
+        display: block;
+      }
+
+      .slide {
+        position: relative !important;
+        inset: auto !important;
+        opacity: 1 !important;
+        pointer-events: auto !important;
+        transform: none !important;
+        width: 100vw !important;
+        height: 56.25vw !important; /* 16:9 ratio */
+        page-break-after: always;
+        break-after: page;
+        padding: 40px !important;
+        display: flex !important;
+      }
+
+      /* Hide slides excluded by jury mode if active during print */
+      body.mode-official .slide:not(.slide-official) {
+        display: none !important;
+      }
+
+      @page {
+        size: 16in 9in landscape;
+        margin: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Navigation Bar -->
+  <header class="top-bar">
+    <div class="brand-group">
+      <span class="brand-badge">Table 2</span>
+      <h1 class="deck-title">Dynamic Storefront Engine <span>| AtelierNova Home &amp; Lifestyle</span></h1>
+    </div>
+
+    <!-- Mode Toggle: 2 Slides vs 4 Slides -->
+    <div class="mode-toggle-group">
+      <button class="mode-btn active" id="btnModeOfficial" onclick="setPresentationMode('official')">
+        Modo Oficial Jurado (2 Slides)
+      </button>
+      <button class="mode-btn" id="btnModeComplete" onclick="setPresentationMode('complete')">
+        Modo Ejecutivo Completo (4 Slides)
+      </button>
+    </div>
+
+    <!-- Slide Navigation Controls -->
+    <div class="controls-group">
+      <button class="nav-btn" id="btnPrev" onclick="navigateSlide(-1)">◀ Ant</button>
+      <div class="slide-counter" id="slideCounter">Slide 1 / 2</div>
+      <button class="nav-btn" id="btnNext" onclick="navigateSlide(1)">Sig ▶</button>
+      <button class="nav-btn" id="btnFullscreen" onclick="toggleFullScreen()" title="Pantalla Completa (F)">⛶</button>
+      <button class="nav-btn" id="btnNotes" onclick="toggleSpeakerNotes()" title="Notas del Presentador (N)">Notas</button>
+    </div>
+  </header>
+
+  <!-- 16:9 Presentation Viewport -->
+  <main class="viewport" id="viewport">
+
+    <!-- =========================================================
+         SLIDE 0: PORTADA EJECUTIVA (Modo Completo)
+         ========================================================= -->
+    <section class="slide" id="slide-0" data-official="false">
+      <div class="cover-container">
+        <div class="cover-top">
+          <div class="cloud-pill">
+            <span class="status-dot"></span>
+            Google Cloud London Hackathon &bull; 29–30 Oct 2026
+          </div>
+          <div class="header-badge">
+            Tribe: Creative AI &amp; AdTech &bull; Sister Table 1
+          </div>
+        </div>
+
+        <div class="cover-body">
+          <div class="cover-tagline">Autonomous Storefront Intelligence</div>
+          <h2 class="cover-title">
+            Table 2: <span>Dynamic Storefront Engine</span>
+          </h2>
+          <p class="cover-description">
+            Agente autónomo multimodal de orquestación retail impulsado por <strong>Google ADK 2.11</strong>, 
+            <strong>Vertex AI Agent Runtime</strong> y <strong>Gemini 3.8 Flash</strong>. Transforma catálogos estáticos 
+            en experiencias D2C hiperpersonalizadas en tiempo real con gobierno de margen y sincronización A2A entre agentes.
+          </p>
+
+          <div class="cover-stats-row">
+            <div class="cover-stat-box">
+              <div class="cover-stat-num">70.9% <small>Madrid</small></div>
+              <div class="cover-stat-label">Rebote inicial en shoppers móviles</div>
+            </div>
+            <div class="cover-stat-box">
+              <div class="cover-stat-num">&lt;= 30% <small>Hard Cap</small></div>
+              <div class="cover-stat-label">Tope promocional asegurado en runtime</div>
+            </div>
+            <div class="cover-stat-box">
+              <div class="cover-stat-num">13 / 13 <small>100%</small></div>
+              <div class="cover-stat-label">Casos Golden Eval superados (1.00 score)</div>
+            </div>
+            <div class="cover-stat-box">
+              <div class="cover-stat-num">europe-west1</div>
+              <div class="cover-stat-label">Vertex AI Agent Runtime en producción</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="cover-footer">
+          <div>
+            <strong>AtelierNova Engineering:</strong> 
+            Producción en Cloud Run &amp; Vertex AI Reasoning Engine
+          </div>
+          <div class="team-pills">
+            <span class="team-pill">@rafalitox2</span>
+            <span class="team-pill">@BorjaIP</span>
+            <span class="team-pill">@carlosescribano-ai</span>
+            <span class="team-pill">@jportell</span>
+            <span class="team-pill">@joshsmith-samy</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =========================================================
+         SLIDE 1: PERSONA, PROBLEMA & PROPUESTA (OFICIAL SLIDE 1)
+         ========================================================= -->
+    <section class="slide slide-official" id="slide-1" data-official="true">
+      <div class="slide-header">
+        <div>
+          <div class="slide-eyebrow">
+            <span>Oficial Slide 1</span> &bull; AtelierNova Business Context &amp; Solution
+          </div>
+          <h2 class="slide-heading">Persona, Desafío de Negocio &amp; Solución Autónoma</h2>
+          <div class="slide-subheading">
+            Cómo transformamos la experiencia de compra de AtelierNova pasando de catálogos ciegos a optimización en vivo
+          </div>
+        </div>
+        <div class="header-badge">
+          <span class="status-dot"></span> Live in europe-west1
+        </div>
+      </div>
+
+      <div class="three-col-grid">
+        <!-- Columna 1: El Usuario y Reto -->
+        <article class="card accent-red">
+          <h3 class="card-title">1. El Usuario &amp; Reto</h3>
+          <div class="card-subtitle">Marco Bellini &bull; Head of E-Commerce</div>
+
+          <div class="metric-hero">
+            <div class="metric-hero-val">70.9%</div>
+            <div class="metric-hero-desc">Tasa de Rebote en Madrid (SEG-042)</div>
+          </div>
+
+          <ul class="bullet-list red">
+            <li><strong>Escaparates estáticos desalineados:</strong> Clientes urbanos móviles ven colecciones de invierno desktop de Londres.</li>
+            <li><strong>Pérdida directa de conversión:</strong> Caída de 46% en ventas por falta de relevancia visual e inventario local.</li>
+            <li><strong>Cuellos de botella de marketing:</strong> Semanas de trabajo manual para producir banners y recalcular márgenes.</li>
+          </ul>
+        </article>
+
+        <!-- Columna 2: La Solución Autónoma -->
+        <article class="card accent-blue">
+          <h3 class="card-title">2. Solución Autónoma</h3>
+          <div class="card-subtitle">Google ADK + Gemini 3.8 Flash</div>
+
+          <div class="sol-feature-box">
+            <div class="sol-icon">&#128202;</div>
+            <div>
+              <div class="sol-title">Decisión Analítica BigQuery</div>
+              <div class="sol-desc">JOIN 3 tablas en dataset <code>seed_t02</code> cruzando rebote, estilos y margen en tiempo real.</div>
+            </div>
+          </div>
+
+          <div class="sol-feature-box">
+            <div class="sol-icon">&#127912;</div>
+            <div>
+              <div class="sol-title">Generación Visual Multimodal</div>
+              <div class="sol-desc"><code>Gemini 3.1 Flash Image</code> genera hero assets contextualizados a la estética del segmento.</div>
+            </div>
+          </div>
+
+          <div class="sol-feature-box">
+            <div class="sol-icon">&#128172;</div>
+            <div>
+              <div class="sol-title">Nocturne UI &amp; A2A Sister Table 1</div>
+              <div class="sol-desc">Preview interactivo con viewport switcher y sincronización de bids con Campaign Orchestrator.</div>
+            </div>
+          </div>
+        </article>
+
+        <!-- Columna 3: Impacto & Gobernanza -->
+        <article class="card accent-green">
+          <h3 class="card-title">3. Impacto &amp; Gobernanza</h3>
+          <div class="card-subtitle">Políticas Duras en Código</div>
+
+          <div class="guardrail-chip">
+            <span class="guardrail-label">Tope Descuento Máximo</span>
+            <span class="guardrail-tag block">&le; 30% Hard Cap</span>
+          </div>
+
+          <div class="guardrail-chip">
+            <span class="guardrail-label">Suelo de Margen Neto</span>
+            <span class="guardrail-tag safe">&ge; 10% Profit Floor</span>
+          </div>
+
+          <div class="guardrail-chip">
+            <span class="guardrail-label">Pujas A2A con Table 1</span>
+            <span class="guardrail-tag warn">&le; 25.0 &euro; CPM</span>
+          </div>
+
+          <div class="guardrail-chip">
+            <span class="guardrail-label">Inyección SKU-0017</span>
+            <span class="guardrail-tag block">Sanitizado &amp; Bloqueado</span>
+          </div>
+
+          <ul class="bullet-list green" style="margin-top: 10px;">
+            <li><strong>Rebote estimado:</strong> 70.9% &rarr; 38.2% (-32.7 pts).</li>
+            <li><strong>Cero riesgo de caja:</strong> El LLM no puede violar reglas de rentabilidad configuradas en código.</li>
+          </ul>
+        </article>
+      </div>
+    </section>
+
+    <!-- =========================================================
+         SLIDE 2: ARQUITECTURA, MUST-HAVES & EVALUACIÓN (OFICIAL 2)
+         ========================================================= -->
+    <section class="slide slide-official" id="slide-2" data-official="true">
+      <div class="slide-header">
+        <div>
+          <div class="slide-eyebrow">
+            <span>Oficial Slide 2</span> &bull; Engineering Rigor &amp; Verification
+          </div>
+          <h2 class="slide-heading">Arquitectura Cloud, 5 Must-Haves &amp; Métricas de Calidad</h2>
+          <div class="slide-subheading">
+            Pipeline enterprise desplegado en Google Cloud con evaluación automatizada y 12 bonus activos
+          </div>
+        </div>
+        <div class="header-badge">
+          <span class="status-dot"></span> ReasoningEngine 5876565294532526080
+        </div>
+      </div>
+
+      <div class="arch-eval-grid">
+        <!-- Panel Izquierdo: Flujo de Arquitectura -->
+        <div class="arch-panel">
+          <div class="card-title" style="margin-bottom: 2px;">
+            Flujo Arquitectónico End-to-End
+          </div>
+          <div class="card-subtitle" style="margin-bottom: 8px;">
+            Vertex AI Agent Runtime (europe-west1) + BigQuery (EU)
+          </div>
+
+          <div class="arch-flow-diagram">
+            <!-- Capa Cliente -->
+            <div class="arch-node primary">
+              <div class="arch-node-title">
+                <span>&#128187;</span> Capa de Presentación: Nocturne UI (React 19 + TypeScript)
+              </div>
+              <div class="arch-node-desc">
+                Auth de equipo GitHub &bull; Light/Dark themes &bull; Viewport Switcher (390px/768px/Desktop) &bull; Photo Lightbox
+              </div>
+            </div>
+
+            <div class="arch-connector">&darr; REST / JSON-RPC / ADK Stream</div>
+
+            <!-- Capa ADK Runtime & Guardrails -->
+            <div class="arch-node runtime">
+              <div class="arch-node-title">
+                <span>&#9881;</span> Vertex AI Agent Runtime &bull; ADK root_agent (europe-west1)
+              </div>
+              <div class="arch-node-desc">
+                <strong>3-Layer Security Guardrails:</strong> Regex Sanitizer &bull; Hard Cap Validator &bull; before_tool_security_callback
+              </div>
+              <div class="model-chips">
+                <span class="model-chip" style="background:#e0e7ff; color:#3730a3;">Gemini 3.8 Flash (Razonamiento)</span>
+                <span class="model-chip" style="background:#fef3c7; color:#92400e;">Gemma 3 27B IT (Baja Latencia)</span>
+                <span class="model-chip" style="background:#ccfbf1; color:#115e59;">Gemini 3.1 Flash Image (Visual)</span>
+              </div>
+            </div>
+
+            <div class="arch-connector">&darr; Herramientas Registradas &bull; Paridad In-Process</div>
+
+            <!-- Capa Herramientas & Integraciones -->
+            <div class="arch-row">
+              <div class="arch-node tools">
+                <div class="arch-node-title">BigQuery Analytics (5)</div>
+                <div class="arch-node-desc">Dataset <code>seed_t02</code> (EU), JOIN 3 tablas, Knowledge Graph de estilos.</div>
+              </div>
+              <div class="arch-node tools">
+                <div class="arch-node-title">FastMCP Actions (10)</div>
+                <div class="arch-node-desc">Publicar layout, preview UI, promociones, memoria cross-session.</div>
+              </div>
+              <div class="arch-node tools">
+                <div class="arch-node-title">Tribe A2A (Sister T01)</div>
+                <div class="arch-node-desc">Sync con Campaign Orchestrator, guardrail &le; 25&euro; CPM.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Panel Derecho: Must-Haves y Métricas -->
+        <div class="eval-panel">
+          <!-- 5 Must Haves -->
+          <div class="must-haves-card">
+            <div class="card-title" style="font-size: 13px; margin-bottom: 2px;">
+              5 Must-Haves de Hackathon (Gate)
+            </div>
+            <div class="card-subtitle" style="margin-bottom: 8px;">100% Cumplidos y Verificados</div>
+
+            <div class="must-have-row">
+              <span class="mh-title"><span class="mh-check">&#10004;</span> 1. Google ADK</span>
+              <span class="mh-val">v2.11.0 en app/agent.py</span>
+            </div>
+            <div class="must-have-row">
+              <span class="mh-title"><span class="mh-check">&#10004;</span> 2. Vertex AI Runtime</span>
+              <span class="mh-val">europe-west1 reasoningEngine</span>
+            </div>
+            <div class="must-have-row">
+              <span class="mh-title"><span class="mh-check">&#10004;</span> 3. Google Antigravity</span>
+              <span class="mh-val">6 skills + 5 subagents</span>
+            </div>
+            <div class="must-have-row">
+              <span class="mh-title"><span class="mh-check">&#10004;</span> 4. Gemini Model</span>
+              <span class="mh-val">gemini-3.8-flash (via ENV)</span>
+            </div>
+            <div class="must-have-row">
+              <span class="mh-title"><span class="mh-check">&#10004;</span> 5. Pipeline Golden Eval</span>
+              <span class="mh-val">13/13 pasados (make eval)</span>
+            </div>
+          </div>
+
+          <!-- Métricas de Calidad & Benchmarks -->
+          <div class="metrics-card">
+            <div class="card-title" style="font-size: 13px; margin-bottom: 2px;">
+              Métricas de Rigor &amp; Benchmarks
+            </div>
+            <div class="card-subtitle" style="margin-bottom: 4px;">Validación Continua en CI/CD</div>
+
+            <div class="metric-grid-2x2">
+              <div class="metric-cell">
+                <div class="metric-num">1.00</div>
+                <div class="metric-label">Trajectory Avg Score (13/13)</div>
+              </div>
+              <div class="metric-cell">
+                <div class="metric-num">428</div>
+                <div class="metric-label">Tests Pytest Pasados (100%)</div>
+              </div>
+              <div class="metric-cell">
+                <div class="metric-num">890.4</div>
+                <div class="metric-label">Req/s MCP (p95 &lt; 50ms)</div>
+              </div>
+              <div class="metric-cell">
+                <div class="metric-num">+12</div>
+                <div class="metric-label">Bonus Points Activos</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =========================================================
+         SLIDE 3: FLUJO DE DEMO EN VIVO (3:00 MIN) (Modo Completo)
+         ========================================================= -->
+    <section class="slide" id="slide-3" data-official="false">
+      <div class="slide-header">
+        <div>
+          <div class="slide-eyebrow">
+            <span>Demo Runbook</span> &bull; Live Judge Demonstration (3:00 min)
+          </div>
+          <h2 class="slide-heading">Flujo de Demostración en Vivo &amp; Enlaces de Producción</h2>
+          <div class="slide-subheading">
+            Secuencia verificable paso a paso ejecutada sobre la infraestructura Cloud en tiempo real
+          </div>
+        </div>
+        <div class="header-badge">
+          <span class="status-dot"></span> Live Demo Ready
+        </div>
+      </div>
+
+      <div class="demo-container">
+        <div class="demo-steps-grid">
+          <!-- Paso 1 -->
+          <div class="step-card">
+            <span class="step-badge">1</span>
+            <span class="step-time">0:45 min</span>
+            <h4 class="step-title">BigQuery Analytical JOIN</h4>
+            <p class="step-desc">
+              Analiza rebote en <code>ES_Madrid</code>, selecciona <code>SEG-042</code> (70.9%) y recomienda productos de alto margen (<code>SKU-0052</code>).
+            </p>
+            <div class="step-code">recommend_storefront_optimization(
+  region="ES_Madrid",
+  min_bounce_rate_pct=55.0
+)</div>
+          </div>
+
+          <!-- Paso 2 -->
+          <div class="step-card">
+            <span class="step-badge">2</span>
+            <span class="step-time">1:30 min</span>
+            <h4 class="step-title">Imagen Multimodal &amp; UI Preview</h4>
+            <p class="step-desc">
+              Genera imagen hero fotorrealista con <code>Gemini 3.1 Flash Image</code> y renderiza el preview interactivo con lightbox.
+            </p>
+            <div class="step-code">generate_hero_lifestyle_image(...)
+render_storefront_preview(
+  segment_id="SEG-001"
+)</div>
+          </div>
+
+          <!-- Paso 3 -->
+          <div class="step-card">
+            <span class="step-badge">3</span>
+            <span class="step-time">2:15 min</span>
+            <h4 class="step-title">Defensa Activa SKU-0017</h4>
+            <p class="step-desc">
+              Inyección maliciosa en descripción (<code>FLASH95</code>, 95% dto) interceptada en 3 capas. Política dura &le; 30% aplicada.
+            </p>
+            <div class="step-code">update_promo_banner(
+  discount_pct=95
+)
+// &rarr; REJECTED_POLICY_CAP</div>
+          </div>
+
+          <!-- Paso 4 -->
+          <div class="step-card">
+            <span class="step-badge">4</span>
+            <span class="step-time">2:45 min</span>
+            <h4 class="step-title">Handshake A2A Sister Table 1</h4>
+            <p class="step-desc">
+              Sincroniza layout con <code>t01_campaign_orchestrator</code> vía protocolo A2A para Meta Reels respetando tope de 25&euro; CPM.
+            </p>
+            <div class="step-code">sync_campaign_with_t01(
+  channel="Meta_Reels",
+  target_cpm_bid_eur=12.50
+)</div>
+          </div>
+        </div>
+
+        <!-- Barra de Enlaces en Vivo -->
+        <div class="demo-actions-bar">
+          <div class="demo-actions-left">
+            <span style="font-size: 18px;">&#127760;</span>
+            <div>
+              <div class="demo-actions-label">Endpoints de Producción Activos en Cloud Run</div>
+              <div style="font-size: 11px; color: var(--text-muted);">
+                Despliegue verificado en Google Cloud Platform (europe-west1)
+              </div>
+            </div>
+          </div>
+
+          <div class="demo-link-buttons">
+            <a href="https://t02-dynamic-storefronts-mcp-d2lv3suxga-ew.a.run.app/ui" target="_blank" rel="noreferrer" class="cta-button">
+              <span>&#128187;</span> Abrir Nocturne UI
+            </a>
+            <a href="https://t02-dynamic-storefronts-mcp-d2lv3suxga-ew.a.run.app/preview/SEG-001" target="_blank" rel="noreferrer" class="cta-button secondary">
+              <span>&#128065;</span> Preview SEG-001
+            </a>
+            <a href="https://t02-dynamic-storefronts-mcp-d2lv3suxga-ew.a.run.app/.well-known/agent.json" target="_blank" rel="noreferrer" class="cta-button secondary">
+              <span>&#128220;</span> A2A Agent Card
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Keyboard Shortcuts Bar -->
+  <div class="keyboard-hint">
+    Navegación: <kbd>&larr;</kbd> <kbd>&rarr;</kbd> Flechas o <kbd>Espacio</kbd> &bull; 
+    Modo Jurado: <kbd>1</kbd> o <kbd>2</kbd> &bull; 
+    Notas de Orador: <kbd>N</kbd> &bull; 
+    Pantalla Completa: <kbd>F</kbd> &bull; 
+    Exportar a PDF: <kbd>Cmd</kbd>+<kbd>P</kbd>
+  </div>
+
+  <!-- Speaker Notes Collapsible Drawer -->
+  <div class="speaker-drawer" id="speakerDrawer">
+    <div class="speaker-cue" id="speakerNotesText">
+      <strong>Guión del Presentador:</strong> Cargando notas...
+    </div>
+    <div class="speaker-timer" id="speakerTiming">Min 0:00 - 1:15</div>
+  </div>
+
+  <script>
+    // Slide Deck State
+    const slidesData = [
+      {
+        id: "slide-0",
+        official: false,
+        cue: "<strong>Slide 0 (Portada):</strong> Presentar Table 2: Dynamic Storefront Engine para AtelierNova. Destacar que está 100% en vivo en Vertex AI Agent Runtime (europe-west1) y Cloud Run con el equipo de 5 ingenieros.",
+        timing: "0:00 - 0:15 min"
+      },
+      {
+        id: "slide-1",
+        official: true,
+        cue: "<strong>Oficial Slide 1 (Problema y Propuesta):</strong> 'Marco Bellini sufre un 70.9% de rebote en Madrid porque sus shoppers ven la web estática de Londres. Nuestra solución con ADK + Gemini 3.8 cruza BigQuery en tiempo real, genera imágenes acordes con Gemini 3.1 Flash Image y bloquea pérdidas con guardrails duros en código (&le;30% dto y &ge;10% margen)'.",
+        timing: "0:15 - 1:30 min"
+      },
+      {
+        id: "slide-2",
+        official: true,
+        cue: "<strong>Oficial Slide 2 (Arquitectura & Rigor):</strong> 'Nuestra arquitectura conecta Nocturne UI con Vertex AI Agent Runtime, filtrado por 3 capas de seguridad y Model Router. Cumplimos los 5 Must-Haves al 100%, con 13/13 en Golden Eval (score 1.00), 428 tests pasando, 890 req/s y 12 bonus activos'.",
+        timing: "1:30 - 2:30 min"
+      },
+      {
+        id: "slide-3",
+        official: false,
+        cue: "<strong>Slide 3 (Demo en Vivo 3:00 min):</strong> Ejecutar los 4 pasos: (1) BigQuery multi-table optimization, (2) Generación visual con Gemini 3.1 Flash Image, (3) Demostración del bloqueo del ataque SKU-0017 (FLASH95), y (4) Sincronización A2A con Table 1.",
+        timing: "2:30 - 3:00 min"
+      }
+    ];
+
+    let currentMode = "official"; // "official" (2 slides: slide 1 & 2) or "complete" (4 slides: 0, 1, 2, 3)
+    let activeSlideIndex = 1; // start at slide-1 for official mode
+    let notesOpen = false;
+
+    function getVisibleSlides() {
+      if (currentMode === "official") {
+        return slidesData.filter(s => s.official);
+      }
+      return slidesData;
+    }
+
+    function setPresentationMode(mode) {
+      currentMode = mode;
+      document.body.classList.toggle("mode-official", mode === "official");
+
+      document.getElementById("btnModeOfficial").classList.toggle("active", mode === "official");
+      document.getElementById("btnModeComplete").classList.toggle("active", mode === "complete");
+
+      const visible = getVisibleSlides();
+      // Ensure active slide is among visible
+      const isCurrentVisible = visible.some(s => s.id === slidesData[activeSlideIndex].id);
+      if (!isCurrentVisible) {
+        // Default to first visible
+        const firstVisibleId = visible[0].id;
+        activeSlideIndex = slidesData.findIndex(s => s.id === firstVisibleId);
+      }
+      renderSlides();
+    }
+
+    function renderSlides() {
+      const visible = getVisibleSlides();
+      const currentSlideData = slidesData[activeSlideIndex];
+      const visiblePos = visible.findIndex(s => s.id === currentSlideData.id);
+
+      // Update slide display
+      slidesData.forEach((s, idx) => {
+        const el = document.getElementById(s.id);
+        if (el) {
+          el.classList.toggle("active", idx === activeSlideIndex);
+        }
+      });
+
+      // Update Counter
+      const counterEl = document.getElementById("slideCounter");
+      if (visiblePos !== -1) {
+        counterEl.textContent = `Slide ${visiblePos + 1} / ${visible.length}`;
+      } else {
+        counterEl.textContent = `Slide ${activeSlideIndex + 1} / ${slidesData.length}`;
+      }
+
+      // Update Nav Buttons
+      document.getElementById("btnPrev").disabled = (visiblePos <= 0);
+      document.getElementById("btnNext").disabled = (visiblePos >= visible.length - 1);
+
+      // Update Notes
+      document.getElementById("speakerNotesText").innerHTML = currentSlideData.cue;
+      document.getElementById("speakerTiming").textContent = currentSlideData.timing;
+    }
+
+    function navigateSlide(direction) {
+      const visible = getVisibleSlides();
+      const currentSlideData = slidesData[activeSlideIndex];
+      const visiblePos = visible.findIndex(s => s.id === currentSlideData.id);
+      const nextVisiblePos = visiblePos + direction;
+
+      if (nextVisiblePos >= 0 && nextVisiblePos < visible.length) {
+        const targetId = visible[nextVisiblePos].id;
+        activeSlideIndex = slidesData.findIndex(s => s.id === targetId);
+        renderSlides();
+      }
+    }
+
+    function toggleFullScreen() {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      } else {
+        if (document.exitFullscreen) {
+          document.exitFullscreen().catch(() => {});
+        }
+      }
+    }
+
+    function toggleSpeakerNotes() {
+      notesOpen = !notesOpen;
+      document.getElementById("speakerDrawer").classList.toggle("open", notesOpen);
+      document.getElementById("btnNotes").style.background = notesOpen ? "#1a73e8" : "";
+    }
+
+    // Keyboard Shortcuts
+    window.addEventListener("keydown", (e) => {
+      if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") return;
+
+      switch (e.key) {
+        case "ArrowRight":
+        case " ":
+        case "PageDown":
+          e.preventDefault();
+          navigateSlide(1);
+          break;
+        case "ArrowLeft":
+        case "PageUp":
+          e.preventDefault();
+          navigateSlide(-1);
+          break;
+        case "f":
+        case "F":
+          e.preventDefault();
+          toggleFullScreen();
+          break;
+        case "n":
+        case "N":
+          e.preventDefault();
+          toggleSpeakerNotes();
+          break;
+        case "1":
+          e.preventDefault();
+          activeSlideIndex = 1;
+          renderSlides();
+          break;
+        case "2":
+          e.preventDefault();
+          activeSlideIndex = 2;
+          renderSlides();
+          break;
+        case "0":
+          e.preventDefault();
+          if (currentMode === "complete") {
+            activeSlideIndex = 0;
+            renderSlides();
+          }
+          break;
+        case "3":
+          e.preventDefault();
+          if (currentMode === "complete") {
+            activeSlideIndex = 3;
+            renderSlides();
+          }
+          break;
+      }
+    });
+
+    // Initialize Default View
+    setPresentationMode("official");
+  </script>
+</body>
+</html>

@@ -417,6 +417,7 @@ class McpCloudRunGateway:
                 "adk_tools": [fn.__name__ for fn in gateway.adk_tools if hasattr(fn, "__name__")],
                 "endpoints": {
                     "nocturne_ui": f"{base_url}/ui",
+                    "executive_slides": f"{base_url}/slides",
                     "health": f"{base_url}/health",
                     "healthz": f"{base_url}/healthz",
                     "api_health": f"{base_url}/api/health",
