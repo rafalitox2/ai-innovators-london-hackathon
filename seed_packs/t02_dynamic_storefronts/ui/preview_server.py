@@ -15,6 +15,11 @@ UI_DIR = Path(__file__).resolve().parent
 class StorefrontPreviewHandler(SimpleHTTPRequestHandler):
     """Serves static UI files and handles POST /api/recreate-hero-image."""
 
+    def translate_path(self, path: str) -> str:
+        if path.startswith("/ui/"):
+            path = "/" + path[len("/ui/") :]
+        return super().translate_path(path)
+
     def do_POST(self) -> None:  # noqa: N802
         if self.path.rstrip("/") == "/api/recreate-hero-image":
             try:
@@ -28,7 +33,13 @@ class StorefrontPreviewHandler(SimpleHTTPRequestHandler):
                     scene_description=str(payload.get("scene_description") or "Editorial interior lifestyle scene"),
                     aspect_ratio=str(payload.get("aspect_ratio") or "16:9"),
                 )
-                body_bytes = result_str.encode("utf-8")
+                result_obj = json.loads(result_str)
+                ui_asset_path = result_obj.get("render_job", {}).get("ui_asset_path") or ""
+                if ui_asset_path:
+                    fname = Path(ui_asset_path).name
+                    result_obj["ui_filename"] = fname
+                    result_obj["hero_asset_url"] = f"/ui/{fname}"
+                body_bytes = json.dumps(result_obj, indent=2).encode("utf-8")
                 self.send_response(200)
                 self.send_header("Content-Type", "application/json; charset=utf-8")
                 self.send_header("Content-Length", str(len(body_bytes)))

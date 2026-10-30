@@ -132,6 +132,8 @@ jobs:
           MCP_URL=$(gcloud run services describe t02-dynamic-storefronts-mcp --project="${GOOGLE_CLOUD_PROJECT}" --region="europe-west1" --format="value(status.url)")
           echo "MCP_SERVER_URL=${MCP_URL}" >> "$GITHUB_ENV"
           curl -fsSL "${MCP_URL}/health" || curl -fsSL "${MCP_URL}/api/health"
+          curl -fsSL "${MCP_URL}/.well-known/agent.json" >/dev/null
+          curl -fsSL "${MCP_URL}/a2a" >/dev/null
 
       - name: Deploy ADK Agent to Vertex AI Agent Runtime (syncs .deployed_agent.json with GCS)
         run: |
