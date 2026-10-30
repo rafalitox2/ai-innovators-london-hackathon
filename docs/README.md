@@ -31,6 +31,7 @@ Table 2 is actively deployed on Google Cloud Platform in region `europe-west1` (
 | **[`PHASE2_SPEC.md`](./PHASE2_SPEC.md)** | **Technical Specification — Phase 2 (2A + 2B)**: BigQuery 3-table parameterized analytics (`recommend_storefront_optimization`), multimodal hero asset generation (`generate_hero_lifestyle_image` via `gemini-3.1-flash-image`), MCP generative UI preview (`render_storefront_preview`), persistent memory, and Gemma/Gemini model routing. | **Phases 2A & 2B** (`Issues #4, #5, #21, #22, #23` · `PR #7, #14, #15, #24, #26, #28, #29, #30, #35`) |
 | **[`PHASE3_SPEC.md`](./PHASE3_SPEC.md)** | **Technical Specification — Phase 3**: Tribe A2A Handshake Protocol (`sync_campaign_with_t01`) with Sister Table **Table 1 (`t01_campaign_orchestrator`)**, CPM governance guardrail (`<= 25.00 EUR`), and editable HTML5/CSS storefront template. | **Phase 3** (`Issue #6` · `PR #9, #42, #60`) |
 | **[`PITCH_T02.md`](./PITCH_T02.md)** | **Pitch Storyboard (2 Slides) & Live Demo Runbook (3:00 min / 5:00 Hard Stop)**: Script for judges, live UI commands, production URLs, and exact demonstration prompts. | **Pitch & Live Demo** (`Issue #6` · `PR #9, #32`) |
+| **[`JUDGES_QA_PLAYBOOK.md`](./JUDGES_QA_PLAYBOOK.md)** | **Master Judges Q&A Playbook (30 Technical & Business Questions)**: Complete defense reference covering the 5 Must-Haves, OOP ADK/MCP architecture, BigQuery 3-table SQL, Knowledge Graph, Multimodal UI, Gemma routing, Red Team (`SKU-0017`), A2A Protocol, and MCP latency/concurrency benchmarks (`890.4 req/s`). | **Judges Defense & Q&A** (`PR #60, #63`) |
 | **[`STARTER.md`](./STARTER.md)** | Official Starter Kit technical reference (Google ADK architecture, seed pack plugin contract, Vertex AI Agent Runtime deployment, and bonus recipes). | Starter Kit Reference |
 | **[`PREWORK.md`](./PREWORK.md)** | Pre-event setup checklist (Antigravity 2.0 configuration, `gcloud`, `uv`, Python 3.12, and the 10 hackathon tables). | Pre-Work |
 | **[`diagrams/t02_architecture.svg`](./diagrams/t02_architecture.svg)** | Comprehensive animated SVG architecture diagrams (`t02_architecture.svg`, `t02_gcp_infrastructure.svg`, `t02_a2a_integration.svg`) visualizing user flows, ADK agent logic, BigQuery joins, MCP tools, Cloud Run, Vertex AI, and Agent Registry. | Architecture Visuals |
@@ -42,17 +43,20 @@ Table 2 is actively deployed on Google Cloud Platform in region `europe-west1` (
 Every member of the table, judge, or mentor can verify the entire project locally or against the live cloud deployment:
 
 ```bash
-# 1. Run the full offline verification gate (393+ unit/ADK/A2A/security tests + 13 golden eval schema validations + pack checks)
+# 1. Run the full offline verification gate (422+ unit/ADK/A2A/MCP/security tests + 13 golden eval schema validations + pack checks)
 make verify PACK=t02
 
-# 2. Run unit tests individually (19 test modules across root, tests/adk/, and tests/a2a/)
+# 2. Run unit tests individually (21 test modules across root, tests/adk/, tests/a2a/, and tests/mcp/)
 make test
 
-# 3. Run isolated Google ADK & Official A2A Protocol suites (offline or live GCP)
+# 3. Run isolated Google ADK, Official A2A Protocol & FastMCP suites + Latency/Concurrency Benchmarks
 make test-adk
 make test-a2a
+make test-mcp
+make benchmark-mcp
 make test-adk-gcp
 make test-a2a-gcp
+make benchmark-mcp-gcp
 
 # 4. Run 8 Playwright E2E UX/UI audit tests (Desktop & Mobile viewports)
 cd ui && npx playwright test

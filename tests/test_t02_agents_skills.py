@@ -210,6 +210,7 @@ def test_repository_cleaned_to_t02_challenge_and_official_docs() -> None:
     doc_md_files = sorted(p.name for p in docs_dir.glob("*.md"))
     assert doc_md_files == [
         "BITACORA_T02.md",
+        "JUDGES_QA_PLAYBOOK.md",
         "PHASE1_SPEC.md",
         "PHASE2_SPEC.md",
         "PHASE3_SPEC.md",
