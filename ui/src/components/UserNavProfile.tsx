@@ -132,23 +132,7 @@ export const UserNavProfile: React.FC<UserNavProfileProps> = ({
 
       {/* Popover Dropdown */}
       {dropdownOpen && (
-        <div
-          style={{
-            position: 'absolute',
-            right: 0,
-            top: 'calc(100% + 6px)',
-            width: '280px',
-            background: 'var(--color-bg)',
-            border: '1px solid var(--color-border)',
-            borderRadius: 'var(--radius-sm)',
-            boxShadow: '0 12px 24px rgba(0, 0, 0, 0.5), 0 0 0 1px var(--color-section-ghost)',
-            zIndex: 150,
-            padding: '16px',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '12px'
-          }}
-        >
+        <div className="user-nav-dropdown" role="menu">
           {/* User Profile Card */}
           <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
             <img

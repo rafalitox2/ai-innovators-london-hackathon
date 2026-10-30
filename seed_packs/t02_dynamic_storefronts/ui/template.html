@@ -96,6 +96,7 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
+      flex-wrap: wrap;
       gap: var(--space-4);
       padding: var(--space-4) var(--space-6);
     }
@@ -128,6 +129,7 @@
     .mini-nav {
       display: flex;
       align-items: center;
+      flex-wrap: wrap;
       gap: var(--space-6);
       padding: 10px 16px;
       font-size: 12px;
@@ -263,6 +265,50 @@
       color: var(--color-neutral-400);
       font-variant-numeric: tabular-nums;
     }
+    @media (max-width: 768px) {
+      body {
+        padding: var(--space-4);
+      }
+      .modal-header {
+        padding: var(--space-3) var(--space-4);
+      }
+      .storefront-frame {
+        margin: 0 var(--space-4) var(--space-4);
+      }
+      .mini-nav {
+        gap: var(--space-3);
+        padding: 8px 12px;
+      }
+      .hero {
+        grid-template-columns: 1fr;
+      }
+      .hero-copy {
+        padding: 18px;
+      }
+      .hero-copy h1 {
+        font-size: 20px;
+      }
+      .grid {
+        grid-template-columns: 1fr;
+        padding: 14px;
+      }
+      .modal-footer {
+        gap: var(--space-3);
+        padding: 0 var(--space-4) var(--space-4);
+      }
+    }
+    @media (max-width: 480px) {
+      body {
+        padding: var(--space-3);
+      }
+      .storefront-frame {
+        margin: 0 var(--space-3) var(--space-3);
+      }
+      .hero-visual {
+        min-height: 210px;
+        padding: 14px;
+      }
+    }
   </style>
 </head>
 <body>
@@ -369,17 +415,33 @@
           const job = data.render_job || {};
           const imgSlot = document.getElementById("hero-img-slot");
           if (imgSlot && (data.hero_asset_url || data.ui_filename)) {
-            const rawUrl = data.hero_asset_url || (window.location.pathname.indexOf("/preview/") === 0 ? "/ui/" + data.ui_filename : data.ui_filename);
-            const sep = rawUrl.indexOf("?") >= 0 ? "&" : "?";
-            imgSlot.innerHTML = '<img src="' + rawUrl + sep + 't=' + Date.now() + '" alt="Hero lifestyle render" />';
+            const rawUrl = String(data.hero_asset_url || (window.location.pathname.indexOf("/preview/") === 0 ? "/ui/" + data.ui_filename : data.ui_filename));
+            if (rawUrl.startsWith("/") || /^[A-Za-z0-9_.-]+$/.test(rawUrl)) {
+              const sep = rawUrl.indexOf("?") >= 0 ? "&" : "?";
+              const imgEl = document.createElement("img");
+              imgEl.src = rawUrl + sep + "t=" + Date.now();
+              imgEl.alt = "Hero lifestyle render";
+              imgSlot.replaceChildren(imgEl);
+            }
           }
           if (promptBox && job.prompt_text) {
-            promptBox.innerHTML = "<strong style='color: var(--color-accent-300);'>Google Image Endpoint (" + (job.image_model || "env:GEMINI_IMAGE_MODEL") + " · v" + variationIdx + "):</strong> " + job.prompt_text;
+            const strongEl = document.createElement("strong");
+            strongEl.style.color = "var(--color-accent-300)";
+            strongEl.textContent = "Google Image Endpoint (" + (job.image_model || "env:GEMINI_IMAGE_MODEL") + " · v" + variationIdx + "):";
+            promptBox.replaceChildren(strongEl, document.createTextNode(" " + String(job.prompt_text)));
           }
         }
       } catch (_) {
         if (promptBox) {
-          promptBox.innerHTML = "<strong style='color: var(--color-accent-300);'>Audience-Adjusted Prompt (v" + variationIdx + " · " + aspect + "):</strong> AtelierNova hero render for {{SEGMENT_ID}} ({{SEGMENT_NAME}}, region={{REGION}}, style={{PREFERRED_STYLE}}, device={{DEVICE_TYPE}}, AOV=€{{AOV_EUR}}). Scene: " + scene;
+          const strongEl = document.createElement("strong");
+          strongEl.style.color = "var(--color-accent-300)";
+          strongEl.textContent = "Audience-Adjusted Prompt (v" + variationIdx + " · " + aspect + "):";
+          promptBox.replaceChildren(
+            strongEl,
+            document.createTextNode(
+              " AtelierNova hero render for {{SEGMENT_ID}} ({{SEGMENT_NAME}}, region={{REGION}}, style={{PREFERRED_STYLE}}, device={{DEVICE_TYPE}}, AOV=€{{AOV_EUR}}). Scene: " + scene
+            )
+          );
         }
       }
       if (caption) caption.textContent = "Hero lifestyle render (v" + variationIdx + " · " + aspect + ") · {{THEME_STYLE}} · {{SEGMENT_ID}}";

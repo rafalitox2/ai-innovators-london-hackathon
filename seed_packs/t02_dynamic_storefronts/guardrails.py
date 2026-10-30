@@ -59,6 +59,10 @@ def scan_args_for_injection(args: dict[str, Any]) -> str | None:
     for key, value in args.items():
         if isinstance(value, str) and contains_injection_marker(value):
             return key
+        if isinstance(value, (list, tuple)):
+            for item in value:
+                if isinstance(item, str) and contains_injection_marker(item):
+                    return key
     return None
 
 

@@ -1138,6 +1138,67 @@ a:hover {
 }
 
 /* ==========================================================================
+   GitHub Auth Modal & User Profile Dropdown
+   ========================================================================== */
+
+.auth-dialog-card {
+  width: 100%;
+  max-width: 560px;
+  max-height: 92vh;
+  max-height: 92dvh;
+  overflow-y: auto;
+  background: var(--color-bg);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.6), 0 0 0 1px var(--color-section-ghost);
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.auth-team-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.auth-custom-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.auth-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--color-neutral-500);
+  border-top: 1px solid var(--color-divider);
+  padding-top: 12px;
+}
+
+.user-nav-dropdown {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 6px);
+  width: 280px;
+  max-width: calc(100vw - 24px);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.5), 0 0 0 1px var(--color-section-ghost);
+  z-index: 150;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* ==========================================================================
    Responsive Design (Tablet <= 768px & Mobile <= 480px)
    ========================================================================== */
 
@@ -1352,6 +1413,20 @@ a:hover {
   .modal-guardrails {
     margin: 0 var(--space-3) var(--space-3);
     padding: var(--space-3);
+  }
+
+  .auth-dialog-card {
+    padding: 18px;
+    gap: 14px;
+    max-height: 96dvh;
+  }
+
+  .auth-team-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .auth-custom-form > button {
+    width: 100%;
   }
 }
 
