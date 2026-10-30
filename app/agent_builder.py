@@ -126,6 +126,9 @@ class AdkAgentBuilder:
             description=pack.short_description or pack.title,
             instruction=full_instruction,
             tools=pack.tools,
+            before_model_callback=pack.before_model_callback,
             before_tool_callback=pack.before_tool_callback,
+            after_tool_callback=pack.after_tool_callback,
+            after_model_callback=pack.after_model_callback,
         )
         return agent, pack
