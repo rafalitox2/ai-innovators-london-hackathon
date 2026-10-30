@@ -21,11 +21,18 @@ export const UserNavProfile: React.FC<UserNavProfileProps> = ({
         setDropdownOpen(false);
       }
     };
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setDropdownOpen(false);
+      }
+    };
     if (dropdownOpen) {
       document.addEventListener('mousedown', handleClickOutside);
+      window.addEventListener('keydown', handleKeyDown);
     }
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
+      window.removeEventListener('keydown', handleKeyDown);
     };
   }, [dropdownOpen]);
 
@@ -40,8 +47,8 @@ export const UserNavProfile: React.FC<UserNavProfileProps> = ({
           alignItems: 'center',
           gap: '8px',
           borderColor: 'var(--color-accent)',
-          color: 'var(--color-accent-200)',
-          background: 'color-mix(in srgb, var(--color-bg) 75%, var(--color-section))'
+          color: 'var(--color-accent)',
+          background: 'var(--color-accent-100)'
         }}
       >
         {/* GitHub SVG icon */}
@@ -67,6 +74,8 @@ export const UserNavProfile: React.FC<UserNavProfileProps> = ({
     <div style={{ position: 'relative' }} ref={dropdownRef}>
       <button
         type="button"
+        aria-expanded={dropdownOpen}
+        aria-haspopup="menu"
         onClick={() => setDropdownOpen((v) => !v)}
         style={{
           display: 'flex',
@@ -209,7 +218,7 @@ export const UserNavProfile: React.FC<UserNavProfileProps> = ({
               rel="noreferrer"
               style={{
                 fontSize: '12px',
-                color: 'var(--color-accent-300)',
+                color: 'var(--color-accent)',
                 textDecoration: 'none',
                 display: 'flex',
                 alignItems: 'center',
@@ -257,7 +266,7 @@ export const UserNavProfile: React.FC<UserNavProfileProps> = ({
                 borderRadius: '4px',
                 padding: '6px 10px',
                 fontSize: '12px',
-                color: '#fca5a5',
+                color: 'var(--color-danger-text)',
                 cursor: 'pointer',
                 textAlign: 'left'
               }}

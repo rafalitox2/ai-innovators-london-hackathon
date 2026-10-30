@@ -36,6 +36,8 @@ ui/node_modules
 ui/node_modules/
 ui/dist/
 ui/*.tsbuildinfo
+ui/test-results/
+ui/playwright-report/
 
 # Local design skills library copied from Desktop
 design_skills/

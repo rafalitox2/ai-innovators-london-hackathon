@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   computeMaxSafeDiscountPct,
   ExperimentOpportunity,
@@ -216,6 +216,16 @@ export const StorefrontPreviewModal: React.FC<StorefrontPreviewModalProps> = ({
   const lowMarginDemoSku = allProducts.find((p) => p.sku === 'SKU-0022');
   const injectionDemoSku = allProducts.find((p) => p.sku === 'SKU-0017');
 
+  useEffect(() => {
+    const handleKeyDown = (ev: KeyboardEvent) => {
+      if (ev.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
+
   return (
     <div
       className="modal-backdrop"
@@ -223,6 +233,9 @@ export const StorefrontPreviewModal: React.FC<StorefrontPreviewModalProps> = ({
     >
       <div
         className="modal-card"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="storefront-modal-title"
         onClick={(ev) => ev.stopPropagation()}
       >
         <div className="google-ribbon" aria-hidden="true" />
@@ -242,7 +255,7 @@ export const StorefrontPreviewModal: React.FC<StorefrontPreviewModalProps> = ({
             >
               ✦ Storefront variant · {e.layout} · ui://storefront-preview/{e.g.id}
             </span>
-            <span style={{ fontSize: 16, fontWeight: 600 }}>
+            <span id="storefront-modal-title" style={{ fontSize: 16, fontWeight: 600 }}>
               {e.id} · {e.g.label}
             </span>
           </div>
@@ -598,7 +611,7 @@ export const StorefrontPreviewModal: React.FC<StorefrontPreviewModalProps> = ({
           {guardrail.injection_detected && (
             <div className="alert alert-warning" style={{ padding: '10px 14px', fontSize: 12 }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                <strong style={{ fontWeight: 500, color: 'var(--color-accent-200)' }}>
+                <strong style={{ fontWeight: 600, color: 'var(--color-warning-text)' }}>
                   Prompt Injection Defense Active (SKU-0017 Sanitized)
                 </strong>
                 <span style={{ color: 'var(--color-neutral-300)' }}>
