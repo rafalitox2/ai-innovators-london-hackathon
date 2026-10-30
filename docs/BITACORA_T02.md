@@ -417,3 +417,15 @@ curl -fsSL -X POST "https://t02-dynamic-storefronts-mcp-d2lv3suxga-ew.a.run.app/
 # 8. Verify remote Vertex AI Agent Runtime ReasoningEngine in europe-west1
 make test-remote
 ```
+
+---
+
+## 8. Self Red Team Conclusions (Issue #37 / PR #40)
+
+We executed an adversarial Self Red Team audit (`Astra — Security Engineer`) across the entire Table 2 perimeter and integrated 204 parameterized regression test cases in [`tests/test_t02_self_red_team.py`](../tests/test_t02_self_red_team.py):
+
+- **Pre-sanitization raw input inspection**: All 8 write/action MCP tools and `before_tool_security_callback` now inspect raw arguments via `scan_args_for_injection()` before `sanitize_untrusted_text()` strips injection markers.
+- **Unicode & obfuscation hardening**: `contains_injection_marker()` normalizes via `NFKC`, strips invisible/format Unicode characters (`\u200b`..`\u206f`, `\u00ad`, `\ufeff`), and collapses separator-obfuscated keywords (`A.D.M.I.N`, `O-V-E-R-R-I-D-E`, `[SYSTEM]`).
+- **Complete `SKU-0017` & poisoned catalog quarantine**: `quarantine_action_args()` and `is_quarantined_product()` block `SKU-0017` and any catalog row containing injection markers across all 6 SKU-bearing MCP actions, BigQuery analytical tools (`SELECT *` / `TO_JSON_STRING(p)`), and the Merchandising Knowledge Graph.
+- **Strict numeric policy validation**: `validate_policy_number()` rejects `bool`, `NaN`, `±Inf`, fractional discounts (`integral=True`), and non-positive CPM bids (`<= 0`).
+
