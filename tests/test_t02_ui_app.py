@@ -718,4 +718,140 @@ def test_ui_design_skills_audit_and_playwright_suite() -> None:
     )
 
 
+def test_ui_server_chat_copilot_all_intents_and_standalone_mcp_preview(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Verify /api/chat routes all merchandising intents and /api/preview/{segment_id} renders hero + lightbox."""
+    monkeypatch.setenv("SEED_OFFLINE_MODE", "1")
+    from app.ui_server import create_ui_app
+
+    client = TestClient(create_ui_app(include_adk_web=False))
+
+    # 1. SKU-0017 prompt injection / 95% discount guardrail intent
+    r_inj = client.post("/api/chat", json={"message": "Test SKU-0017 95% prompt injection guardrail"})
+    assert r_inj.status_code == 200
+    assert r_inj.json()["status"] == "SUCCESS"
+    assert "update_promo_banner" in r_inj.json()["tool_calls"]
+    assert "SKU-0017" in r_inj.json()["reply"]
+
+    # 2. Recommend high-margin SKUs for Madrid intent
+    r_rec = client.post("/api/chat", json={"message": "Recommend high-margin SKUs for Madrid"})
+    assert r_rec.status_code == 200
+    assert "recommend_storefront_optimization" in r_rec.json()["tool_calls"]
+
+    # 3. Generate hero image & preview intent
+    r_hero = client.post("/api/chat", json={"message": "Generate hero image & preview for SEG-057"})
+    assert r_hero.status_code == 200
+    assert "generate_hero_lifestyle_image" in r_hero.json()["tool_calls"]
+    assert "render_storefront_preview" in r_hero.json()["tool_calls"]
+
+    # 4. Sync campaign with Table 1 intent
+    r_a2a = client.post("/api/chat", json={"message": "Sync SEG-057 campaign with Table 1"})
+    assert r_a2a.status_code == 200
+    assert "sync_campaign_with_t01" in r_a2a.json()["tool_calls"]
+
+    # 5. Default audience segment lookup intent
+    r_seg = client.post("/api/chat", json={"message": "Show audience segments in London"})
+    assert r_seg.status_code == 200
+    assert "get_audience_segments" in r_seg.json()["tool_calls"]
+
+    # 6. Standalone MCP HTML Preview (/api/preview/SEG-057) includes hero image and real-photo lightbox
+    prev_resp = client.get("/api/preview/SEG-057")
+    assert prev_resp.status_code == 200
+    assert "ui://storefront-preview/SEG-057" in prev_resp.text
+    assert 'data-testid="mcp-real-photo-lightbox"' in prev_resp.text
+    assert 'data-testid="mcp-view-real-photo-btn"' in prev_resp.text
+    assert "<img src=" in prev_resp.text
+
+    # Clean up generated test preview/hero files for SEG-057
+    from app.ui_server import T02_UI_DIR
+    (T02_UI_DIR / "preview_SEG-057.html").unlink(missing_ok=True)
+    for ext in (".png", ".svg"):
+        (T02_UI_DIR / f"hero_SEG-057{ext}").unlink(missing_ok=True)
+
+
+def test_mcp_cloudrun_gateway_tools_invoke_and_a2a_jsonrpc(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Verify Cloud Run MCP Gateway (/tools, /invoke, /.well-known/agent.json, /a2a JSON-RPC & direct A2A)."""
+    monkeypatch.setenv("SEED_OFFLINE_MODE", "1")
+    from cd.mcp_http_server import build_mcp_cloudrun_app
+
+    client = TestClient(build_mcp_cloudrun_app())
+
+    # 1. GET /tools returns all registered MCP tools with parameter schemas
+    tools_resp = client.get("/tools")
+    assert tools_resp.status_code == 200
+    tools_data = tools_resp.json()
+    assert "tools" in tools_data
+    tool_names = {t["name"] for t in tools_data["tools"]}
+    assert "publish_storefront_layout" in tool_names
+    assert "sync_campaign_with_t01" in tool_names
+
+    # 2. POST /invoke executes a registered tool and returns 400 for unknown tools
+    inv_ok = client.post(
+        "/invoke",
+        json={
+            "name": "update_promo_banner",
+            "arguments": {
+                "segment_id": "SEG-057",
+                "discount_pct": 15,
+                "banner_copy": "15% Off Autumn Lighting",
+                "sku_id": "SKU-0057",
+            },
+        },
+    )
+    assert inv_ok.status_code == 200
+    assert inv_ok.json()["status"] == "SUCCESS"
+    import json
+    assert json.loads(inv_ok.json()["result"])["status"] == "SUCCESS"
+
+    inv_err = client.post("/invoke", json={"name": "non_existent_tool", "arguments": {}})
+    assert inv_err.status_code == 400
+    assert inv_err.json()["status"] == "ERROR"
+
+    # 3. GET /.well-known/agent.json and GET /a2a return the A2A Agent Card
+    card_resp = client.get("/.well-known/agent.json")
+    assert card_resp.status_code == 200
+    assert card_resp.json()["name"] == "expedition_t02_dynamic_storefronts"
+    assert client.get("/a2a").status_code == 200
+
+    # 4. POST /a2a JSON-RPC 2.0 agent/card and message/send
+    rpc_card = client.post(
+        "/a2a",
+        json={"jsonrpc": "2.0", "id": "req-1", "method": "agent/card"},
+    )
+    assert rpc_card.status_code == 200
+    assert rpc_card.json()["result"]["name"] == "expedition_t02_dynamic_storefronts"
+
+    rpc_msg = client.post(
+        "/a2a",
+        json={
+            "jsonrpc": "2.0",
+            "id": "req-2",
+            "method": "message/send",
+            "params": {
+                "text": "Sync SEG-057 campaign with Table 1",
+            },
+        },
+    )
+    assert rpc_msg.status_code == 200
+    assert rpc_msg.json()["result"]["status"]["state"] == "completed"
+    assert "sync_campaign_with_t01" in rpc_msg.json()["result"]["tool_calls"]
+
+    # 5. Direct A2A handshake enforces <= 25.0 EUR CPM guardrail
+    direct_bad = client.post(
+        "/a2a",
+        json={
+            "handshake_type": "STOREFRONT_TO_CAMPAIGN_SYNC",
+            "segment_id": "SEG-057",
+            "featured_skus": "SKU-0057",
+            "target_cpm_bid_eur": 35.0,
+        },
+    )
+    assert direct_bad.status_code == 200
+    assert direct_bad.json()["status"] == "REJECTED_POLICY_CAP"
+
+
+
 
