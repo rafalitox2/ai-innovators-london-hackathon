@@ -134,3 +134,8 @@ def test_app_oop_classes_build_and_validate() -> None:
     dashboard_service = NocturneDashboardService()
     controller = NocturneUiController(service=dashboard_service)
     assert controller.service is dashboard_service
+
+    dockerfile_mcp = (resolver.repo_root / "cd" / "Dockerfile.mcp").read_text(encoding="utf-8")
+    assert "COPY mcp ./mcp" in dockerfile_mcp, (
+        "cd/Dockerfile.mcp must copy top-level mcp/ package for Cloud Run MCP gateway startup"
+    )

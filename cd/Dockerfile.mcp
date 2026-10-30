@@ -35,6 +35,7 @@ RUN pip install --no-cache-dir \
 
 COPY .env.example ./
 COPY app ./app
+COPY mcp ./mcp
 COPY seed_packs ./seed_packs
 COPY cd ./cd
 COPY --from=ui-builder /ui/dist ./ui/dist
