@@ -245,6 +245,75 @@ def test_ui_react_folder_structure_and_nocturne_design_system() -> None:
         assert screen_label in app_text, f"Missing screen element {screen_label!r} in ui/src/App.tsx"
 
 
+def test_ui_google_material3_theme_tokens_and_switcher() -> None:
+    """Verify Google Material Design 3 + Gemini Studio theme tokens, 4-color ribbon, and Light/Dark toggle."""
+    ui_root = REPO_ROOT / "ui"
+    css_text = (ui_root / "src" / "styles" / "nocturne.css").read_text(encoding="utf-8")
+    for google_token in (
+        "--color-google-blue: #4285f4",
+        "--color-google-red: #ea4335",
+        "--color-google-yellow: #fbbc04",
+        "--color-google-green: #34a853",
+        '[data-theme="google-light"]',
+        '[data-theme="google-dark"]',
+        ".google-ribbon",
+        ".kpi-grid",
+        ".table-wrap",
+        ".copilot-drawer",
+    ):
+        assert google_token in css_text, f"Missing Google theme token {google_token!r} in nocturne.css"
+
+    app_text = (ui_root / "src" / "App.tsx").read_text(encoding="utf-8")
+    assert "google-ribbon" in app_text
+    assert "Google Light" in app_text
+    assert "Gemini Dark" in app_text
+
+
+def test_ui_mobile_responsive_breakpoints_and_modal_classes() -> None:
+    """Verify mobile responsive @media breakpoints (<=768px and <=480px) and responsive modal/layout classes."""
+    ui_root = REPO_ROOT / "ui"
+    css_text = (ui_root / "src" / "styles" / "nocturne.css").read_text(encoding="utf-8")
+    for responsive_token in (
+        "@media (max-width: 768px)",
+        "@media (max-width: 480px)",
+        ".modal-backdrop",
+        ".modal-card",
+        ".modal-topbar",
+        ".modal-topbar-actions",
+        ".modal-preview-frame",
+        ".modal-store-nav",
+        ".modal-hero-copy",
+        ".modal-guardrails",
+        ".modal-footer-meta",
+        ".hero-actions",
+    ):
+        assert responsive_token in css_text, (
+            f"Missing mobile responsive token/class {responsive_token!r} in nocturne.css"
+        )
+
+    modal_text = (ui_root / "src" / "components" / "StorefrontPreviewModal.tsx").read_text(
+        encoding="utf-8"
+    )
+    for modal_cls in (
+        "modal-backdrop",
+        "modal-card",
+        "modal-topbar",
+        "modal-topbar-actions",
+        "modal-preview-frame",
+        "modal-store-nav",
+        "modal-hero-copy",
+        "modal-guardrails",
+        "modal-footer-meta",
+    ):
+        assert modal_cls in modal_text, (
+            f"Expected StorefrontPreviewModal.tsx to use responsive class {modal_cls!r}"
+        )
+
+    app_text = (ui_root / "src" / "App.tsx").read_text(encoding="utf-8")
+    assert "hero-actions" in app_text
+
+
+
 def test_cloudrun_mcp_server_serves_nocturne_ui_and_api_routes(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -296,6 +365,136 @@ def test_cloudrun_mcp_server_serves_nocturne_ui_and_api_routes(
 
     hero_file_resp = client.get(f"/ui/{recreate_json['ui_filename']}")
     assert hero_file_resp.status_code == 200
+
+
+def test_ui_server_github_auth_and_team_roster(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Verify GitHub Auth config, team member roster, session token creation, and author attribution on publish."""
+    monkeypatch.setenv("SEED_OFFLINE_MODE", "1")
+    from app.ui_server import create_ui_app
+
+    client = TestClient(create_ui_app(include_adk_web=False))
+
+    # 1. Config endpoint
+    cfg_resp = client.get("/api/auth/github/config")
+    assert cfg_resp.status_code == 200
+    cfg = cfg_resp.json()
+    assert cfg["status"] == "SUCCESS"
+    assert cfg["enabled"] is True
+    assert cfg["default_org"] == "AtelierNova Home & Lifestyle"
+
+    # 2. Team roster endpoint
+    team_resp = client.get("/api/auth/team")
+    assert team_resp.status_code == 200
+    team_data = team_resp.json()
+    assert team_data["status"] == "SUCCESS"
+    roster_usernames = {m["username"] for m in team_data["team"]}
+    expected_members = {
+        "rafalitox2",
+        "BorjaIP",
+        "carlosescribano-ai",
+        "jportell",
+        "joshsmith-samy",
+        "marco-bellini",
+    }
+    assert expected_members.issubset(roster_usernames)
+
+    # 3. Session creation endpoint
+    sess_resp = client.post(
+        "/api/auth/session",
+        json={
+            "username": "rafalitox2",
+            "name": "Rafael Hormigo",
+            "avatar_url": "https://github.com/rafalitox2.png",
+            "role": "Lead Engineer & Merchandiser",
+            "auth_method": "demo_sso",
+        },
+    )
+    assert sess_resp.status_code == 200
+    sess = sess_resp.json()
+    assert sess["status"] == "SUCCESS"
+    assert sess["session"]["username"] == "rafalitox2"
+    assert sess["session"]["token"].startswith("gh_sess_rafalitox2_")
+    assert sess["session"]["org"] == "AtelierNova Home & Lifestyle"
+
+    # 4. Attribution on opportunity publish
+    pub_resp = client.post(
+        "/api/opportunities/publish",
+        json={
+            "experiment_id": "EXP-0057",
+            "segment_id": "SEG-057",
+            "featured_skus": "SKU-0057,SKU-0002",
+            "hero_headline": "Warm Mediterranean light for London homes",
+            "theme_style": "Mediterranean_Warm",
+            "discount_pct": 15,
+            "banner_copy": "15% off smart lighting this week · code LON15",
+            "sku_id": "SKU-0057",
+            "published_by": "rafalitox2",
+            "published_by_avatar": "https://github.com/rafalitox2.png",
+        },
+    )
+    assert pub_resp.status_code == 200
+    pub_data = pub_resp.json()
+    assert pub_data["status"] == "SUCCESS"
+    assert pub_data["published_by"] == "rafalitox2"
+    assert pub_data["published_by_avatar"] == "https://github.com/rafalitox2.png"
+
+
+def test_published_storefront_hero_images_match_sku_and_persist(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Published storefronts resolve hero images for their actual SKU/theme and persist recreated hero URLs."""
+    monkeypatch.setenv("SEED_OFFLINE_MODE", "1")
+    from app.ui_server import T02_UI_DIR, create_ui_app
+
+    # Clean up any leftover test hero file for SEG-074 before testing
+    for ext in (".png", ".svg"):
+        candidate = T02_UI_DIR / f"hero_SEG-074{ext}"
+        if candidate.exists():
+            candidate.unlink()
+
+    client = TestClient(create_ui_app(include_adk_web=False))
+
+    # 1. Pre-published EXP-0074 (SEG-074, SKU-0074, Biophilic_Zen) must render SKU-0074/Biophilic_Zen, not hardcoded SKU-0057
+    hero_resp = client.get("/api/assets/hero/SEG-074")
+    assert hero_resp.status_code == 200
+    svg_text = hero_resp.text
+    assert "SKU-0074" in svg_text
+    assert "BIOPHILIC_ZEN" in svg_text
+    assert "SKU-0057" not in svg_text
+
+    # 2. Explicit sku_id and style_theme query params override segment defaults when switching SKU in modal
+    custom_sku_resp = client.get(
+        "/api/assets/hero/SEG-074?sku_id=SKU-0081&style_theme=Nordic_Minimal"
+    )
+    assert custom_sku_resp.status_code == 200
+    assert "SKU-0081" in custom_sku_resp.text
+    assert "NORDIC_MINIMAL" in custom_sku_resp.text
+
+    # 3. Publishing an opportunity returns a persisted hero_asset_url matching the published SKU and segment
+    pub_resp = client.post(
+        "/api/opportunities/publish",
+        json={
+            "experiment_id": "EXP-0074",
+            "segment_id": "SEG-074",
+            "featured_skus": "SKU-0074,SKU-0001",
+            "hero_headline": "Biophilic Zen Desks for European Workspaces",
+            "theme_style": "Biophilic_Zen",
+            "discount_pct": 15,
+            "banner_copy": "15% off ergonomic desks this week",
+            "sku_id": "SKU-0074",
+        },
+    )
+    assert pub_resp.status_code == 200
+    pub_json = pub_resp.json()
+    assert pub_json["status"] == "SUCCESS"
+    assert "hero_asset_url" in pub_json
+    assert "SEG-074" in pub_json["hero_asset_url"]
+
+    # Clean up generated test hero file
+    for ext in (".png", ".svg"):
+        candidate = T02_UI_DIR / f"hero_SEG-074{ext}"
+        if candidate.exists():
+            candidate.unlink()
 
 
 def test_published_storefront_hero_asset_resolves_actual_sku_and_theme_not_hardcoded_sku0057(

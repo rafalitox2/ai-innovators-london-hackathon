@@ -32,7 +32,11 @@ seed_packs/*/ui/hero_*.*
 seed_packs/*/ui/preview_*.html
 
 # Nocturne React UI build & dependencies
+ui/node_modules
 ui/node_modules/
 ui/dist/
 ui/*.tsbuildinfo
+
+# Local design skills library copied from Desktop
+design_skills/
 

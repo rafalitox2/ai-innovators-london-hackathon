@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { AdkHealthResponse, sendAdkCopilotMessage } from '../services/adkClient';
+import { GitHubUser } from '../types/auth';
 
 interface CopilotMessage {
   id: string;
@@ -14,6 +15,7 @@ interface AdkCopilotDrawerProps {
   open: boolean;
   onClose: () => void;
   health: AdkHealthResponse;
+  user?: GitHubUser | null;
   onSelectExperiment?: (expId: string) => void;
 }
 
@@ -28,6 +30,7 @@ export const AdkCopilotDrawer: React.FC<AdkCopilotDrawerProps> = ({
   open,
   onClose,
   health,
+  user,
   onSelectExperiment
 }) => {
   const [messages, setMessages] = useState<CopilotMessage[]>([
@@ -115,7 +118,7 @@ export const AdkCopilotDrawer: React.FC<AdkCopilotDrawerProps> = ({
               key={q}
               type="button"
               className="btn-ghost"
-              style={{ fontSize: '0.72rem', padding: '4px 8px' }}
+              style={{ fontSize: '0.72rem', padding: '4px 8px', whiteSpace: 'normal', textAlign: 'left' }}
               onClick={() => handleSend(q)}
               disabled={sending}
             >
@@ -138,7 +141,11 @@ export const AdkCopilotDrawer: React.FC<AdkCopilotDrawerProps> = ({
                 }}
               >
                 <span className="mono">
-                  {m.role === 'assistant' ? `ADK · ${m.mode || 'tool_pipeline'}` : 'Operator'}
+                  {m.role === 'assistant'
+                    ? `ADK · ${m.mode || 'tool_pipeline'}`
+                    : user
+                    ? `${user.name} (@${user.username})`
+                    : 'Operator'}
                 </span>
                 <span className="mono">{m.timestamp}</span>
               </div>

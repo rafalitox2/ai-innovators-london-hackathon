@@ -17,6 +17,8 @@ from seed_packs.t02_dynamic_storefronts.guardrails import (
     compute_max_safe_discount_pct,
     contains_injection_marker,
     sanitize_description,
+    scan_args_for_injection,
+    is_quarantined_product,
 )
 from seed_packs.t02_dynamic_storefronts.mcp_server import (
     ACTION_TOOLS,
@@ -96,6 +98,9 @@ def find_catalog_products(
     Returns:
         JSON string with matching products sorted by highest margin percentage.
     """
+    flagged_key = scan_args_for_injection(locals())
+    if flagged_key is not None:
+        return json.dumps({"status": "REJECTED", "error": f"Untrusted instruction marker in {flagged_key}."})
     project, dataset = _resolve_project_and_dataset()
     cat_clean = (category or "all").strip()
     style_clean = (style_theme or "all").strip()
@@ -114,12 +119,12 @@ def find_catalog_products(
                 params.append(bigquery.ScalarQueryParameter("style", "STRING", style_clean))
             where_sql = " AND ".join(clauses)
             sql = (
-                f"SELECT sku_id, product_name, category, style_theme, base_price_eur, "
-                f"stock_qty, margin_pct, hero_asset_status, description "
+                f"SELECT * "
                 f"FROM {table_ref} WHERE {where_sql} ORDER BY margin_pct DESC LIMIT 15"
             )
             cfg = bigquery.QueryJobConfig(query_parameters=params)
             rows = [dict(r.items()) for r in client.query(sql, job_config=cfg).result()]
+            rows = [row for row in rows if not is_quarantined_product(row)]
             for row in rows:
                 row["description"] = sanitize_description(row.get("description"))
             return json.dumps({
@@ -135,7 +140,7 @@ def find_catalog_products(
 
     rows = [
         r for r in _read_local_csv("products_catalog")
-        if int(r["stock_qty"]) >= int(min_stock)
+        if not is_quarantined_product(r) and int(r["stock_qty"]) >= int(min_stock)
         and (cat_clean.lower() == "all" or r["category"].lower() == cat_clean.lower())
         and (style_clean.lower() == "all" or r["style_theme"].lower() == style_clean.lower())
     ]
@@ -162,6 +167,9 @@ def get_storefront_performance(segment_id: str = "SEG-001", limit: int = 10) -> 
     Returns:
         JSON string with storefront experiment metrics for the requested segment.
     """
+    flagged_key = scan_args_for_injection(locals())
+    if flagged_key is not None:
+        return json.dumps({"status": "REJECTED", "error": f"Untrusted instruction marker in {flagged_key}."})
     project, dataset = _resolve_project_and_dataset()
     seg_clean = (segment_id or "all").strip()
     use_offline = os.environ.get("SEED_OFFLINE_MODE", "").lower() in {"1", "true", "yes"}
@@ -215,6 +223,9 @@ def get_audience_segments(region: str = "all") -> str:
     Returns:
         JSON string listing audience segments ordered by conversion rate.
     """
+    flagged_key = scan_args_for_injection(locals())
+    if flagged_key is not None:
+        return json.dumps({"status": "REJECTED", "error": f"Untrusted instruction marker in {flagged_key}."})
     project, dataset = _resolve_project_and_dataset()
     reg_clean = (region or "all").strip()
     use_offline = os.environ.get("SEED_OFFLINE_MODE", "").lower() in {"1", "true", "yes"}
@@ -276,6 +287,9 @@ def recommend_storefront_optimization(
     Returns:
         JSON string with joined segment-experiment-SKU recommendations, margin headroom, and max safe discount cap (<=30%).
     """
+    flagged_key = scan_args_for_injection(locals())
+    if flagged_key is not None:
+        return json.dumps({"status": "REJECTED", "error": f"Untrusted instruction marker in {flagged_key}."})
     try:
         project, dataset = _resolve_project_and_dataset()
         reg_clean = (region or "all").strip()
@@ -316,6 +330,7 @@ def recommend_storefront_optimization(
                 ),
                 top_style_skus AS (
                     SELECT sku_id AS recommended_sku_id,
+                           TO_JSON_STRING(p) AS catalog_security_record,
                            product_name AS recommended_product_name,
                            category AS recommended_category,
                            style_theme,
@@ -327,7 +342,7 @@ def recommend_storefront_optimization(
                                PARTITION BY LOWER(style_theme)
                                ORDER BY margin_pct DESC, stock_qty DESC
                            ) AS rn
-                    FROM {cat_tbl}
+                    FROM {cat_tbl} AS p
                     WHERE stock_qty >= @min_stock
                       AND UPPER(sku_id) != 'SKU-0017'
                       AND NOT REGEXP_CONTAINS(
@@ -347,6 +362,7 @@ def recommend_storefront_optimization(
                     e.layout_variant,
                     e.bounce_rate_pct,
                     e.purchases,
+                    k.catalog_security_record,
                     k.recommended_sku_id,
                     k.recommended_product_name,
                     k.recommended_category,
@@ -364,7 +380,9 @@ def recommend_storefront_optimization(
                 """
                 cfg = bigquery.QueryJobConfig(query_parameters=params)
                 rows = [dict(r.items()) for r in client.query(sql, job_config=cfg).result()]
+                rows = [row for row in rows if not is_quarantined_product(row)]
                 for row in rows:
+                    row.pop("catalog_security_record", None)
                     row["recommended_product_name"] = sanitize_description(
                         str(row.get("recommended_product_name", ""))
                     )
@@ -397,8 +415,7 @@ def recommend_storefront_optimization(
         catalog = [
             p for p in _read_local_csv("products_catalog")
             if int(p["stock_qty"]) >= min_stk
-            and p.get("sku_id", "").strip().upper() != "SKU-0017"
-            and not contains_injection_marker(p.get("description"))
+            and not is_quarantined_product(p)
         ]
         catalog.sort(key=lambda p: (float(p["margin_pct"]), int(p["stock_qty"])), reverse=True)
         top_by_style: dict[str, dict[str, Any]] = {}
@@ -468,6 +485,9 @@ def query_merchandising_knowledge_graph(
     Returns:
         JSON string containing typed knowledge graph nodes, directed relationship edges, quarantined SKUs, and a cross-category bundle with safe discount guardrails.
     """
+    flagged_key = scan_args_for_injection(locals())
+    if flagged_key is not None:
+        return json.dumps({"status": "REJECTED", "error": f"Untrusted instruction marker in {flagged_key}."})
     try:
         from seed_packs.t02_dynamic_storefronts.knowledge_graph import (
             build_segment_knowledge_graph,
@@ -502,8 +522,7 @@ def query_merchandising_knowledge_graph(
                 seg_rows = [dict(r.items()) for r in client.query(seg_sql, job_config=seg_cfg).result()]
 
                 prod_sql = f"""
-                    SELECT sku_id, product_name, category, style_theme, base_price_eur,
-                           margin_pct, stock_qty, description
+                    SELECT *
                     FROM `{project}.{dataset}.products_catalog`
                     WHERE stock_qty >= @min_stock
                       AND margin_pct > @min_margin

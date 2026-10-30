@@ -13,6 +13,10 @@ import {
 } from './services/adkClient';
 import { StorefrontPreviewModal } from './components/StorefrontPreviewModal';
 import { AdkCopilotDrawer } from './components/AdkCopilotDrawer';
+import { GitHubUser } from './types/auth';
+import { getStoredUser, setStoredUser } from './services/authService';
+import { GitHubAuthModal } from './components/GitHubAuthModal';
+import { UserNavProfile } from './components/UserNavProfile';
 
 type TabKey = 'home' | 'queue' | 'wip' | 'pub' | 'res';
 type ItemStateMap = Record<string, ItemState>;
@@ -57,6 +61,9 @@ export const App: React.FC = () => {
   const [items, setItems] = useState<ItemStateMap>(() => ({ ...data.initItems }));
   const [previewExpId, setPreviewExpId] = useState<string | null>(null);
   const [copilotOpen, setCopilotOpen] = useState<boolean>(false);
+  const [theme, setTheme] = useState<'google-light' | 'google-dark'>('google-light');
+  const [currentUser, setCurrentUser] = useState<GitHubUser | null>(() => getStoredUser());
+  const [authModalOpen, setAuthModalOpen] = useState<boolean>(false);
   const [health, setHealth] = useState<AdkHealthResponse>({
     status: 'SUCCESS',
     agent_name: 'expedition_t02',
@@ -73,6 +80,10 @@ export const App: React.FC = () => {
   useEffect(() => {
     fetchAdkHealth().then(setHealth);
   }, []);
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+  }, [theme]);
 
   // Trigger background ADK tool pipeline whenever an item enters 'generating'
   useEffect(() => {
@@ -206,7 +217,7 @@ export const App: React.FC = () => {
   ) => {
     const opp = data.low.find((e) => e.id === expId);
     let resolvedPatch: Partial<ItemState> = { ...(patch || {}) };
-    if (opp && !patch) {
+    if (opp && !patch && !layoutId && !bannerId) {
       const maxSafe = computeMaxSafeDiscountPct(opp.p.marginPct);
       const disc =
         items[expId]?.discountPct ??
@@ -230,7 +241,9 @@ export const App: React.FC = () => {
         discount_pct: disc,
         banner_copy: bannerCopy,
         sku_id: opp.p.sku,
-        hero_asset_url: heroAssetUrl
+        hero_asset_url: heroAssetUrl,
+        published_by: currentUser ? currentUser.username : 'rafalitox2',
+        published_by_avatar: currentUser?.avatar_url
       });
       resolvedPatch = {
         discountPct: disc,
@@ -254,7 +267,9 @@ export const App: React.FC = () => {
         status: 'published',
         day: prev[expId]?.day ?? 20,
         progress: 1,
-        opened: true
+        opened: true,
+        publishedBy: currentUser ? `@${currentUser.username}` : prev[expId]?.publishedBy,
+        publishedByAvatar: currentUser?.avatar_url || prev[expId]?.publishedByAvatar
       }
     }));
   };
@@ -423,6 +438,7 @@ export const App: React.FC = () => {
 
   return (
     <div className="app-shell">
+      <div className="google-ribbon" aria-hidden="true" />
       {/* Header */}
       <header className="app-header">
         <div className="brand-group">
@@ -430,6 +446,9 @@ export const App: React.FC = () => {
           <span className="brand-title">AtelierNova Home &amp; Lifestyle</span>
           <span className="brand-sep">/</span>
           <span className="brand-sub">Dynamic Storefronts</span>
+          <span className="google-cloud-pill">
+            <span>✦</span> Google Cloud · Vertex AI ADK
+          </span>
         </div>
 
         <div className="header-controls">
@@ -444,13 +463,32 @@ export const App: React.FC = () => {
             </span>
           </div>
 
+          <UserNavProfile
+            user={currentUser}
+            onOpenAuthModal={() => setAuthModalOpen(true)}
+            onSignOut={() => {
+              setStoredUser(null);
+              setCurrentUser(null);
+            }}
+          />
+
           <button
             type="button"
             className="btn-ghost"
-            onClick={() => setCopilotOpen(true)}
-            style={{ borderColor: 'var(--color-border)' }}
+            onClick={() =>
+              setTheme((t) => (t === 'google-light' ? 'google-dark' : 'google-light'))
+            }
+            title="Switch between Google Daylight and Gemini Dark Studio"
           >
-            ADK Copilot
+            {theme === 'google-light' ? '🌙 Gemini Dark' : '☀️ Google Light'}
+          </button>
+
+          <button
+            type="button"
+            className="btn-ghost btn-gemini"
+            onClick={() => setCopilotOpen(true)}
+          >
+            ✦ ADK Copilot
           </button>
 
           <button
@@ -464,7 +502,7 @@ export const App: React.FC = () => {
             <span
               className="switch-track"
               style={{
-                background: autoApprove ? 'var(--color-accent-600)' : 'var(--color-neutral-700)'
+                background: autoApprove ? 'var(--color-accent-600)' : 'var(--color-neutral-600)'
               }}
             >
               <span
@@ -507,16 +545,8 @@ export const App: React.FC = () => {
       <main className="app-main">
         {/* 01 OVERVIEW */}
         {tab === 'home' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-10)' }}>
-            <section
-              className="card lighten"
-              style={{
-                padding: 'var(--space-6)',
-                background:
-                  'radial-gradient(560px 260px at 85% 20%, var(--color-section-ghost), transparent 70%), linear-gradient(160deg, var(--color-surface), var(--color-bg-subtle))',
-                border: '1px solid var(--color-border)'
-              }}
-            >
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-8)' }}>
+            <section className="card hero-google-card">
               <div
                 style={{
                   display: 'flex',
@@ -526,41 +556,40 @@ export const App: React.FC = () => {
                   gap: 'var(--space-6)'
                 }}
               >
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
-                  <span
-                    className="mono"
-                    style={{
-                      fontSize: '0.6875rem',
-                      letterSpacing: '0.1em',
-                      textTransform: 'uppercase',
-                      color: 'var(--color-accent)'
-                    }}
-                  >
-                    01 Overview · Table 2 Dynamic Storefront Engine
-                  </span>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)', maxWidth: 760 }}>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8 }}>
+                    <span className="google-cloud-pill">
+                      ✦ 01 Overview · Table 2 Dynamic Storefront Engine
+                    </span>
+                    <span className="tag tag-neutral mono">BigQuery EU · seed_t02</span>
+                    <span className="tag tag-neutral mono">FastMCP · {health.tools.length || 14} Tools</span>
+                    <span className="tag tag-success mono">Guardrails · ≤30% &amp; SKU-0017</span>
+                  </div>
                   <h1
                     style={{
-                      fontSize: 'clamp(1.375rem, 2.2vw, 1.875rem)',
-                      fontWeight: 500,
+                      fontFamily: 'var(--font-heading)',
+                      fontSize: 'clamp(1.625rem, 2.5vw, 2.25rem)',
+                      fontWeight: 600,
                       letterSpacing: '-0.025em',
+                      lineHeight: 1.15,
                       margin: 0
                     }}
                   >
                     One layout for every shopper is costing conversion.
                   </h1>
-                  <p style={{ margin: 0, fontSize: '0.875rem' }}>
+                  <p style={{ margin: 0, fontSize: '0.9375rem', color: 'var(--color-text-secondary)' }}>
                     Continuous BigQuery telemetry across 120 A/B storefront experiments identifies
-                    high-bounce segment × SKU mismatches, generates localized hero lifestyle assets,
-                    and enforces strict ≤30% discount and ≥15pt margin guardrails.
+                    high-bounce segment × SKU mismatches, generates localized hero lifestyle assets via
+                    Vertex AI multimodal models, and enforces strict ≤30% discount and ≥15pt margin guardrails.
                   </p>
                 </div>
-                <div style={{ display: 'flex', gap: 'var(--space-3)' }}>
+                <div className="hero-actions">
                   <button
                     type="button"
-                    className="btn-ghost"
+                    className="btn-ghost btn-gemini"
                     onClick={() => setCopilotOpen(true)}
                   >
-                    Ask ADK Copilot
+                    ✦ Ask ADK Copilot
                   </button>
                   <button
                     type="button"
@@ -637,7 +666,7 @@ export const App: React.FC = () => {
         {tab === 'queue' && (
           <section>
             <div className="section-head">
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: 'var(--space-3)' }}>
+              <div style={{ display: 'flex', alignItems: 'baseline', flexWrap: 'wrap', gap: 'var(--space-3)' }}>
                 <h2 className="section-title">Optimization queue</h2>
                 <span className="section-sub">
                   Ranked by views × price × margin × bounce · {pendingList.length} pending approval
@@ -757,7 +786,7 @@ export const App: React.FC = () => {
         {tab === 'wip' && (
           <section>
             <div className="section-head">
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: 'var(--space-3)' }}>
+              <div style={{ display: 'flex', alignItems: 'baseline', flexWrap: 'wrap', gap: 'var(--space-3)' }}>
                 <h2 className="section-title">Work in progress</h2>
                 <span className="section-sub">
                   Open the generated storefront preview before approving for publication
@@ -901,7 +930,7 @@ export const App: React.FC = () => {
         {tab === 'pub' && (
           <section>
             <div className="section-head">
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: 'var(--space-3)' }}>
+              <div style={{ display: 'flex', alignItems: 'baseline', flexWrap: 'wrap', gap: 'var(--space-3)' }}>
                 <h2 className="section-title">Published storefronts</h2>
                 <span className="section-sub">
                   {pubList.length} storefront variants live · estimated added revenue{' '}
@@ -948,7 +977,35 @@ export const App: React.FC = () => {
                         onClick={() => handleOpenPreview(e.id)}
                         title="Click to inspect storefront preview"
                       >
-                        <td className="muted num">{data.days[dayIdx]}</td>
+                        <td className="muted num">
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                            <span>{data.days[dayIdx]}</span>
+                            {items[e.id]?.publishedBy ? (
+                              <span
+                                style={{
+                                  fontSize: '0.6875rem',
+                                  color: 'var(--color-accent-300)',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: 4
+                                }}
+                              >
+                                {items[e.id]?.publishedByAvatar && (
+                                  <img
+                                    src={items[e.id]?.publishedByAvatar}
+                                    alt=""
+                                    style={{ width: 12, height: 12, borderRadius: '50%' }}
+                                  />
+                                )}
+                                {items[e.id]?.publishedBy}
+                              </span>
+                            ) : (
+                              <span style={{ fontSize: '0.6875rem', color: 'var(--color-neutral-500)' }}>
+                                @ateliernova-bot
+                              </span>
+                            )}
+                          </div>
+                        </td>
                         <td>
                           <div style={{ display: 'flex', flexDirection: 'column' }}>
                             <span>{e.p.name}</span>
@@ -983,7 +1040,7 @@ export const App: React.FC = () => {
         {tab === 'res' && (
           <section>
             <div className="section-head">
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: 'var(--space-3)' }}>
+              <div style={{ display: 'flex', alignItems: 'baseline', flexWrap: 'wrap', gap: 'var(--space-3)' }}>
                 <h2 className="section-title">Performance over time</h2>
                 <span className="section-sub">
                   {data.days[0]} – {data.days[data.days.length - 1]} 2026
@@ -1132,6 +1189,7 @@ export const App: React.FC = () => {
           itemState={items[previewOpportunity.id]}
           allProducts={data.products}
           discountCap={DISCOUNT_CAP}
+          user={currentUser}
           onClose={() => setPreviewExpId(null)}
           onPublished={(expId, layoutId, bannerId, patch) =>
             handlePublishOpportunity(expId, layoutId, bannerId, patch)
@@ -1145,8 +1203,18 @@ export const App: React.FC = () => {
         open={copilotOpen}
         onClose={() => setCopilotOpen(false)}
         health={health}
+        user={currentUser}
         onSelectExperiment={(expId) => {
           handleOpenPreview(expId);
+        }}
+      />
+
+      {/* GitHub Authentication Modal */}
+      <GitHubAuthModal
+        isOpen={authModalOpen}
+        onClose={() => setAuthModalOpen(false)}
+        onLoginSuccess={(user) => {
+          setCurrentUser(user);
         }}
       />
     </div>

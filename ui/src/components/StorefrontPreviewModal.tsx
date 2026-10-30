@@ -5,6 +5,7 @@ import {
   ItemState,
   ProductItem
 } from '../data/seedData';
+import { GitHubUser } from '../types/auth';
 import {
   A2ASyncResult,
   publishStorefrontOpportunity,
@@ -18,6 +19,7 @@ interface StorefrontPreviewModalProps {
   itemState?: ItemState;
   allProducts: ProductItem[];
   discountCap?: number;
+  user?: GitHubUser | null;
   onClose: () => void;
   onPublished: (
     expId: string,
@@ -40,6 +42,7 @@ export const StorefrontPreviewModal: React.FC<StorefrontPreviewModalProps> = ({
   itemState,
   allProducts,
   discountCap = 30,
+  user,
   onClose,
   onPublished,
   onUpdateItemState
@@ -191,7 +194,9 @@ export const StorefrontPreviewModal: React.FC<StorefrontPreviewModalProps> = ({
       discount_pct: discountPct,
       banner_copy: promoText,
       sku_id: activeProduct.sku,
-      hero_asset_url: heroAssetSrc
+      hero_asset_url: heroAssetSrc,
+      published_by: user ? user.username : 'rafalitox2',
+      published_by_avatar: user?.avatar_url
     });
     setPublishing(false);
     if (res.status !== 'SUCCESS') {
@@ -213,97 +218,61 @@ export const StorefrontPreviewModal: React.FC<StorefrontPreviewModalProps> = ({
 
   return (
     <div
+      className="modal-backdrop"
       onClick={onClose}
-      style={{
-        position: 'fixed',
-        inset: 0,
-        zIndex: 50,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: 'var(--space-8)',
-        background: 'color-mix(in srgb, var(--color-bg) 78%, transparent)'
-      }}
     >
       <div
+        className="modal-card"
         onClick={(ev) => ev.stopPropagation()}
-        style={{
-          width: 'min(900px, 100%)',
-          maxHeight: '92vh',
-          overflow: 'auto',
-          background: 'var(--color-surface)',
-          borderRadius: 'var(--radius-lg)',
-          boxShadow: 'var(--shadow-lg)',
-          display: 'flex',
-          flexDirection: 'column'
-        }}
       >
+        <div className="google-ribbon" aria-hidden="true" />
         {/* Top Modal Bar */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 'var(--space-4)',
-            padding: 'var(--space-4) var(--space-6)'
-          }}
-        >
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 2, marginRight: 'auto' }}>
+        <div className="modal-topbar">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 2, marginRight: 'auto', minWidth: 0 }}>
             <span
+              className="mono"
               style={{
-                fontSize: 10,
-                letterSpacing: '0.1em',
+                fontSize: 11,
+                fontWeight: 600,
+                letterSpacing: '0.06em',
                 textTransform: 'uppercase',
-                color: 'var(--color-accent)'
+                color: 'var(--color-accent)',
+                overflowWrap: 'anywhere'
               }}
             >
-              Storefront variant · {e.layout} · ui://storefront-preview/{e.g.id}
+              ✦ Storefront variant · {e.layout} · ui://storefront-preview/{e.g.id}
             </span>
-            <span style={{ fontSize: 15, fontWeight: 500 }}>
+            <span style={{ fontSize: 16, fontWeight: 600 }}>
               {e.id} · {e.g.label}
             </span>
           </div>
-          <button
-            type="button"
-            className="btn btn-secondary"
-            disabled={recreatingHero}
-            onClick={handleRecreateHeroImage}
-          >
-            {recreatingHero ? 'Recreating image…' : 'Recreate image'}
-          </button>
-          <button type="button" className="btn btn-ghost" onClick={onClose}>
-            Close
-          </button>
-          <button
-            type="button"
-            className="btn btn-primary"
-            disabled={publishing || guardrail.status !== 'SUCCESS'}
-            onClick={handleApproveAndPublish}
-          >
-            {publishing ? 'Publishing…' : 'Approve & publish'}
-          </button>
+          <div className="modal-topbar-actions">
+            <button
+              type="button"
+              className="btn btn-secondary"
+              disabled={recreatingHero}
+              onClick={handleRecreateHeroImage}
+            >
+              {recreatingHero ? 'Recreating image…' : '✦ Recreate image'}
+            </button>
+            <button type="button" className="btn btn-ghost" onClick={onClose}>
+              Close
+            </button>
+            <button
+              type="button"
+              className="btn btn-primary"
+              disabled={publishing || guardrail.status !== 'SUCCESS'}
+              onClick={handleApproveAndPublish}
+            >
+              {publishing ? 'Publishing…' : 'Approve & publish'}
+            </button>
+          </div>
         </div>
 
         {/* Storefront Live Preview Frame */}
-        <div
-          style={{
-            margin: '0 var(--space-6) var(--space-4)',
-            borderRadius: 'var(--radius-md)',
-            background: 'var(--color-bg)',
-            boxShadow: 'var(--shadow-sm)',
-            overflow: 'hidden'
-          }}
-        >
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 'var(--space-6)',
-              padding: '10px 16px',
-              fontSize: 12,
-              color: 'var(--color-neutral-300)'
-            }}
-          >
-            <span style={{ fontWeight: 500, color: 'var(--color-text)', marginRight: 'auto' }}>
+        <div className="modal-preview-frame">
+          <div className="modal-store-nav">
+            <span style={{ fontWeight: 600, color: 'var(--color-text)', marginRight: 'auto' }}>
               AtelierNova
             </span>
             <span>{activeProduct.cat.replace(/_/g, ' ')}</span>
@@ -316,18 +285,19 @@ export const StorefrontPreviewModal: React.FC<StorefrontPreviewModalProps> = ({
               padding: '8px 16px',
               textAlign: 'center',
               fontSize: 12,
+              fontWeight: 500,
               background:
                 guardrail.status === 'SUCCESS'
-                  ? 'var(--color-accent-900)'
-                  : 'color-mix(in srgb, var(--color-danger) 28%, var(--color-bg))',
+                  ? 'var(--color-accent-100)'
+                  : 'var(--color-danger-bg)',
               color:
-                guardrail.status === 'SUCCESS' ? 'var(--color-accent-200)' : '#f6b8bb'
+                guardrail.status === 'SUCCESS' ? 'var(--color-accent)' : 'var(--color-danger-text)'
             }}
           >
             {promoText}
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(260px, 100%), 1fr))' }}>
             <div
               style={{
                 minHeight: 260,
@@ -336,8 +306,8 @@ export const StorefrontPreviewModal: React.FC<StorefrontPreviewModalProps> = ({
                 alignItems: 'flex-end',
                 padding: 16,
                 background:
-                  'radial-gradient(400px 260px at 70% 30%, var(--color-section-ghost), transparent 70%), linear-gradient(160deg, var(--color-section), var(--color-neutral-900))',
-                color: 'var(--color-neutral-300)',
+                  'radial-gradient(400px 260px at 70% 30%, rgba(66,133,244,0.28), transparent 70%), linear-gradient(160deg, #1b263b, #0f172a)',
+                color: '#f8fafd',
                 fontSize: 11,
                 overflow: 'hidden'
               }}
@@ -354,7 +324,7 @@ export const StorefrontPreviewModal: React.FC<StorefrontPreviewModalProps> = ({
                     width: '100%',
                     height: '100%',
                     objectFit: 'cover',
-                    opacity: 0.85
+                    opacity: 0.92
                   }}
                 />
               )}
@@ -365,10 +335,14 @@ export const StorefrontPreviewModal: React.FC<StorefrontPreviewModalProps> = ({
                   width: '100%',
                   display: 'flex',
                   flexDirection: 'column',
-                  gap: 6
+                  gap: 6,
+                  background: 'rgba(15, 23, 42, 0.72)',
+                  backdropFilter: 'blur(8px)',
+                  padding: '8px 12px',
+                  borderRadius: 'var(--radius-sm)'
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
                   <span>
                     Hero lifestyle render (v{heroVariationIdx}) · {activeProduct.theme.replace(/_/g, ' ')} ·{' '}
                     {activeProduct.name}
@@ -387,8 +361,8 @@ export const StorefrontPreviewModal: React.FC<StorefrontPreviewModalProps> = ({
                   <span
                     style={{
                       fontSize: 10,
-                      color: 'var(--color-neutral-300)',
-                      background: 'color-mix(in srgb, var(--color-bg) 82%, transparent)',
+                      color: '#e2e8f0',
+                      background: 'rgba(15, 23, 42, 0.85)',
                       padding: '6px 8px',
                       borderRadius: 'var(--radius-sm)'
                     }}
@@ -399,15 +373,7 @@ export const StorefrontPreviewModal: React.FC<StorefrontPreviewModalProps> = ({
               </div>
             </div>
 
-            <div
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'center',
-                gap: 12,
-                padding: 28
-              }}
-            >
+            <div className="modal-hero-copy">
               <span
                 style={{
                   fontSize: 10,
@@ -418,7 +384,7 @@ export const StorefrontPreviewModal: React.FC<StorefrontPreviewModalProps> = ({
               >
                 {activeProduct.theme.replace(/_/g, ' ')} edit
               </span>
-              <span style={{ fontSize: 26, fontWeight: 500, lineHeight: 1.15 }}>
+              <span style={{ fontSize: 'clamp(1.25rem, 3vw, 1.625rem)', fontWeight: 500, lineHeight: 1.15 }}>
                 {headline}
               </span>
               <span style={{ fontSize: 13, color: 'var(--color-neutral-400)', lineHeight: 1.5 }}>
@@ -504,17 +470,7 @@ export const StorefrontPreviewModal: React.FC<StorefrontPreviewModalProps> = ({
         </div>
 
         {/* Interactive ADK Guardrail & Sister Table 1 A2A Controls */}
-        <div
-          style={{
-            margin: '0 var(--space-6) var(--space-4)',
-            padding: 'var(--space-4) var(--space-6)',
-            borderRadius: 'var(--radius-md)',
-            background: 'var(--color-neutral-900)',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 'var(--space-4)'
-          }}
-        >
+        <div className="modal-guardrails">
           <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', flexWrap: 'wrap' }}>
             <span
               style={{
@@ -539,7 +495,7 @@ export const StorefrontPreviewModal: React.FC<StorefrontPreviewModalProps> = ({
           <div
             style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(min(190px, 100%), 1fr))',
               gap: 'var(--space-4)'
             }}
           >
@@ -614,12 +570,12 @@ export const StorefrontPreviewModal: React.FC<StorefrontPreviewModalProps> = ({
               <span style={{ fontSize: 12, color: 'var(--color-neutral-300)' }}>
                 Channel ({channel})
               </span>
-              <div style={{ display: 'flex', gap: 8 }}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                 <select
                   className="select"
                   value={channel}
                   onChange={(ev) => setChannel(ev.target.value)}
-                  style={{ padding: '6px 8px', fontSize: 12, width: 'auto' }}
+                  style={{ padding: '6px 8px', fontSize: 12, width: 'auto', flex: '1 1 110px' }}
                 >
                   <option value="Meta_Reels">Meta_Reels</option>
                   <option value="TikTok_Pulse">TikTok_Pulse</option>
@@ -628,7 +584,7 @@ export const StorefrontPreviewModal: React.FC<StorefrontPreviewModalProps> = ({
                 <button
                   type="button"
                   className="btn btn-secondary"
-                  style={{ padding: '6px 12px', fontSize: 12 }}
+                  style={{ padding: '6px 12px', fontSize: 12, flex: '1 1 auto' }}
                   disabled={a2aLoading}
                   onClick={handleA2ASync}
                 >
@@ -693,17 +649,7 @@ export const StorefrontPreviewModal: React.FC<StorefrontPreviewModalProps> = ({
         </div>
 
         {/* Footer Metadata Bar matching Prototype */}
-        <div
-          style={{
-            display: 'flex',
-            gap: 'var(--space-8)',
-            flexWrap: 'wrap',
-            padding: '0 var(--space-6) var(--space-6)',
-            fontSize: 12,
-            color: 'var(--color-neutral-400)'
-          }}
-          className="tabular-nums"
-        >
+        <div className="modal-footer-meta tabular-nums">
           <span>SKU {activeProduct.sku}</span>
           <span>Margin {activeProduct.marginPct.toFixed(1)}%</span>
           <span>Net Margin {guardrail.net_margin_pct.toFixed(1)}%</span>
@@ -711,7 +657,7 @@ export const StorefrontPreviewModal: React.FC<StorefrontPreviewModalProps> = ({
           <span
             style={{
               color:
-                guardrail.status === 'SUCCESS' ? 'var(--color-neutral-400)' : '#f6b8bb'
+                guardrail.status === 'SUCCESS' ? 'var(--color-neutral-400)' : 'var(--color-danger-text)'
             }}
           >
             {guardrail.reason}
