@@ -27,10 +27,11 @@ from seed_packs.t02_dynamic_storefronts.guardrails import (
     MAX_DISCOUNT_PCT,
     compute_max_safe_discount_pct,
     contains_injection_marker,
+    is_quarantined_product,
+    QUARANTINED_SKU_IDS,
     sanitize_description,
 )
 
-QUARANTINED_SKU_IDS = ("SKU-0017",)
 MIN_MARGIN_BUFFER_PCT = 10.0
 
 NODE_ID_NAMESPACES: dict[str, str] = {
@@ -97,13 +98,7 @@ STYLE_AFFINITY_GRAPH: dict[str, list[tuple[str, float, str]]] = {
 
 
 def _is_poisoned_product(row: dict[str, Any]) -> bool:
-    sku_id = str(row.get("sku_id", "")).strip().upper()
-    if sku_id in QUARANTINED_SKU_IDS:
-        return True
-    for field in ("sku_id", "product_name", "category", "style_theme", "description"):
-        if contains_injection_marker(str(row.get(field, ""))):
-            return True
-    return False
+    return is_quarantined_product(row)
 
 
 def build_segment_knowledge_graph(
