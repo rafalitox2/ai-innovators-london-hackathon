@@ -1050,24 +1050,22 @@ class NocturneUiController:
             sku_clean = "".join(c for c in sku_id if c.isalnum() or c in "-_").strip()
             theme_clean = "".join(c for c in style_theme if c.isalnum() or c in "-_").strip()
 
-            existing_candidates = [
-                self.service.ui_dir / f"hero_{seg_clean}{ext}"
-                for ext in (".png", ".svg")
-                if (self.service.ui_dir / f"hero_{seg_clean}{ext}").exists()
-            ]
-            if existing_candidates:
-                newest = max(existing_candidates, key=lambda p: p.stat().st_mtime)
-                media = "image/png" if newest.suffix.lower() == ".png" else "image/svg+xml"
-                if not sku_clean:
-                    return Response(content=newest.read_bytes(), media_type=media)
-                if newest.suffix.lower() == ".svg":
-                    svg_upper = newest.read_text(encoding="utf-8", errors="ignore").upper()
-                    if sku_clean.upper() in svg_upper and (
-                        not theme_clean or theme_clean.upper() in svg_upper
-                    ):
-                        return Response(content=newest.read_bytes(), media_type=media)
-
+            # 1. When a specific SKU is requested, prioritize SKU-specific assets
             if sku_clean:
+                sku_ui_candidates = [
+                    self.service.ui_dir / f"hero_{sku_clean}_{seg_clean}{ext}"
+                    for ext in (".png", ".svg")
+                    if (self.service.ui_dir / f"hero_{sku_clean}_{seg_clean}{ext}").exists()
+                ]
+                if sku_ui_candidates:
+                    newest_sku = max(sku_ui_candidates, key=lambda p: p.stat().st_mtime)
+                    media = "image/png" if newest_sku.suffix.lower() == ".png" else "image/svg+xml"
+                    return Response(
+                        content=newest_sku.read_bytes(),
+                        media_type=media,
+                        headers={"Cache-Control": "no-cache, must-revalidate"}
+                    )
+
                 tmp_candidates = [
                     Path(f"/tmp/t02_hero_{sku_clean}_{seg_clean}{ext}")
                     for ext in (".png", ".svg")
@@ -1077,10 +1075,34 @@ class NocturneUiController:
                     newest_tmp = max(tmp_candidates, key=lambda p: p.stat().st_mtime)
                     media_tmp = "image/png" if newest_tmp.suffix.lower() == ".png" else "image/svg+xml"
                     if newest_tmp.suffix.lower() == ".png":
-                        return Response(content=newest_tmp.read_bytes(), media_type=media_tmp)
+                        return Response(
+                            content=newest_tmp.read_bytes(),
+                            media_type=media_tmp,
+                            headers={"Cache-Control": "no-cache, must-revalidate"}
+                        )
                     svg_tmp_upper = newest_tmp.read_text(encoding="utf-8", errors="ignore").upper()
                     if not theme_clean or theme_clean.upper() in svg_tmp_upper:
-                        return Response(content=newest_tmp.read_bytes(), media_type=media_tmp)
+                        return Response(
+                            content=newest_tmp.read_bytes(),
+                            media_type=media_tmp,
+                            headers={"Cache-Control": "no-cache, must-revalidate"}
+                        )
+
+            # 2. When no SKU requested, check segment-level cached assets in ui/
+            if not sku_clean:
+                existing_candidates = [
+                    self.service.ui_dir / f"hero_{seg_clean}{ext}"
+                    for ext in (".png", ".svg")
+                    if (self.service.ui_dir / f"hero_{seg_clean}{ext}").exists()
+                ]
+                if existing_candidates:
+                    newest = max(existing_candidates, key=lambda p: p.stat().st_mtime)
+                    media = "image/png" if newest.suffix.lower() == ".png" else "image/svg+xml"
+                    return Response(
+                        content=newest.read_bytes(),
+                        media_type=media,
+                        headers={"Cache-Control": "no-cache, must-revalidate"}
+                    )
 
             raw_products = self.service.read_csv("products_catalog")
             raw_segments = self.service.read_csv("audience_segments")
@@ -1140,9 +1162,19 @@ class NocturneUiController:
             asset_path_str = res.get("render_job", {}).get("ui_asset_path") or res.get("render_job", {}).get("asset_path")
             if asset_path_str and Path(asset_path_str).exists():
                 asset_path = Path(asset_path_str)
+                try:
+                    sku_ui_file = self.service.ui_dir / f"hero_{resolved_sku}_{seg_clean}{asset_path.suffix}"
+                    if not sku_ui_file.exists():
+                        sku_ui_file.write_bytes(asset_path.read_bytes())
+                except Exception:
+                    pass
                 suffix = asset_path.suffix.lower()
                 media = "image/png" if suffix == ".png" else "image/svg+xml"
-                return Response(content=asset_path.read_bytes(), media_type=media)
+                return Response(
+                    content=asset_path.read_bytes(),
+                    media_type=media,
+                    headers={"Cache-Control": "no-cache, must-revalidate"}
+                )
 
             raise HTTPException(status_code=404, detail=f"Hero asset for {seg_clean} not found")
 
@@ -1176,8 +1208,17 @@ class NocturneUiController:
             job = res.get("render_job", {})
             ui_asset_path = job.get("ui_asset_path") or job.get("asset_path") or ""
             if ui_asset_path:
-                res["ui_filename"] = Path(ui_asset_path).name
-                res["hero_asset_url"] = f"/ui/{Path(ui_asset_path).name}"
+                asset_file = Path(ui_asset_path)
+                sku_clean = "".join(c for c in req.sku_id if c.isalnum() or c in "-_").strip()
+                seg_clean = "".join(c for c in req.segment_id if c.isalnum() or c in "-_").strip()
+                if sku_clean and seg_clean and asset_file.exists():
+                    try:
+                        sku_ui_file = self.service.ui_dir / f"hero_{sku_clean}_{seg_clean}{asset_file.suffix}"
+                        sku_ui_file.write_bytes(asset_file.read_bytes())
+                    except Exception:
+                        pass
+                res["ui_filename"] = asset_file.name
+                res["hero_asset_url"] = f"/api/assets/hero/{req.segment_id}?sku_id={req.sku_id}&style_theme={req.style_theme}"
             return res
 
         @app.post("/api/chat")
