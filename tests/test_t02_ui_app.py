@@ -286,6 +286,11 @@ def test_ui_mobile_responsive_breakpoints_and_modal_classes() -> None:
         ".modal-guardrails",
         ".modal-footer-meta",
         ".hero-actions",
+        ".auth-dialog-card",
+        ".auth-team-grid",
+        ".auth-custom-form",
+        ".auth-footer",
+        ".user-nav-dropdown",
     ):
         assert responsive_token in css_text, (
             f"Missing mobile responsive token/class {responsive_token!r} in nocturne.css"
@@ -308,6 +313,30 @@ def test_ui_mobile_responsive_breakpoints_and_modal_classes() -> None:
         assert modal_cls in modal_text, (
             f"Expected StorefrontPreviewModal.tsx to use responsive class {modal_cls!r}"
         )
+
+    auth_modal_text = (ui_root / "src" / "components" / "GitHubAuthModal.tsx").read_text(
+        encoding="utf-8"
+    )
+    for auth_cls in (
+        "auth-dialog-card",
+        "auth-team-grid",
+        "auth-custom-form",
+        "auth-footer",
+    ):
+        assert auth_cls in auth_modal_text, (
+            f"Expected GitHubAuthModal.tsx to use responsive class {auth_cls!r}"
+        )
+
+    user_nav_text = (ui_root / "src" / "components" / "UserNavProfile.tsx").read_text(
+        encoding="utf-8"
+    )
+    assert "user-nav-dropdown" in user_nav_text
+
+    template_text = (
+        REPO_ROOT / "seed_packs" / "t02_dynamic_storefronts" / "ui" / "template.html"
+    ).read_text(encoding="utf-8")
+    assert "@media (max-width: 768px)" in template_text
+    assert "@media (max-width: 480px)" in template_text
 
     app_text = (ui_root / "src" / "App.tsx").read_text(encoding="utf-8")
     assert "hero-actions" in app_text
