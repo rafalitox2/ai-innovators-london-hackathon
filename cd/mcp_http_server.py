@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+from datetime import datetime, timezone
 import json
 import os
 from pathlib import Path
 from typing import Any
+import uuid
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -14,11 +16,12 @@ from starlette.responses import HTMLResponse, JSONResponse, Response
 import uvicorn
 
 from app.loader import resolve_env_config
-from app.ui_server import UI_DIST_DIR, register_ui_routes
+from app.ui_server import UI_DIST_DIR, _run_adk_or_fallback_chat, register_ui_routes
 from seed_packs.t02_dynamic_storefronts.mcp_server import (
     MCP_TOOLS,
     mcp,
     render_storefront_preview,
+    sync_campaign_with_t01,
 )
 from seed_packs.t02_dynamic_storefronts.tools import TOOLS as ADK_TOOLS
 
@@ -83,9 +86,20 @@ def build_a2a_agent_card(base_url: str = "") -> dict[str, Any]:
             "deterministic 30% discount / 10% margin guardrails, and Table 1 A2A campaign sync."
         ),
         "version": "1.0.0",
+        "protocolVersion": "0.2.5",
         "tribe": "Creative AI & AdTech",
         "url": f"{clean_base}/a2a",
+        "supportedInterfaces": [
+            {
+                "url": f"{clean_base}/a2a",
+                "protocolBinding": "JSONRPC",
+                "protocolVersion": "1.0",
+            }
+        ],
+        "defaultInputModes": ["text", "text/plain", "application/json"],
+        "defaultOutputModes": ["text", "text/plain", "application/json"],
         "mcp_sse_endpoint": f"{clean_base}/sse",
+        "a2a_sync_endpoint": f"{clean_base}/api/a2a/sync",
         "storefront_preview_endpoint": f"{clean_base}/preview/SEG-001",
         "reasoning_engine_resource": reasoning_engine,
         "capabilities": {
@@ -146,7 +160,10 @@ async def healthz_endpoint(request: Request) -> JSONResponse:
                 "api_dashboard": f"{base_url}/api/dashboard",
                 "mcp_sse": f"{base_url}/sse",
                 "mcp_messages": f"{base_url}/messages",
+                "a2a_endpoint": f"{base_url}/a2a",
+                "a2a_sync": f"{base_url}/api/a2a/sync",
                 "a2a_agent_card": f"{base_url}/.well-known/agent.json",
+                "a2a_agent_card_v2": f"{base_url}/.well-known/agent-card.json",
                 "storefront_preview": f"{base_url}/preview/SEG-001",
             },
         }
@@ -162,9 +179,153 @@ async def root_ui_or_health_endpoint(request: Request) -> Response:
 
 
 async def agent_card_endpoint(request: Request) -> JSONResponse:
-    """Serve /.well-known/agent.json for A2A & Google Cloud Agent Registry discovery."""
+    """Serve /.well-known/agent.json and /.well-known/agent-card.json for A2A & Agent Registry discovery."""
     base_url = _resolve_public_base_url(request)
     return JSONResponse(build_a2a_agent_card(base_url=base_url))
+
+
+def _extract_a2a_text(params: dict[str, Any]) -> str:
+    """Extract plain text from an A2A JSON-RPC message/send or tasks/send params object."""
+    msg = params.get("message") or {}
+    if isinstance(msg, dict):
+        parts = msg.get("parts") or []
+        texts: list[str] = []
+        for part in parts:
+            if isinstance(part, dict):
+                if part.get("text"):
+                    texts.append(str(part["text"]))
+                elif part.get("data"):
+                    texts.append(json.dumps(part["data"]))
+        if texts:
+            return "\n".join(texts)
+    for key in ("text", "prompt", "query", "input"):
+        if params.get(key):
+            return str(params[key])
+    return ""
+
+
+async def a2a_endpoint(request: Request) -> JSONResponse:
+    """Handle A2A Discovery (GET /a2a), A2A JSON-RPC 2.0 (POST /a2a), and Tribe A2A Handshake payloads."""
+    base_url = _resolve_public_base_url(request)
+    if request.method == "GET":
+        return JSONResponse(build_a2a_agent_card(base_url=base_url))
+
+    try:
+        raw_bytes = await request.body()
+        body: dict[str, Any] = json.loads(raw_bytes.decode("utf-8")) if raw_bytes else {}
+    except Exception as exc:
+        return JSONResponse(
+            {"status": "ERROR", "error": f"Invalid JSON payload: {exc}"},
+            status_code=400,
+        )
+
+    # 1. Standard A2A JSON-RPC 2.0 envelope (e.g. google-adk RemoteA2aAgent / a2a-sdk)
+    if isinstance(body, dict) and "jsonrpc" in body:
+        rpc_id = body.get("id", "a2a-1")
+        method = str(body.get("method") or "message/send")
+        params = body.get("params") if isinstance(body.get("params"), dict) else {}
+
+        if method in ("agent/authenticatedExtendedCard", "agent/card", "agent.getCard"):
+            return JSONResponse(
+                {
+                    "jsonrpc": "2.0",
+                    "id": rpc_id,
+                    "result": build_a2a_agent_card(base_url=base_url),
+                }
+            )
+
+        text_query = _extract_a2a_text(params) or "Optimize storefront and synchronize campaign with Table 1"
+        context_id = str(
+            params.get("contextId")
+            or (params.get("message") or {}).get("contextId")
+            or params.get("sessionId")
+            or "a2a-t01-t02-session"
+        )
+        chat_res = await _run_adk_or_fallback_chat(
+            message=text_query,
+            session_id=context_id,
+            user_id="a2a-peer-agent",
+        )
+        reply_text = str(chat_res.get("reply") or "")
+        msg_id = f"msg-{uuid.uuid4().hex[:12]}"
+        task_id = str(params.get("id") or f"task-{uuid.uuid4().hex[:12]}")
+        agent_msg = {
+            "kind": "message",
+            "messageId": msg_id,
+            "role": "agent",
+            "contextId": context_id,
+            "parts": [{"kind": "text", "text": reply_text}],
+        }
+        return JSONResponse(
+            {
+                "jsonrpc": "2.0",
+                "id": rpc_id,
+                "result": {
+                    "kind": "task",
+                    "id": task_id,
+                    "contextId": context_id,
+                    "status": {
+                        "state": "completed",
+                        "timestamp": datetime.now(timezone.utc).isoformat(),
+                        "message": agent_msg,
+                    },
+                    "artifacts": [
+                        {
+                            "artifactId": f"art-{uuid.uuid4().hex[:8]}",
+                            "name": "storefront_a2a_response",
+                            "parts": [{"kind": "text", "text": reply_text}],
+                        }
+                    ],
+                    "message": agent_msg,
+                    "tool_calls": chat_res.get("tool_calls", []),
+                    "tool_outputs": chat_res.get("tool_outputs", {}),
+                },
+            }
+        )
+
+    # 2. Direct prompt / natural-language A2A message
+    prompt_text = str(
+        body.get("message") or body.get("prompt") or body.get("query") or body.get("text") or ""
+    ).strip()
+    if prompt_text and "segment_id" not in body and "payload" not in body:
+        session_id = str(body.get("session_id") or body.get("contextId") or "a2a-rest-session")
+        chat_res = await _run_adk_or_fallback_chat(
+            message=prompt_text,
+            session_id=session_id,
+            user_id=str(body.get("sender_agent") or "expedition_t01_campaign_orchestrator"),
+        )
+        return JSONResponse(
+            {
+                **chat_res,
+                "a2a_agent": "expedition_t02_dynamic_storefronts",
+                "a2a_endpoint": f"{base_url}/a2a",
+            }
+        )
+
+    # 3. Structured Tribe A2A Handshake (STOREFRONT_TO_CAMPAIGN_SYNC / CAMPAIGN_TO_STOREFRONT_SYNC)
+    payload_src = body.get("payload") if isinstance(body.get("payload"), dict) else body
+    featured_raw = payload_src.get("featured_skus", "SKU-0057,SKU-0002")
+    if isinstance(featured_raw, list):
+        featured_str = ",".join(str(s) for s in featured_raw)
+    else:
+        featured_str = str(featured_raw or "SKU-0057,SKU-0002")
+
+    sync_raw = sync_campaign_with_t01(
+        segment_id=str(payload_src.get("segment_id") or "SEG-057"),
+        featured_skus=featured_str,
+        hero_headline=str(
+            payload_src.get("hero_headline")
+            or payload_src.get("headline")
+            or "Warm Mediterranean light for London homes"
+        ),
+        theme_style=str(payload_src.get("theme_style") or "Mediterranean_Warm"),
+        locale=str(payload_src.get("locale") or "en-GB"),
+        event_id=str(payload_src.get("event_id") or "EVT-0001"),
+        channel=str(payload_src.get("channel") or "Meta_Reels"),
+        target_cpm_bid_eur=payload_src.get("target_cpm_bid_eur", 12.5),
+    )
+    sync_res = json.loads(sync_raw)
+    return JSONResponse(sync_res)
 
 
 async def storefront_preview_endpoint(request: Request) -> HTMLResponse:
@@ -212,6 +373,11 @@ def build_mcp_cloudrun_app() -> FastAPI:
     cloud_app.add_route("/health", healthz_endpoint, methods=["GET"])
     cloud_app.add_route("/healthz", healthz_endpoint, methods=["GET"])
     cloud_app.add_route("/.well-known/agent.json", agent_card_endpoint, methods=["GET"])
+    cloud_app.add_route("/.well-known/agent-card.json", agent_card_endpoint, methods=["GET"])
+    cloud_app.add_route("/a2a/.well-known/agent.json", agent_card_endpoint, methods=["GET"])
+    cloud_app.add_route("/a2a/.well-known/agent-card.json", agent_card_endpoint, methods=["GET"])
+    cloud_app.add_route("/a2a", a2a_endpoint, methods=["GET", "POST"])
+    cloud_app.add_route("/a2a/", a2a_endpoint, methods=["GET", "POST"])
     cloud_app.add_route("/preview/{segment_id}", storefront_preview_endpoint, methods=["GET"])
 
     sse_starlette = mcp.sse_app()

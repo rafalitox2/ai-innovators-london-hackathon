@@ -21,6 +21,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 WORKDIR /app
 
 RUN pip install --no-cache-dir \
+    "google-adk[a2a]==2.11.0" \
     "mcp==1.30.0" \
     "fastapi>=0.115.0" \
     "pydantic>=2.9.0" \
