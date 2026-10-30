@@ -7,6 +7,7 @@ import html
 import json
 import os
 from pathlib import Path
+import re
 from typing import Any
 
 from seed_packs.t02_dynamic_storefronts.guardrails import (
@@ -19,6 +20,12 @@ from seed_packs.t02_dynamic_storefronts.mcp.state_store import (
     CatalogCsvRepository,
     McpStateStore,
 )
+
+
+def _sanitize_identifier(val: str | None, default: str) -> str:
+    """Strictly restrict file/URI/JS identifiers to [A-Za-z0-9_-] to prevent path traversal and injection."""
+    cleaned = re.sub(r"[^A-Za-z0-9_-]", "", (val or "").strip())
+    return cleaned or default
 
 
 class MultimodalHeroService:
@@ -66,9 +73,9 @@ class MultimodalHeroService:
         if rejection is not None:
             return json.dumps(rejection)
         try:
-            sku_clean = (sku_id or "SKU-0001").strip()
-            seg_clean = (segment_id or "SEG-001").strip()
-            theme_clean = (style_theme or "Nordic_Minimal").strip()
+            sku_clean = _sanitize_identifier(sku_id, "SKU-0001")
+            seg_clean = _sanitize_identifier(segment_id, "SEG-001")
+            theme_clean = _sanitize_identifier(style_theme, "Nordic_Minimal")
             scene_clean = sanitize_description(scene_description or "Sunlit modern European living space")
             ratio_clean = (aspect_ratio or "16:9").strip()
 

@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 import html
 import json
 from pathlib import Path
+import re
 from typing import Any
 
 from seed_packs.t02_dynamic_storefronts.guardrails import (
@@ -22,6 +23,12 @@ from seed_packs.t02_dynamic_storefronts.mcp.state_store import (
     CatalogCsvRepository,
     McpStateStore,
 )
+
+
+def _sanitize_identifier(val: str | None, default: str) -> str:
+    """Strictly restrict file/URI/JS identifiers to [A-Za-z0-9_-] to prevent path traversal and injection."""
+    cleaned = re.sub(r"[^A-Za-z0-9_-]", "", (val or "").strip())
+    return cleaned or default
 
 
 class StorefrontActionService:
@@ -41,7 +48,11 @@ class StorefrontActionService:
         """Parse, clean, and resolve list of featured SKU identifiers."""
         if not featured_skus_csv:
             return []
-        return [s.strip().upper() for s in featured_skus_csv.split(",") if s.strip()]
+        return [
+            _sanitize_identifier(s, "SKU-0001")
+            for s in featured_skus_csv.split(",")
+            if s.strip()
+        ]
 
     def publish_storefront_layout(
         self,
@@ -70,10 +81,10 @@ class StorefrontActionService:
         layout_id = f"LAYOUT-{1001 + len(layouts)}"
         record = {
             "layout_id": layout_id,
-            "segment_id": segment_id.strip(),
+            "segment_id": _sanitize_identifier(segment_id, "SEG-001"),
             "featured_skus": self.resolve_featured_skus(segment_id, featured_skus),
             "hero_headline": headline_clean,
-            "theme_style": theme_style.strip(),
+            "theme_style": _sanitize_identifier(theme_style, "Nordic_Minimal"),
             "published_at": datetime.now(timezone.utc).isoformat(),
             "status": "LIVE",
         }
@@ -107,7 +118,7 @@ class StorefrontActionService:
         job_id = f"RENDER-{2001 + len(queue)}"
         record = {
             "render_job_id": job_id,
-            "sku_id": sku_id.strip(),
+            "sku_id": _sanitize_identifier(sku_id, "SKU-0001"),
             "scene_prompt": scene_clean,
             "aspect_ratio": aspect_ratio.strip(),
             "queued_at": datetime.now(timezone.utc).isoformat(),
@@ -169,8 +180,8 @@ class StorefrontActionService:
         banner_id = f"PROMO-{3001 + len(banners)}"
         record = {
             "banner_id": banner_id,
-            "segment_id": segment_id.strip(),
-            "sku_id": sku_clean,
+            "segment_id": _sanitize_identifier(segment_id, "SEG-001"),
+            "sku_id": _sanitize_identifier(sku_clean, "") if sku_clean else "",
             "discount_pct": disc,
             "banner_copy": banner_clean,
             "updated_at": datetime.now(timezone.utc).isoformat(),
@@ -206,9 +217,9 @@ class StorefrontActionService:
                 })
             disc = int(disc)
 
-            seg_clean = (segment_id or "SEG-001").strip()
+            seg_clean = _sanitize_identifier(segment_id, "SEG-001")
             headline_clean = sanitize_description(hero_headline or "AtelierNova Curated Living")
-            theme_clean = (theme_style or "Nordic_Minimal").strip()
+            theme_clean = _sanitize_identifier(theme_style, "Nordic_Minimal")
             banner_clean = sanitize_description(banner_copy or "AtelierNova Exclusive Edit")
             sku_list = self.resolve_featured_skus(seg_clean, featured_skus)
 
