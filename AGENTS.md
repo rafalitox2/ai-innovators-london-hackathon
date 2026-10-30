@@ -66,7 +66,13 @@ make worktree-link                # Link .venv & .env from primary worktree into
 make worktree-list                # List all active git worktrees and branches
 make verify PACK=t02              # Run full offline PR gate (pytest + eval-validate + check_packs)
 make seed PACK=t02                # Create BigQuery dataset & load synthetic Seed Pack tables
-make test                         # Run fast offline pytest suite (loader, agent build, eval schema)
+make test                         # Run fast offline pytest suite (393+ unit, ADK, A2A & security tests)
+make test-adk                     # Run isolated Google ADK Agent & GCP evaluator suite (offline)
+make test-a2a                     # Run isolated Official A2A Protocol & Tribe handshake suite (offline)
+make test-adk-gcp                 # Run Live GCP ADK suite (Vertex AI Eval + BigQuery dry-run + Agent Engine)
+make test-a2a-gcp                 # Run Live GCP A2A suite (Cloud Run OIDC + JSON-RPC 2.0 + Tribe Sync)
+make ui-api                       # Start integrated FastAPI + ADK server for /ui on http://127.0.0.1:8000
+make ui-build                     # Build production React 19 + TypeScript bundle in ui/dist
 make dev                          # Start local ADK Web UI on http://127.0.0.1:8000
 make eval                         # Run ADK golden evaluations (.test.json) and print pass/fail summary
 make eval-validate                # Validate eval JSON only (no Gemini calls)
@@ -122,3 +128,4 @@ Our team repository is configured for **Table 2 — Dynamic Storefront Engine** 
   - `t02-storefront-ui-multimodal` (`.agents/skills/t02-storefront-ui-multimodal/SKILL.md`): Multimodal hero lifestyle image generation (`GEMINI_IMAGE_MODEL`) and MCP App UI storefront preview (`template.html`).
   - `t02-eval-and-deploy` (`.agents/skills/t02-eval-and-deploy/SKILL.md`): Authoring `golden.test.json` scenarios, running `make eval-validate PACK=t02`, Cloud Build (`cloudbuild.yaml`), and `make deploy` / `make test-remote`.
   - `t02-worktree-collab` (`.agents/skills/t02-worktree-collab/SKILL.md`): Multi-person and multi-agent parallel `git worktree` orchestration (`make worktree`, `make worktree-link`, `make verify`), Spec/Eval-first TDD (`RED` → `GREEN`), and PR race-condition prevention.
+  - `security-audit` (`.agents/skills/security-audit/SKILL.md`): Offensive and defensive security audit skill (adapted from Cloudflare `security-audit-skill`) covering OWASP Top 10:2025, OWASP LLM01–LLM10 prompt injection, MCP tool poisoning, CORS, path traversal, DOM XSS, SSRF, and BigQuery SQL identifier validation (`SEC-01`..`SEC-08`).
