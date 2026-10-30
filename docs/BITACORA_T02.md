@@ -428,3 +428,17 @@ make dev
 # 7. Verificar el agente desplegado en vivo en Vertex AI Agent Runtime (europe-west1)
 make test-remote
 ```
+
+
+## Self Red Team con Astra: issue #37 / PR #40
+
+Se realizó un ejercicio ofensivo de Self Red Team con Astra (`gpt-6-astra`) para buscar y reproducir bypasses de los guardrails T02, conforme al [issue #37](https://github.com/rafalitox2/ai-innovators-london-hackathon/issues/37). La [PR #40](https://github.com/rafalitox2/ai-innovators-london-hackathon/pull/40) incorpora las correcciones y las pruebas de regresión.
+
+- **Texto no confiable:** detección sobre el input crudo antes de sanitizar, normalización Unicode y detección de marcadores ofuscados.
+- **Cuarentena:** rechazo de `SKU-0017` y registros de catálogo con marcadores de inyección en acciones, callback ADK y lecturas CSV/BigQuery/Knowledge Graph.
+- **Límites numéricos:** rechazo de booleanos, NaN, infinitos y valores fuera de política en descuentos y pujas CPM; los descuentos fraccionarios no se truncan.
+- **Evidencia:** RED observado antes de cada corrección; 204 pruebas adversariales y 247 pruebas focalizadas pasaron en la validación previa.
+
+La validación es offline, mediante llamadas a herramientas y callbacks con integraciones externas simuladas. No acredita pruebas de penetración en la nube ni protección universal frente a prompt injection. Las evaluaciones y despliegues en vivo no se ejecutaron.
+
+Durante la revisión, el documento independiente del ejercicio provocó un fallo en el inventario cerrado de `docs/`. Sus conclusiones se integran aquí y se elimina ese archivo, conservando el test y la lista de documentos permitidos sin cambios.
