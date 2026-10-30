@@ -97,10 +97,12 @@ Judges and evaluators can interact with Table 2 across three live interfaces:
 
 ### Minute 2:45 – 3:00 | Engineering Excellence & Cloud Deployment
 - **Golden Evaluation**: 13/13 golden test cases passed at 100% (`tool_trajectory_avg_score=1.00`).
-- **Comprehensive Automated Testing**:
-  - **393+ offline `pytest` tests** across 19 modules (including isolated Google ADK suite `make test-adk`, Official A2A Protocol suite `make test-a2a`, 204 Self Red Team cases, and 8 Cloudflare `security-audit-skill` checks `SEC-01`..`SEC-08`).
+- **Comprehensive Automated Testing & Benchmarks**:
+  - **422+ offline `pytest` tests** across 21 modules (including isolated Google ADK suite `make test-adk`, Official A2A Protocol suite `make test-a2a`, FastMCP & OOP Services suite `make test-mcp`, 204 Self Red Team cases, and 8 Cloudflare `security-audit-skill` checks `SEC-01`..`SEC-08`).
+  - **FastMCP Latency & Concurrency Benchmark (`make benchmark-mcp`)**: `p95 < 50 ms` across all 10 tools, `< 1.2 ms` guardrail fast-path rejection, and **890.4 req/s** under 30-request concurrent burst (`236 KiB` memory delta).
   - **8 Playwright E2E UX/UI audit tests** (`cd ui && npx playwright test`) verifying desktop & mobile viewports, zero horizontal overflow, viewport switching, and `1x`–`3x` photo lightbox.
-- **Engineering Traceability**: **41 merged Pull Requests** and **19 closed GitHub Issues** built via Spec/Eval-first TDD (`RED` → `GREEN`) and isolated `git worktree` collaboration.
+- **Judges Defense Playbook**: See **[`JUDGES_QA_PLAYBOOK.md`](./JUDGES_QA_PLAYBOOK.md)** for the 30 technical & business Judge questions and answers.
+- **Engineering Traceability**: **42+ merged Pull Requests** and **19 closed GitHub Issues** built via Spec/Eval-first TDD (`RED` → `GREEN`) and isolated `git worktree` collaboration.
 - **Production Infrastructure**:
   - Live on **Google Cloud Run**: `https://t02-dynamic-storefronts-mcp-d2lv3suxga-ew.a.run.app/ui`
   - Deployed in **Vertex AI Agent Runtime**: `projects/633924037012/locations/europe-west1/reasoningEngines/5876565294532526080`
