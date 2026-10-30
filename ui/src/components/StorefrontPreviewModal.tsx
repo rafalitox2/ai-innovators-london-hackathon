@@ -55,6 +55,10 @@ export const StorefrontPreviewModal: React.FC<StorefrontPreviewModalProps> = ({
 
   const initialSkuId = itemState?.skuId || e.p.sku;
   const [selectedSkuId, setSelectedSkuId] = useState<string>(initialSkuId);
+  const [customHeroBySku, setCustomHeroBySku] = useState<Record<string, string>>({});
+  const [heroVariationBySku, setHeroVariationBySku] = useState<Record<string, number>>({});
+  const [heroPromptBySku, setHeroPromptBySku] = useState<Record<string, string>>({});
+  const [thumbRetries, setThumbRetries] = useState<Record<string, number>>({});
   const [discountPct, setDiscountPct] = useState<number>(initialDisc);
   const [cpmBidEur, setCpmBidEur] = useState<number>(12.5);
   const [channel, setChannel] = useState<string>('Meta_Reels');
@@ -108,6 +112,14 @@ export const StorefrontPreviewModal: React.FC<StorefrontPreviewModalProps> = ({
   const activeProduct =
     allProducts.find((p) => p.sku === selectedSkuId) || e.p;
 
+  const handleSelectSku = (nextSku: string) => {
+    setSelectedSkuId(nextSku);
+    setHeroImgFailed(false);
+    if (nextSku === 'SKU-0017') {
+      setDiscountPct(25);
+    }
+  };
+
   const guardrail = validateGuardrailsLocal({
     product: activeProduct,
     discountPct,
@@ -126,15 +138,33 @@ export const StorefrontPreviewModal: React.FC<StorefrontPreviewModalProps> = ({
     headlineMap[activeProduct.theme] ||
     `Transform Your Space with ${activeProduct.sku}`;
 
+  const galleryTheme =
+    activeProduct.sku === 'SKU-0017' || activeProduct.sku === 'SKU-0022'
+      ? e.p.theme
+      : activeProduct.theme;
+
   const related = allProducts
     .filter(
       (p) =>
-        p.theme === activeProduct.theme &&
-        p.sku !== activeProduct.sku &&
+        p.theme === galleryTheme &&
+        p.sku !== e.p.sku &&
         p.sku !== 'SKU-0017' &&
         p.stock > 40
     )
     .slice(0, 4);
+
+  const showcaseProducts: ProductItem[] = [
+    e.p,
+    ...related.filter((p) => p.sku !== e.p.sku)
+  ];
+  const currentShowcaseIdx = showcaseProducts.findIndex((p) => p.sku === activeProduct.sku);
+
+  const handleStepShowcase = (delta: number) => {
+    if (showcaseProducts.length <= 1) return;
+    const baseIdx = currentShowcaseIdx >= 0 ? currentShowcaseIdx : 0;
+    const nextIdx = (baseIdx + delta + showcaseProducts.length) % showcaseProducts.length;
+    handleSelectSku(showcaseProducts[nextIdx].sku);
+  };
 
   const promoCode = `${e.g.city.slice(0, 3).toUpperCase()}${discountPct}`;
   const promoText = `${discountPct}% off ${activeProduct.cat
@@ -144,13 +174,20 @@ export const StorefrontPreviewModal: React.FC<StorefrontPreviewModalProps> = ({
   const defaultHeroForSku = `/api/assets/hero/${e.g.id}?sku_id=${encodeURIComponent(activeProduct.sku)}&style_theme=${encodeURIComponent(activeProduct.theme)}`;
   const persistedHeroMatchesSku =
     itemState?.heroAssetUrl &&
-    selectedSkuId === initialSkuId &&
-    (!itemState.heroAssetUrl.includes('sku_id=') ||
-      itemState.heroAssetUrl.includes(`sku_id=${encodeURIComponent(activeProduct.sku)}`));
+    itemState.skuId === activeProduct.sku;
+  const currentCustomHero = customHeroBySku[activeProduct.sku];
   const heroAssetSrc =
-    customHeroSrc ||
+    currentCustomHero ||
     (persistedHeroMatchesSku ? itemState?.heroAssetUrl : undefined) ||
+    (activeProduct.sku === e.p.sku && customHeroSrc ? customHeroSrc : undefined) ||
     defaultHeroForSku;
+
+  const currentHeroVariation =
+    heroVariationBySku[activeProduct.sku] ||
+    (activeProduct.sku === e.p.sku ? heroVariationIdx : 1);
+  const currentHeroPromptNote =
+    heroPromptBySku[activeProduct.sku] ||
+    (activeProduct.sku === e.p.sku ? heroPromptNote : null);
 
   const handleRecreateHeroImage = async () => {
     const scenes = [
@@ -159,8 +196,8 @@ export const StorefrontPreviewModal: React.FC<StorefrontPreviewModalProps> = ({
       'Sunlit morning minimalist editorial composition with natural shadows',
       'Twilight gallery-style interior spotlight with city skyline backdrop'
     ];
-    const nextIdx = heroVariationIdx + 1;
-    const scene = scenes[heroVariationIdx % scenes.length];
+    const nextIdx = currentHeroVariation + 1;
+    const scene = scenes[currentHeroVariation % scenes.length];
     const activeDevice =
       viewportMode === 'mobile'
         ? 'mobile'
@@ -190,18 +227,24 @@ export const StorefrontPreviewModal: React.FC<StorefrontPreviewModalProps> = ({
       (res.ui_filename ? `/ui/${res.ui_filename}` : defaultHeroForSku);
     const sep = baseImgUrl.includes('?') ? '&' : '?';
     const nextHeroUrl = `${baseImgUrl}${sep}t=${Date.now()}`;
-    setCustomHeroSrc(nextHeroUrl);
+    setCustomHeroBySku((prev) => ({ ...prev, [activeProduct.sku]: nextHeroUrl }));
+    setHeroVariationBySku((prev) => ({ ...prev, [activeProduct.sku]: nextIdx }));
+    if (activeProduct.sku === e.p.sku) {
+      setCustomHeroSrc(nextHeroUrl);
+      setHeroVariationIdx(nextIdx);
+    }
     onUpdateItemState?.(e.id, {
       heroAssetUrl: nextHeroUrl,
       skuId: activeProduct.sku,
       themeStyle: activeProduct.theme,
       heroHeadline: headline
     });
-    setHeroVariationIdx(nextIdx);
     if (res.render_job?.prompt_text) {
-      setHeroPromptNote(
-        `${res.render_job.render_job_id} (${res.render_job.image_model} · v${nextIdx} · ${aspect}): ${res.render_job.prompt_text}`
-      );
+      const promptInfo = `${res.render_job.render_job_id} (${res.render_job.image_model} · v${nextIdx} · ${aspect}): ${res.render_job.prompt_text}`;
+      setHeroPromptBySku((prev) => ({ ...prev, [activeProduct.sku]: promptInfo }));
+      if (activeProduct.sku === e.p.sku) {
+        setHeroPromptNote(promptInfo);
+      }
     }
     setRecreatingHero(false);
   };
@@ -382,7 +425,7 @@ export const StorefrontPreviewModal: React.FC<StorefrontPreviewModalProps> = ({
               onClick={() =>
                 openPhotoLightbox(
                   heroAssetSrc,
-                  `${activeProduct.name} (${activeProduct.sku}) · ${activeProduct.theme.replace(/_/g, ' ')} (v${heroVariationIdx})`
+                  `${activeProduct.name} (${activeProduct.sku}) · ${activeProduct.theme.replace(/_/g, ' ')} (v${currentHeroVariation})`
                 )
               }
             >
@@ -638,7 +681,7 @@ export const StorefrontPreviewModal: React.FC<StorefrontPreviewModalProps> = ({
                     onClick={() =>
                       openPhotoLightbox(
                         heroAssetSrc,
-                        `${activeProduct.name} (${activeProduct.sku}) · ${activeProduct.theme.replace(/_/g, ' ')} (v${heroVariationIdx})`
+                        `${activeProduct.name} (${activeProduct.sku}) · ${activeProduct.theme.replace(/_/g, ' ')} (v${currentHeroVariation})`
                       )
                     }
                     style={{
@@ -653,6 +696,51 @@ export const StorefrontPreviewModal: React.FC<StorefrontPreviewModalProps> = ({
                       cursor: 'zoom-in'
                     }}
                   />
+                )}
+                {showcaseProducts.length > 1 && (
+                  <div
+                    style={{
+                      position: 'absolute',
+                      top: 12,
+                      right: 12,
+                      zIndex: 2,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 6
+                    }}
+                  >
+                    <button
+                      type="button"
+                      className="hero-gallery-nav-btn"
+                      title="Previous product image"
+                      aria-label="Previous product image"
+                      onClick={() => handleStepShowcase(-1)}
+                    >
+                      ‹
+                    </button>
+                    <span
+                      className="mono tabular-nums"
+                      style={{
+                        fontSize: 10,
+                        padding: '3px 8px',
+                        borderRadius: 999,
+                        background: 'rgba(15, 23, 42, 0.75)',
+                        backdropFilter: 'blur(6px)',
+                        color: '#f8fafd'
+                      }}
+                    >
+                      {(currentShowcaseIdx >= 0 ? currentShowcaseIdx + 1 : 1)} / {showcaseProducts.length}
+                    </span>
+                    <button
+                      type="button"
+                      className="hero-gallery-nav-btn"
+                      title="Next product image"
+                      aria-label="Next product image"
+                      onClick={() => handleStepShowcase(1)}
+                    >
+                      ›
+                    </button>
+                  </div>
                 )}
                 <div
                   style={{
@@ -670,7 +758,7 @@ export const StorefrontPreviewModal: React.FC<StorefrontPreviewModalProps> = ({
                 >
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
                     <span>
-                      Hero lifestyle render (v{heroVariationIdx}) · {activeProduct.theme.replace(/_/g, ' ')} ·{' '}
+                      Hero lifestyle render (v{currentHeroVariation}) · {activeProduct.theme.replace(/_/g, ' ')} ·{' '}
                       {activeProduct.name}
                     </span>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
@@ -682,13 +770,13 @@ export const StorefrontPreviewModal: React.FC<StorefrontPreviewModalProps> = ({
                         onClick={() =>
                           openPhotoLightbox(
                             heroAssetSrc,
-                            `${activeProduct.name} (${activeProduct.sku}) · ${activeProduct.theme.replace(/_/g, ' ')} (v${heroVariationIdx})`
+                            `${activeProduct.name} (${activeProduct.sku}) · ${activeProduct.theme.replace(/_/g, ' ')} (v${currentHeroVariation})`
                           )
                         }
                       >
                         View real photo
                       </button>
-                      {heroPromptNote && (
+                      {currentHeroPromptNote && (
                         <button
                           type="button"
                           className="btn btn-ghost"
@@ -717,7 +805,7 @@ export const StorefrontPreviewModal: React.FC<StorefrontPreviewModalProps> = ({
                       </button>
                     </div>
                   </div>
-                  {showPromptNote && heroPromptNote && (
+                  {showPromptNote && currentHeroPromptNote && (
                     <div
                       style={{
                         fontSize: 10,
@@ -743,7 +831,7 @@ export const StorefrontPreviewModal: React.FC<StorefrontPreviewModalProps> = ({
                         </button>
                       </div>
                       <span style={{ fontFamily: 'var(--font-mono, monospace)' }}>
-                        {heroPromptNote}
+                        {currentHeroPromptNote}
                       </span>
                     </div>
                   )}
@@ -789,74 +877,144 @@ export const StorefrontPreviewModal: React.FC<StorefrontPreviewModalProps> = ({
 
             <div
               style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: 8,
+                padding: '10px 16px 0',
+                fontSize: 11,
+                color: 'var(--color-text-secondary)'
+              }}
+            >
+              <span>
+                Curated {galleryTheme.replace(/_/g, ' ')} Collection · Click any product below to preview in Hero
+              </span>
+              {activeProduct.sku !== e.p.sku && (
+                <button
+                  type="button"
+                  className="btn btn-ghost"
+                  style={{ padding: '2px 8px', fontSize: 11 }}
+                  onClick={() => handleSelectSku(e.p.sku)}
+                >
+                  ↺ Back to primary ({e.p.sku})
+                </button>
+              )}
+            </div>
+
+            <div
+              style={{
                 display: 'grid',
                 gridTemplateColumns:
                   viewportMode === 'mobile'
                     ? 'repeat(2, minmax(0, 1fr))'
                     : 'repeat(auto-fill, minmax(150px, 1fr))',
                 gap: 12,
-                padding: 16
+                padding: '10px 16px 16px'
               }}
             >
-              {related.map((p) => (
-                <div key={p.sku} style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {related.map((p) => {
+                const isSelected = activeProduct.sku === p.sku;
+                const retryCount = thumbRetries[p.sku] || 0;
+                const persistedThumb = itemState?.skuId === p.sku ? itemState?.heroAssetUrl : undefined;
+                const baseThumbSrc =
+                  customHeroBySku[p.sku] ||
+                  persistedThumb ||
+                  `/api/assets/hero/${e.g.id}?sku_id=${encodeURIComponent(p.sku)}&style_theme=${encodeURIComponent(p.theme)}`;
+                const thumbSrc =
+                  retryCount > 0 && !baseThumbSrc.includes('retry=')
+                    ? `${baseThumbSrc}&retry=${retryCount}`
+                    : baseThumbSrc;
+                return (
                   <div
-                    style={{
-                      position: 'relative',
-                      aspectRatio: '4 / 3',
-                      borderRadius: 'var(--radius-sm)',
-                      background: 'linear-gradient(160deg, var(--color-neutral-800), var(--color-neutral-900))',
-                      overflow: 'hidden',
-                      display: 'flex',
-                      alignItems: 'flex-end',
-                      padding: 8,
-                      fontSize: 10,
-                      color: 'var(--color-neutral-300)'
+                    key={p.sku}
+                    role="button"
+                    tabIndex={0}
+                    aria-pressed={isSelected}
+                    className={`preview-sku-card${isSelected ? ' active' : ''}`}
+                    onClick={() => handleSelectSku(isSelected ? e.p.sku : p.sku)}
+                    onKeyDown={(ev) => {
+                      if (ev.key === 'Enter' || ev.key === ' ') {
+                        ev.preventDefault();
+                        handleSelectSku(isSelected ? e.p.sku : p.sku);
+                      }
                     }}
                   >
-                    <img
-                      src={`/api/assets/hero/${e.g.id}?sku_id=${encodeURIComponent(p.sku)}&style_theme=${encodeURIComponent(p.theme)}`}
-                      alt={p.name}
-                      loading="lazy"
-                      title="Click to inspect full real photo & zoom"
-                      onClick={() =>
-                        openPhotoLightbox(
-                          `/api/assets/hero/${e.g.id}?sku_id=${encodeURIComponent(p.sku)}&style_theme=${encodeURIComponent(p.theme)}`,
-                          `${p.name} (${p.sku}) · ${p.theme.replace(/_/g, ' ')}`
-                        )
-                      }
-                      style={{
-                        position: 'absolute',
-                        inset: 0,
-                        width: '100%',
-                        height: '100%',
-                        objectFit: 'cover',
-                        opacity: 1,
-                        filter: 'none',
-                        mixBlendMode: 'normal',
-                        cursor: 'zoom-in'
-                      }}
-                    />
-                    <span
+                    <div
                       style={{
                         position: 'relative',
-                        zIndex: 1,
-                        background: 'color-mix(in srgb, var(--color-bg) 78%, transparent)',
-                        padding: '2px 6px',
-                        borderRadius: 'var(--radius-sm)'
+                        aspectRatio: '4 / 3',
+                        borderRadius: 'var(--radius-sm)',
+                        background: 'linear-gradient(160deg, var(--color-neutral-800), var(--color-neutral-900))',
+                        overflow: 'hidden',
+                        display: 'flex',
+                        alignItems: 'flex-end',
+                        justifyContent: 'space-between',
+                        padding: 8,
+                        fontSize: 10,
+                        color: 'var(--color-neutral-300)'
                       }}
                     >
-                      {p.sku}
+                      <img
+                        src={thumbSrc}
+                        alt={p.name}
+                        loading="lazy"
+                        onError={() => {
+                          if (retryCount < 2) {
+                            window.setTimeout(
+                              () =>
+                                setThumbRetries((prev) => ({
+                                  ...prev,
+                                  [p.sku]: (prev[p.sku] || 0) + 1
+                                })),
+                              400
+                            );
+                          }
+                        }}
+                        style={{
+                          position: 'absolute',
+                          inset: 0,
+                          width: '100%',
+                          height: '100%',
+                          objectFit: 'cover'
+                        }}
+                      />
+                      <span
+                        style={{
+                          position: 'relative',
+                          zIndex: 1,
+                          background: 'color-mix(in srgb, var(--color-bg) 78%, transparent)',
+                          padding: '2px 6px',
+                          borderRadius: 'var(--radius-sm)'
+                        }}
+                      >
+                        {p.sku}
+                      </span>
+                      {isSelected && (
+                        <span
+                          style={{
+                            position: 'relative',
+                            zIndex: 1,
+                            background: 'var(--color-accent)',
+                            color: '#ffffff',
+                            padding: '2px 6px',
+                            borderRadius: 'var(--radius-sm)',
+                            fontWeight: 600
+                          }}
+                        >
+                          Viewing
+                        </span>
+                      )}
+                    </div>
+                    <span style={{ fontSize: 12, fontWeight: isSelected ? 600 : 400 }}>
+                      {p.sku} · {p.name}
+                    </span>
+                    <span style={{ fontSize: 11, color: 'var(--color-neutral-400)' }} className="tabular-nums">
+                      {eur2.format(p.price)}
                     </span>
                   </div>
-                  <span style={{ fontSize: 12 }}>
-                    {p.sku} · {p.name}
-                  </span>
-                  <span style={{ fontSize: 11, color: 'var(--color-neutral-400)' }} className="tabular-nums">
-                    {eur2.format(p.price)}
-                  </span>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
             {/* Authentic Storefront Luxury Brand Footer */}
@@ -974,15 +1132,7 @@ export const StorefrontPreviewModal: React.FC<StorefrontPreviewModalProps> = ({
               <select
                 className="select"
                 value={selectedSkuId}
-                onChange={(ev) => {
-                  const nextSku = ev.target.value;
-                  setSelectedSkuId(nextSku);
-                  setCustomHeroSrc(null);
-                  setHeroImgFailed(false);
-                  if (nextSku === 'SKU-0017') {
-                    setDiscountPct(25);
-                  }
-                }}
+                onChange={(ev) => handleSelectSku(ev.target.value)}
                 style={{ padding: '6px 10px', fontSize: 12 }}
               >
                 <option value={e.p.sku}>

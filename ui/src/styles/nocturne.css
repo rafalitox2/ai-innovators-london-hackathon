@@ -1499,6 +1499,54 @@ select:focus-visible,
   outline-offset: 2px;
 }
 
+.hero-gallery-nav-btn {
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(6px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #f8fafd;
+  cursor: pointer;
+  font-size: 15px;
+  line-height: 1;
+  padding: 0;
+  transition: all 0.15s ease;
+}
+
+.hero-gallery-nav-btn:hover {
+  background: var(--color-accent, #4285f4);
+  border-color: var(--color-accent, #4285f4);
+  transform: scale(1.08);
+}
+
+.preview-sku-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 6px;
+  border-radius: var(--radius-sm, 6px);
+  border: 2px solid transparent;
+  cursor: pointer;
+  background: rgba(15, 23, 42, 0.35);
+  transition: all 0.15s ease;
+}
+
+.preview-sku-card:hover {
+  background: rgba(66, 133, 244, 0.1);
+  border-color: rgba(66, 133, 244, 0.35);
+  transform: translateY(-2px);
+}
+
+.preview-sku-card.active {
+  border-color: var(--color-accent, #4285f4);
+  background: rgba(66, 133, 244, 0.15);
+  box-shadow: 0 0 12px rgba(66, 133, 244, 0.25);
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

@@ -187,6 +187,8 @@ class MultimodalHeroService:
             ui_sync_warning: str | None = None
             try:
                 ui_dir.mkdir(parents=True, exist_ok=True)
+                ui_sku_file = ui_dir / f"hero_{sku_clean}_{seg_clean}{asset_path.suffix}"
+                ui_sku_file.write_bytes(asset_path.read_bytes())
                 ui_asset_file = ui_dir / f"hero_{seg_clean}{asset_path.suffix}"
                 ui_asset_file.write_bytes(asset_path.read_bytes())
                 ui_asset_path_str = str(ui_asset_file)
