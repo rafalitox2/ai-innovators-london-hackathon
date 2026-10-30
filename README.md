@@ -34,6 +34,10 @@
 
 <img src="docs/diagrams/t02_architecture.svg" alt="T02 Dynamic Storefronts — animated component and data-flow architecture diagram" />
 
+<img src="docs/diagrams/t02_gcp_infrastructure.svg" alt="T02 Dynamic Storefronts — GCP infrastructure and CI/CD topology diagram" />
+
+<img src="docs/diagrams/t02_a2a_integration.svg" alt="T02 Dynamic Storefronts — Tribe A2A (Table 2 <-> Table 1) integration diagram" />
+
 ```mermaid
 flowchart TB
     subgraph Client["Merchandising Console (Marco Bellini)"]
