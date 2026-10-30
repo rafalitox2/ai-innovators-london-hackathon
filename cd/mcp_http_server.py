@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 import json
 import os
 from pathlib import Path
+import re
 from typing import Any
 import uuid
 
@@ -29,11 +30,18 @@ _REPO_ROOT = Path(__file__).resolve().parent.parent
 _UI_DIR = _REPO_ROOT / "seed_packs" / "t02_dynamic_storefronts" / "ui"
 
 
+_TRUSTED_CLOUDRUN_HOST_RE = re.compile(r"^[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)*\.a\.run\.app$")
+_TRUSTED_LOCAL_HOSTS = frozenset({"localhost", "127.0.0.1", "testserver"})
+
+
 def _resolve_public_base_url(request: Request) -> str:
     """Resolve external HTTPS base URL behind Cloud Run GFE proxy."""
     env_url = os.environ.get("MCP_SERVER_URL", "").strip().rstrip("/")
     if env_url:
         return env_url
+    hostname = (request.url.hostname or "").lower()
+    if hostname not in _TRUSTED_LOCAL_HOSTS and not _TRUSTED_CLOUDRUN_HOST_RE.match(hostname):
+        return "http://localhost:8080"
     base_url = str(request.base_url).rstrip("/")
     forwarded_proto = request.headers.get("x-forwarded-proto", "").lower()
     if (forwarded_proto == "https" or ".a.run.app" in base_url) and base_url.startswith("http://"):
@@ -213,9 +221,9 @@ async def a2a_endpoint(request: Request) -> JSONResponse:
     try:
         raw_bytes = await request.body()
         body: dict[str, Any] = json.loads(raw_bytes.decode("utf-8")) if raw_bytes else {}
-    except Exception as exc:
+    except Exception:
         return JSONResponse(
-            {"status": "ERROR", "error": f"Invalid JSON payload: {exc}"},
+            {"status": "ERROR", "error": "Invalid JSON payload"},
             status_code=400,
         )
 
@@ -360,13 +368,41 @@ def build_mcp_cloudrun_app() -> FastAPI:
         title="AtelierNova Dynamic Storefronts — Cloud Run UI + FastMCP + ADK Server",
         version="1.0.0",
     )
+    raw_origins = os.environ.get("CORS_ALLOWED_ORIGINS", "").strip()
+    allowed_origins = (
+        [o.strip() for o in raw_origins.split(",") if o.strip()]
+        if raw_origins
+        else [
+            "http://localhost:8000",
+            "http://127.0.0.1:8000",
+            "http://localhost:8080",
+            "http://127.0.0.1:8080",
+            "http://localhost:5173",
+            "http://127.0.0.1:5173",
+        ]
+    )
     cloud_app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"],
-        allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
+        allow_origins=allowed_origins,
+        allow_credentials="*" not in allowed_origins,
+        allow_methods=["GET", "POST", "OPTIONS"],
+        allow_headers=["Content-Type", "Authorization"],
     )
+
+    @cloud_app.middleware("http")
+    async def _add_security_headers(request: Request, call_next: Any) -> Response:
+        response = await call_next(request)
+        response.headers.setdefault("X-Content-Type-Options", "nosniff")
+        response.headers.setdefault("X-Frame-Options", "SAMEORIGIN")
+        response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
+        content_type = response.headers.get("content-type", "").lower()
+        if "image/svg+xml" in content_type:
+            response.headers.setdefault(
+                "Content-Security-Policy",
+                "default-src 'none'; style-src 'unsafe-inline'; sandbox",
+            )
+        return response
+
     register_ui_routes(cloud_app)
 
     cloud_app.add_route("/", root_ui_or_health_endpoint, methods=["GET"])
