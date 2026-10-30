@@ -6,6 +6,7 @@ import csv
 import json
 import os
 from pathlib import Path
+import re
 from typing import Any
 
 from google.cloud import bigquery
@@ -33,6 +34,8 @@ from seed_packs.t02_dynamic_storefronts.mcp_server import (
 
 _DATA_DIR = Path(__file__).resolve().parent / "data"
 _DEFAULT_DATASET = "seed_t02"
+_BQ_PROJECT_RE = re.compile(r"^[A-Za-z0-9._-]+$")
+_BQ_DATASET_RE = re.compile(r"^[A-Za-z0-9_]+$")
 
 
 def _resolve_project_and_dataset() -> tuple[str, str]:
@@ -44,7 +47,11 @@ def _resolve_project_and_dataset() -> tuple[str, str]:
     ).strip()
     if "your-gcp-project-id" in project.lower() or "your-project-id" in project.lower():
         project = ""
+    if project and not _BQ_PROJECT_RE.match(project):
+        raise ValueError(f"Invalid GOOGLE_CLOUD_PROJECT identifier: '{project}'")
     dataset = os.environ.get("SEED_BQ_DATASET", _DEFAULT_DATASET).strip() or _DEFAULT_DATASET
+    if not _BQ_DATASET_RE.match(dataset):
+        raise ValueError(f"Invalid SEED_BQ_DATASET identifier: '{dataset}'")
     return project, dataset
 
 

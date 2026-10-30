@@ -31,6 +31,19 @@ _GCS_STATE_BLOB_PATH = "t02_dynamic_storefronts/state.json"
 _sanitize_text = sanitize_description
 
 
+def _sanitize_identifier(val: str | None, default: str) -> str:
+    """Strictly restrict file/URI/JS identifiers to [A-Za-z0-9_-] to prevent path traversal and injection."""
+    cleaned = re.sub(r"[^A-Za-z0-9_-]", "", (val or "").strip())
+    return cleaned or default
+
+
+def _state_candidate_paths() -> tuple[Path, ...]:
+    env_state = os.environ.get("T02_LOCAL_STATE_FILE", "").strip()
+    if env_state:
+        return (Path(env_state),)
+    return (_DEFAULT_STATE_PATH, _FALLBACK_STATE_PATH)
+
+
 def _read_csv_rows(name: str) -> list[dict[str, Any]]:
     path = _DATA_DIR / f"{name}.csv"
     if not path.exists():
@@ -61,7 +74,7 @@ def _resolve_gcs_bucket_name() -> tuple[str, str]:
 
 
 def _load_state() -> dict[str, Any]:
-    for path in (_DEFAULT_STATE_PATH, _FALLBACK_STATE_PATH):
+    for path in _state_candidate_paths():
         if path.exists():
             try:
                 return json.loads(path.read_text(encoding="utf-8"))
@@ -89,7 +102,7 @@ def _load_state() -> dict[str, Any]:
 def _save_state(state: dict[str, Any]) -> str:
     payload = json.dumps(state, indent=2)
     local_written = ""
-    for path in (_DEFAULT_STATE_PATH, _FALLBACK_STATE_PATH):
+    for path in _state_candidate_paths():
         try:
             path.write_text(payload, encoding="utf-8")
             local_written = str(path)
@@ -140,10 +153,10 @@ def publish_storefront_layout(
     layout_id = f"LAYOUT-{1001 + len(layouts)}"
     record = {
         "layout_id": layout_id,
-        "segment_id": segment_id.strip(),
-        "featured_skus": [s.strip() for s in featured_skus.split(",") if s.strip()],
+        "segment_id": _sanitize_identifier(segment_id, "SEG-001"),
+        "featured_skus": [_sanitize_identifier(s, "SKU-0001") for s in featured_skus.split(",") if s.strip()],
         "hero_headline": headline_clean,
-        "theme_style": theme_style.strip(),
+        "theme_style": _sanitize_identifier(theme_style, "Nordic_Minimal"),
         "published_at": datetime.now(timezone.utc).isoformat(),
         "status": "LIVE",
     }
@@ -179,7 +192,7 @@ def queue_visual_asset_render(
     job_id = f"RENDER-{2001 + len(queue)}"
     record = {
         "render_job_id": job_id,
-        "sku_id": sku_id.strip(),
+        "sku_id": _sanitize_identifier(sku_id, "SKU-0001"),
         "scene_prompt": scene_clean,
         "aspect_ratio": aspect_ratio.strip(),
         "queued_at": datetime.now(timezone.utc).isoformat(),
@@ -248,8 +261,8 @@ def update_promo_banner(
     banner_id = f"PROMO-{3001 + len(banners)}"
     record = {
         "banner_id": banner_id,
-        "segment_id": segment_id.strip(),
-        "sku_id": sku_clean,
+        "segment_id": _sanitize_identifier(segment_id, "SEG-001"),
+        "sku_id": _sanitize_identifier(sku_clean, "") if sku_clean else "",
         "discount_pct": disc,
         "banner_copy": banner_clean,
         "updated_at": datetime.now(timezone.utc).isoformat(),
@@ -281,9 +294,9 @@ def generate_hero_lifestyle_image(
         JSON string containing the generated asset file path, model metadata, and render job status.
     """
     try:
-        sku_clean = (sku_id or "SKU-0001").strip()
-        seg_clean = (segment_id or "SEG-001").strip()
-        theme_clean = (style_theme or "Nordic_Minimal").strip()
+        sku_clean = _sanitize_identifier(sku_id, "SKU-0001")
+        seg_clean = _sanitize_identifier(segment_id, "SEG-001")
+        theme_clean = _sanitize_identifier(style_theme, "Nordic_Minimal")
         scene_clean = _sanitize_text(scene_description or "Sunlit modern European living space")
         ratio_clean = (aspect_ratio or "16:9").strip()
 
@@ -472,11 +485,15 @@ def render_storefront_preview(
                 "error": f"discount_pct={disc}% exceeds the {MAX_DISCOUNT_PCT}% maximum automated merchandising discount policy.",
             })
 
-        seg_clean = (segment_id or "SEG-001").strip()
+        seg_clean = _sanitize_identifier(segment_id, "SEG-001")
         headline_clean = _sanitize_text(hero_headline or "AtelierNova Curated Living")
-        theme_clean = (theme_style or "Nordic_Minimal").strip()
+        theme_clean = _sanitize_identifier(theme_style, "Nordic_Minimal")
         banner_clean = _sanitize_text(banner_copy or "AtelierNova Exclusive Edit")
-        sku_list = [s.strip() for s in (featured_skus or "").split(",") if s.strip()]
+        sku_list = [
+            _sanitize_identifier(s, "SKU-0001")
+            for s in (featured_skus or "").split(",")
+            if s.strip()
+        ]
 
         catalog_map = {
             r.get("sku_id", "").strip().upper(): r for r in _read_csv_rows("products_catalog")

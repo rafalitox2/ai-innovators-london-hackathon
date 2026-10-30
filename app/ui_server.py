@@ -9,7 +9,7 @@ import os
 from pathlib import Path
 from typing import Any
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, HTMLResponse, Response
 from pydantic import BaseModel, Field
@@ -637,9 +637,17 @@ def register_ui_routes(app: FastAPI) -> None:
                 theme_style=req.theme_style,
             )
         )
+        raw_hero_url = req.hero_asset_url.strip()
+        is_safe_hero_url = (
+            (raw_hero_url.startswith("/api/assets/hero/") or raw_hero_url.startswith("/ui/"))
+            and ".." not in raw_hero_url
+            and "\n" not in raw_hero_url
+            and "\r" not in raw_hero_url
+        )
         resolved_hero_url = (
-            req.hero_asset_url.strip()
-            or f"/api/assets/hero/{req.segment_id}?sku_id={req.sku_id}&style_theme={req.theme_style}"
+            raw_hero_url
+            if is_safe_hero_url
+            else f"/api/assets/hero/{req.segment_id}?sku_id={req.sku_id}&style_theme={req.theme_style}"
         )
         return {
             "status": "SUCCESS",
@@ -891,13 +899,38 @@ def create_ui_app(include_adk_web: bool = True) -> FastAPI:
             version="1.0.0",
         )
 
+    raw_origins = os.environ.get("CORS_ALLOWED_ORIGINS", "").strip()
+    allowed_origins = (
+        [o.strip() for o in raw_origins.split(",") if o.strip()]
+        if raw_origins
+        else [
+            "http://localhost:8000",
+            "http://127.0.0.1:8000",
+            "http://localhost:5173",
+            "http://127.0.0.1:5173",
+        ]
+    )
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"],
-        allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
+        allow_origins=allowed_origins,
+        allow_credentials="*" not in allowed_origins,
+        allow_methods=["GET", "POST", "OPTIONS"],
+        allow_headers=["Content-Type", "Authorization"],
     )
+
+    @app.middleware("http")
+    async def _add_security_headers(request: Request, call_next: Any) -> Response:
+        response = await call_next(request)
+        response.headers.setdefault("X-Content-Type-Options", "nosniff")
+        response.headers.setdefault("X-Frame-Options", "SAMEORIGIN")
+        response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
+        content_type = response.headers.get("content-type", "").lower()
+        if "image/svg+xml" in content_type:
+            response.headers.setdefault(
+                "Content-Security-Policy",
+                "default-src 'none'; style-src 'unsafe-inline'; sandbox",
+            )
+        return response
 
     register_ui_routes(app)
     return app

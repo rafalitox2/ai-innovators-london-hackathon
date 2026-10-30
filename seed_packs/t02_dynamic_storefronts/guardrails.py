@@ -12,6 +12,8 @@ INJECTION_MARKERS = (
     "ignore previous instructions",
     "ignore the above",
     "disregard previous instructions",
+    "<script",
+    "javascript:",
 )
 _INJECTION_MARKERS = INJECTION_MARKERS
 INJECTION_REGEX_PATTERN = "|".join(INJECTION_MARKERS)
@@ -43,6 +45,10 @@ def scan_args_for_injection(args: dict[str, Any]) -> str | None:
     for key, value in args.items():
         if isinstance(value, str) and contains_injection_marker(value):
             return key
+        if isinstance(value, (list, tuple)):
+            for item in value:
+                if isinstance(item, str) and contains_injection_marker(item):
+                    return key
     return None
 
 
@@ -61,18 +67,33 @@ def before_tool_security_callback(
             ),
         }
 
-    if tool.name == "update_promo_banner":
+    if tool.name in ("update_promo_banner", "render_storefront_preview"):
         discount_pct = args.get("discount_pct")
         try:
             disc = int(discount_pct) if discount_pct is not None else None
         except (TypeError, ValueError):
             disc = None
-        if disc is not None and disc > MAX_DISCOUNT_PCT:
+        if disc is not None and (disc < 0 or disc > MAX_DISCOUNT_PCT):
             return {
                 "status": "REJECTED_SECURITY_CALLBACK",
                 "error": (
-                    f"update_promo_banner blocked before execution: discount_pct={disc}% "
-                    f"exceeds the {MAX_DISCOUNT_PCT}% policy cap."
+                    f"{tool.name} blocked before execution: discount_pct={disc}% "
+                    f"violates the 0%..{MAX_DISCOUNT_PCT}% policy cap."
+                ),
+            }
+
+    if tool.name == "sync_campaign_with_t01":
+        cpm_bid = args.get("target_cpm_bid_eur")
+        try:
+            bid_val = float(cpm_bid) if cpm_bid is not None else None
+        except (TypeError, ValueError):
+            bid_val = None
+        if bid_val is not None and (bid_val <= 0 or bid_val > 25.0):
+            return {
+                "status": "REJECTED_SECURITY_CALLBACK",
+                "error": (
+                    f"sync_campaign_with_t01 blocked before execution: target_cpm_bid_eur={bid_val} "
+                    "violates the (0, 25.0] EUR CPM policy cap."
                 ),
             }
 
