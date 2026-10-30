@@ -430,7 +430,14 @@ def generate_hero_lifestyle_image(
             record["ui_sync_warning"] = ui_sync_warning
         queue.append(record)
         backend = _save_state(state)
-        return json.dumps({"status": "SUCCESS", "render_job": record, "state_backend": backend})
+        ui_filename = f"hero_{seg_clean}{asset_path.suffix}"
+        return json.dumps({
+            "status": "SUCCESS",
+            "ui_filename": ui_filename,
+            "hero_asset_url": f"/api/assets/hero/{seg_clean}?sku_id={sku_clean}&style_theme={theme_clean}",
+            "render_job": record,
+            "state_backend": backend,
+        })
     except Exception as exc:
         return json.dumps({"status": "ERROR", "error": str(exc)})
 
@@ -539,19 +546,6 @@ def render_storefront_preview(
             for ext in (".png", ".svg")
             if (ui_dir / f"hero_{seg_clean}{ext}").exists()
         ]
-        if not existing_heroes:
-            generate_hero_lifestyle_image(
-                sku_id=primary_sku_str,
-                segment_id=seg_clean,
-                style_theme=theme_clean,
-                scene_description=f"Editorial {theme_clean.replace('_', ' ')} living scene for {seg_clean}",
-                aspect_ratio="16:9",
-            )
-            existing_heroes = [
-                ui_dir / f"hero_{seg_clean}{ext}"
-                for ext in (".png", ".svg")
-                if (ui_dir / f"hero_{seg_clean}{ext}").exists()
-            ]
         if existing_heroes:
             newest_hero = max(existing_heroes, key=lambda p: p.stat().st_mtime)
             hero_image_html = (

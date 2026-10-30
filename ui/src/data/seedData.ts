@@ -65,6 +65,8 @@ export interface ItemState {
   maxSafeDiscountPct?: number;
   bannerCopy?: string;
   heroHeadline?: string;
+  skuId?: string;
+  themeStyle?: string;
   layoutId?: string;
   bannerId?: string;
 }
@@ -539,6 +541,15 @@ export function buildSeedDataset(): SeedDataset {
     "EXP-0043": { status: "published", day: 18 },
     "EXP-0024": { status: "published", day: 19 }
   };
+
+  Object.entries(initItems).forEach(([expId, itemState]) => {
+    const exp = exps.find((e) => e.id === expId);
+    if (exp) {
+      itemState.skuId = exp.p.sku;
+      itemState.themeStyle = exp.p.theme;
+      itemState.heroAssetUrl = `/api/assets/hero/${exp.g.id}?sku_id=${encodeURIComponent(exp.p.sku)}&style_theme=${encodeURIComponent(exp.p.theme)}`;
+    }
+  });
 
   return {
     products,

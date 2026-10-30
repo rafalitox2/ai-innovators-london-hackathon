@@ -23,9 +23,9 @@ interface StorefrontPreviewModalProps {
     expId: string,
     layoutId?: string,
     bannerId?: string,
-    heroAssetUrl?: string
+    patch?: Partial<ItemState>
   ) => void;
-  onHeroImageUpdated?: (expId: string, heroAssetUrl: string) => void;
+  onUpdateItemState?: (expId: string, patch: Partial<ItemState>) => void;
 }
 
 const eur2 = new Intl.NumberFormat('en-GB', {
@@ -42,7 +42,7 @@ export const StorefrontPreviewModal: React.FC<StorefrontPreviewModalProps> = ({
   discountCap = 30,
   onClose,
   onPublished,
-  onHeroImageUpdated
+  onUpdateItemState
 }) => {
   const e = opportunity;
   const defaultMaxSafe = Math.floor(computeMaxSafeDiscountPct(e.p.marginPct) / 5) * 5;
@@ -50,7 +50,8 @@ export const StorefrontPreviewModal: React.FC<StorefrontPreviewModalProps> = ({
     itemState?.discountPct ??
     Math.max(5, Math.min(discountCap, defaultMaxSafe, Math.floor(((e.p.m * 100) * 0.4) / 5) * 5));
 
-  const [selectedSkuId, setSelectedSkuId] = useState<string>(e.p.sku);
+  const initialSkuId = itemState?.skuId || e.p.sku;
+  const [selectedSkuId, setSelectedSkuId] = useState<string>(initialSkuId);
   const [discountPct, setDiscountPct] = useState<number>(initialDisc);
   const [cpmBidEur, setCpmBidEur] = useState<number>(12.5);
   const [channel, setChannel] = useState<string>('Meta_Reels');
@@ -100,11 +101,16 @@ export const StorefrontPreviewModal: React.FC<StorefrontPreviewModalProps> = ({
     .replace(/_/g, ' ')
     .toLowerCase()} this week · code ${promoCode}`;
 
-  const defaultHeroUrl = `/api/assets/hero/${e.g.id}?sku_id=${activeProduct.sku}&style_theme=${activeProduct.theme}`;
+  const defaultHeroForSku = `/api/assets/hero/${e.g.id}?sku_id=${encodeURIComponent(activeProduct.sku)}&style_theme=${encodeURIComponent(activeProduct.theme)}`;
+  const persistedHeroMatchesSku =
+    itemState?.heroAssetUrl &&
+    selectedSkuId === initialSkuId &&
+    (!itemState.heroAssetUrl.includes('sku_id=') ||
+      itemState.heroAssetUrl.includes(`sku_id=${encodeURIComponent(activeProduct.sku)}`));
   const heroAssetSrc =
     customHeroSrc ||
-    (selectedSkuId === e.p.sku ? itemState?.heroAssetUrl : undefined) ||
-    defaultHeroUrl;
+    (persistedHeroMatchesSku ? itemState?.heroAssetUrl : undefined) ||
+    defaultHeroForSku;
 
   const handleRecreateHeroImage = async () => {
     const scenes = [
@@ -132,11 +138,16 @@ export const StorefrontPreviewModal: React.FC<StorefrontPreviewModalProps> = ({
     });
     const baseImgUrl =
       res.hero_asset_url ||
-      (res.ui_filename ? `/ui/${res.ui_filename}` : defaultHeroUrl);
+      (res.ui_filename ? `/ui/${res.ui_filename}` : defaultHeroForSku);
     const sep = baseImgUrl.includes('?') ? '&' : '?';
-    const versionedHeroUrl = `${baseImgUrl}${sep}t=${Date.now()}`;
-    setCustomHeroSrc(versionedHeroUrl);
-    onHeroImageUpdated?.(e.id, versionedHeroUrl);
+    const nextHeroUrl = `${baseImgUrl}${sep}t=${Date.now()}`;
+    setCustomHeroSrc(nextHeroUrl);
+    onUpdateItemState?.(e.id, {
+      heroAssetUrl: nextHeroUrl,
+      skuId: activeProduct.sku,
+      themeStyle: activeProduct.theme,
+      heroHeadline: headline
+    });
     setHeroVariationIdx(nextIdx);
     if (res.render_job?.prompt_text) {
       setHeroPromptNote(
@@ -179,20 +190,22 @@ export const StorefrontPreviewModal: React.FC<StorefrontPreviewModalProps> = ({
       theme_style: activeProduct.theme,
       discount_pct: discountPct,
       banner_copy: promoText,
-      sku_id: activeProduct.sku
+      sku_id: activeProduct.sku,
+      hero_asset_url: heroAssetSrc
     });
     setPublishing(false);
     if (res.status !== 'SUCCESS') {
       setPublishError(`${res.status}: ${res.error || 'Blocked by merchandising policy'}`);
       return;
     }
-    const persistedHeroUrl = customHeroSrc || res.hero_asset_url || heroAssetSrc;
-    onPublished(
-      e.id,
-      res.layout?.layout_id,
-      res.promo_banner?.banner_id,
-      persistedHeroUrl
-    );
+    onPublished(e.id, res.layout?.layout_id, res.promo_banner?.banner_id, {
+      heroAssetUrl: res.hero_asset_url || heroAssetSrc,
+      discountPct,
+      bannerCopy: promoText,
+      heroHeadline: headline,
+      skuId: activeProduct.sku,
+      themeStyle: activeProduct.theme
+    });
   };
 
   const lowMarginDemoSku = allProducts.find((p) => p.sku === 'SKU-0022');
@@ -443,27 +456,40 @@ export const StorefrontPreviewModal: React.FC<StorefrontPreviewModalProps> = ({
               <div key={p.sku} style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                 <div
                   style={{
+                    position: 'relative',
                     aspectRatio: '4 / 3',
                     borderRadius: 'var(--radius-sm)',
-                    background:
-                      'radial-gradient(120px 80px at 75% 25%, var(--color-section-ghost), transparent 70%), linear-gradient(160deg, var(--color-section), var(--color-neutral-900))',
+                    background: 'linear-gradient(160deg, var(--color-neutral-800), var(--color-neutral-900))',
+                    overflow: 'hidden',
                     display: 'flex',
-                    flexDirection: 'column',
-                    justifyContent: 'space-between',
+                    alignItems: 'flex-end',
                     padding: 8,
                     fontSize: 10,
-                    color: 'var(--color-neutral-300)',
-                    border: '1px solid var(--color-divider)'
+                    color: 'var(--color-neutral-300)'
                   }}
                 >
-                  <span style={{ color: 'var(--color-accent-300)', fontSize: 9, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-                    {p.cat.replace(/_/g, ' ')}
-                  </span>
-                  <span style={{ fontWeight: 500, color: 'var(--color-text)' }}>
-                    {p.shortName || p.name}
-                  </span>
-                  <span style={{ color: 'var(--color-neutral-400)', fontSize: 9 }} className="mono">
-                    {p.sku} · {p.theme.replace(/_/g, ' ')}
+                  <img
+                    src={`/api/assets/hero/${e.g.id}?sku_id=${encodeURIComponent(p.sku)}&style_theme=${encodeURIComponent(p.theme)}`}
+                    alt={p.name}
+                    loading="lazy"
+                    style={{
+                      position: 'absolute',
+                      inset: 0,
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'cover'
+                    }}
+                  />
+                  <span
+                    style={{
+                      position: 'relative',
+                      zIndex: 1,
+                      background: 'color-mix(in srgb, var(--color-bg) 78%, transparent)',
+                      padding: '2px 6px',
+                      borderRadius: 'var(--radius-sm)'
+                    }}
+                  >
+                    {p.sku}
                   </span>
                 </div>
                 <span style={{ fontSize: 12 }}>
@@ -526,6 +552,8 @@ export const StorefrontPreviewModal: React.FC<StorefrontPreviewModalProps> = ({
                 onChange={(ev) => {
                   const nextSku = ev.target.value;
                   setSelectedSkuId(nextSku);
+                  setCustomHeroSrc(null);
+                  setHeroImgFailed(false);
                   if (nextSku === 'SKU-0017') {
                     setDiscountPct(25);
                   }

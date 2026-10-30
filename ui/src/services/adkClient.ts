@@ -165,7 +165,7 @@ export async function triggerAdkGenerateOpportunity(params: {
       max_safe_discount_pct: maxSafe,
       banner_copy: `${disc}% off ${params.product.cat.replace(/_/g, ' ').toLowerCase()} this week · code ${code}`,
       hero_headline: `${params.style_theme.replace(/_/g, ' ')} living for ${params.city} spaces`,
-      hero_asset_url: `/api/assets/hero/${params.segment_id}?sku_id=${params.sku_id}&style_theme=${params.style_theme}`,
+      hero_asset_url: `/api/assets/hero/${params.segment_id}?sku_id=${encodeURIComponent(params.sku_id)}&style_theme=${encodeURIComponent(params.style_theme)}`,
       steps: [
         {
           step: 1,
@@ -209,9 +209,11 @@ export async function publishStorefrontOpportunity(params: {
   discount_pct: number;
   banner_copy: string;
   sku_id: string;
+  hero_asset_url?: string;
 }): Promise<{
   status: string;
   error?: string;
+  sku_id?: string;
   hero_asset_url?: string;
   layout?: { layout_id: string };
   promo_banner?: { banner_id: string };
@@ -233,7 +235,6 @@ export async function publishStorefrontOpportunity(params: {
     }
     return {
       status: 'SUCCESS',
-      hero_asset_url: `/api/assets/hero/${params.segment_id}?sku_id=${params.sku_id}&style_theme=${params.theme_style}`,
       layout: { layout_id: `LAYOUT-${params.segment_id}` },
       promo_banner: { banner_id: `PROMO-${params.segment_id}` }
     };
@@ -362,7 +363,7 @@ export async function recreateHeroImageForAudience(params: {
     return {
       status: 'SUCCESS',
       ui_filename: `hero_${params.segment_id}.svg`,
-      hero_asset_url: `/api/assets/hero/${params.segment_id}?sku_id=${params.sku_id}&style_theme=${params.style_theme}`,
+      hero_asset_url: `/api/assets/hero/${params.segment_id}`,
       render_job: {
         render_job_id: 'HERO-LOCAL-2501',
         sku_id: params.sku_id,
