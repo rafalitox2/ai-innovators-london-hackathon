@@ -7,6 +7,7 @@ import json
 import math
 import os
 from pathlib import Path
+import time
 from typing import Any
 
 from fastapi import FastAPI, HTTPException
@@ -24,6 +25,8 @@ from seed_packs.t02_dynamic_storefronts.guardrails import (
 )
 from seed_packs.t02_dynamic_storefronts.mcp_server import (
     MCP_TOOLS as T02_MCP_TOOLS,
+    _load_state,
+    _save_state,
     generate_hero_lifestyle_image,
     publish_storefront_layout,
     queue_visual_asset_render,
@@ -86,6 +89,8 @@ class PublishOpportunityRequest(BaseModel):
     banner_copy: str = Field(default="15% off smart lighting this week")
     sku_id: str = Field(default="SKU-0057")
     hero_asset_url: str = Field(default="")
+    published_by: str = Field(default="rafalitox2")
+    published_by_avatar: str = Field(default="")
 
 
 class GuardrailValidateRequest(BaseModel):
@@ -121,6 +126,66 @@ class RecreateHeroImageRequest(BaseModel):
         default="Golden-hour architectural wide shot tailored to regional apartment aesthetic"
     )
     aspect_ratio: str = Field(default="16:9")
+
+
+class AuthSessionRequest(BaseModel):
+    username: str = Field(default="rafalitox2")
+    name: str = Field(default="Rafael Hormigo")
+    avatar_url: str = Field(default="https://github.com/rafalitox2.png")
+    role: str = Field(default="Lead Engineer & Merchandiser")
+    auth_method: str = Field(default="demo_sso")
+
+
+TEAM_ROSTER = [
+    {
+        "username": "rafalitox2",
+        "name": "Rafael Hormigo",
+        "role": "Lead Engineer & Merchandiser",
+        "avatar_url": "https://github.com/rafalitox2.png",
+        "company": "AtelierNova · Table 2 Lead",
+        "bio": "Full-stack Agentic Engineering & Multimodal Merchandising",
+    },
+    {
+        "username": "BorjaIP",
+        "name": "Borja Irigoyen",
+        "role": "Cloud Platform & CD Lead",
+        "avatar_url": "https://github.com/BorjaIP.png",
+        "company": "AtelierNova · Platform Team",
+        "bio": "Cloud Run, CI/CD, OpenTofu and Infrastructure Automation",
+    },
+    {
+        "username": "carlosescribano-ai",
+        "name": "Carlos Escribano",
+        "role": "AI Architect & Multi-Agent Lead",
+        "avatar_url": "https://github.com/carlosescribano-ai.png",
+        "company": "AtelierNova · AI Labs",
+        "bio": "Vertex AI Agent Runtime & Model Orchestration",
+    },
+    {
+        "username": "jportell",
+        "name": "Jordi Portell",
+        "role": "ML & Knowledge Graph Specialist",
+        "avatar_url": "https://github.com/jportell.png",
+        "company": "AtelierNova · Data Science",
+        "bio": "Merchandising Knowledge Graphs & Semantic Recommendation",
+    },
+    {
+        "username": "joshsmith-samy",
+        "name": "Josh Smith",
+        "role": "Creative AI & AdTech Lead",
+        "avatar_url": "https://github.com/joshsmith-samy.png",
+        "company": "AtelierNova · Growth",
+        "bio": "Tribe A2A Handshake & Autonomous Creative Campaigns",
+    },
+    {
+        "username": "marco-bellini",
+        "name": "Marco Bellini",
+        "role": "Head of Digital Merchandising",
+        "avatar_url": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
+        "company": "AtelierNova Home & Lifestyle",
+        "bio": "D2C Digital Merchandising & Conversion Optimization across Europe",
+    },
+]
 
 
 def _read_csv(name: str) -> list[dict[str, str]]:
@@ -496,6 +561,44 @@ def register_ui_routes(app: FastAPI) -> None:
             "tools": tool_names,
         }
 
+    @app.get("/api/auth/github/config")
+    def api_auth_github_config() -> dict[str, Any]:
+        client_id = os.environ.get("GITHUB_CLIENT_ID", "").strip()
+        redirect_uri = os.environ.get("GITHUB_REDIRECT_URI", "").strip() or "/ui"
+        return {
+            "status": "SUCCESS",
+            "enabled": True,
+            "client_id": client_id,
+            "redirect_uri": redirect_uri,
+            "demo_mode": not bool(client_id),
+            "default_org": "AtelierNova Home & Lifestyle",
+        }
+
+    @app.get("/api/auth/team")
+    def api_auth_team() -> dict[str, Any]:
+        return {
+            "status": "SUCCESS",
+            "team": TEAM_ROSTER,
+            "total": len(TEAM_ROSTER),
+        }
+
+    @app.post("/api/auth/session")
+    def api_auth_session(req: AuthSessionRequest) -> dict[str, Any]:
+        clean_user = req.username.strip().lstrip("@") or "guest"
+        return {
+            "status": "SUCCESS",
+            "session": {
+                "token": f"gh_sess_{clean_user}_{int(time.time())}",
+                "username": clean_user,
+                "name": req.name or clean_user,
+                "avatar_url": req.avatar_url or f"https://github.com/{clean_user}.png",
+                "role": req.role or "Merchandiser",
+                "auth_method": req.auth_method or "demo_sso",
+                "org": "AtelierNova Home & Lifestyle",
+                "authenticated_at": int(time.time()),
+            },
+        }
+
     @app.get("/api/dashboard")
     def api_dashboard() -> dict[str, Any]:
         return _build_dashboard_payload()
@@ -641,13 +744,29 @@ def register_ui_routes(app: FastAPI) -> None:
             req.hero_asset_url.strip()
             or f"/api/assets/hero/{req.segment_id}?sku_id={req.sku_id}&style_theme={req.theme_style}"
         )
+        layout_obj = layout_res.get("layout", {})
+        if isinstance(layout_obj, dict):
+            layout_obj["published_by"] = req.published_by
+            layout_obj["published_by_avatar"] = req.published_by_avatar
+            try:
+                state = _load_state()
+                for entry in reversed(state.get("published_layouts", [])):
+                    if entry.get("layout_id") == layout_obj.get("layout_id"):
+                        entry["published_by"] = req.published_by
+                        entry["published_by_avatar"] = req.published_by_avatar
+                        break
+                _save_state(state)
+            except Exception:
+                pass
         return {
             "status": "SUCCESS",
             "experiment_id": req.experiment_id,
             "sku_id": req.sku_id,
             "hero_asset_url": resolved_hero_url,
-            "layout": layout_res.get("layout", {}),
+            "layout": layout_obj,
             "promo_banner": banner_res.get("promo_banner", {}),
+            "published_by": req.published_by,
+            "published_by_avatar": req.published_by_avatar,
         }
 
     @app.post("/api/guardrails/validate")

@@ -298,6 +298,78 @@ def test_cloudrun_mcp_server_serves_nocturne_ui_and_api_routes(
     assert hero_file_resp.status_code == 200
 
 
+def test_ui_server_github_auth_and_team_roster(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Verify GitHub Auth config, team member roster, session token creation, and author attribution on publish."""
+    monkeypatch.setenv("SEED_OFFLINE_MODE", "1")
+    from app.ui_server import create_ui_app
+
+    client = TestClient(create_ui_app(include_adk_web=False))
+
+    # 1. Config endpoint
+    cfg_resp = client.get("/api/auth/github/config")
+    assert cfg_resp.status_code == 200
+    cfg = cfg_resp.json()
+    assert cfg["status"] == "SUCCESS"
+    assert cfg["enabled"] is True
+    assert cfg["default_org"] == "AtelierNova Home & Lifestyle"
+
+    # 2. Team roster endpoint
+    team_resp = client.get("/api/auth/team")
+    assert team_resp.status_code == 200
+    team_data = team_resp.json()
+    assert team_data["status"] == "SUCCESS"
+    roster_usernames = {m["username"] for m in team_data["team"]}
+    expected_members = {
+        "rafalitox2",
+        "BorjaIP",
+        "carlosescribano-ai",
+        "jportell",
+        "joshsmith-samy",
+        "marco-bellini",
+    }
+    assert expected_members.issubset(roster_usernames)
+
+    # 3. Session creation endpoint
+    sess_resp = client.post(
+        "/api/auth/session",
+        json={
+            "username": "rafalitox2",
+            "name": "Rafael Hormigo",
+            "avatar_url": "https://github.com/rafalitox2.png",
+            "role": "Lead Engineer & Merchandiser",
+            "auth_method": "demo_sso",
+        },
+    )
+    assert sess_resp.status_code == 200
+    sess = sess_resp.json()
+    assert sess["status"] == "SUCCESS"
+    assert sess["session"]["username"] == "rafalitox2"
+    assert sess["session"]["token"].startswith("gh_sess_rafalitox2_")
+    assert sess["session"]["org"] == "AtelierNova Home & Lifestyle"
+
+    # 4. Attribution on opportunity publish
+    pub_resp = client.post(
+        "/api/opportunities/publish",
+        json={
+            "experiment_id": "EXP-0057",
+            "segment_id": "SEG-057",
+            "featured_skus": "SKU-0057,SKU-0002",
+            "hero_headline": "Warm Mediterranean light for London homes",
+            "theme_style": "Mediterranean_Warm",
+            "discount_pct": 15,
+            "banner_copy": "15% off smart lighting this week · code LON15",
+            "sku_id": "SKU-0057",
+            "published_by": "rafalitox2",
+            "published_by_avatar": "https://github.com/rafalitox2.png",
+        },
+    )
+    assert pub_resp.status_code == 200
+    pub_data = pub_resp.json()
+    assert pub_data["status"] == "SUCCESS"
+    assert pub_data["published_by"] == "rafalitox2"
+    assert pub_data["published_by_avatar"] == "https://github.com/rafalitox2.png"
+
+
 def test_published_storefront_hero_images_match_sku_and_persist(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

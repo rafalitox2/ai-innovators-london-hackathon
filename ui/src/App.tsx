@@ -13,6 +13,10 @@ import {
 } from './services/adkClient';
 import { StorefrontPreviewModal } from './components/StorefrontPreviewModal';
 import { AdkCopilotDrawer } from './components/AdkCopilotDrawer';
+import { GitHubUser } from './types/auth';
+import { getStoredUser, setStoredUser } from './services/authService';
+import { GitHubAuthModal } from './components/GitHubAuthModal';
+import { UserNavProfile } from './components/UserNavProfile';
 
 type TabKey = 'home' | 'queue' | 'wip' | 'pub' | 'res';
 type ItemStateMap = Record<string, ItemState>;
@@ -57,6 +61,8 @@ export const App: React.FC = () => {
   const [items, setItems] = useState<ItemStateMap>(() => ({ ...data.initItems }));
   const [previewExpId, setPreviewExpId] = useState<string | null>(null);
   const [copilotOpen, setCopilotOpen] = useState<boolean>(false);
+  const [currentUser, setCurrentUser] = useState<GitHubUser | null>(() => getStoredUser());
+  const [authModalOpen, setAuthModalOpen] = useState<boolean>(false);
   const [health, setHealth] = useState<AdkHealthResponse>({
     status: 'SUCCESS',
     agent_name: 'expedition_t02',
@@ -206,7 +212,7 @@ export const App: React.FC = () => {
   ) => {
     const opp = data.low.find((e) => e.id === expId);
     let resolvedPatch: Partial<ItemState> = { ...(patch || {}) };
-    if (opp && !patch) {
+    if (opp && !patch && !layoutId && !bannerId) {
       const maxSafe = computeMaxSafeDiscountPct(opp.p.marginPct);
       const disc =
         items[expId]?.discountPct ??
@@ -230,7 +236,9 @@ export const App: React.FC = () => {
         discount_pct: disc,
         banner_copy: bannerCopy,
         sku_id: opp.p.sku,
-        hero_asset_url: heroAssetUrl
+        hero_asset_url: heroAssetUrl,
+        published_by: currentUser ? currentUser.username : 'rafalitox2',
+        published_by_avatar: currentUser?.avatar_url
       });
       resolvedPatch = {
         discountPct: disc,
@@ -254,7 +262,9 @@ export const App: React.FC = () => {
         status: 'published',
         day: prev[expId]?.day ?? 20,
         progress: 1,
-        opened: true
+        opened: true,
+        publishedBy: currentUser ? `@${currentUser.username}` : prev[expId]?.publishedBy,
+        publishedByAvatar: currentUser?.avatar_url || prev[expId]?.publishedByAvatar
       }
     }));
   };
@@ -443,6 +453,15 @@ export const App: React.FC = () => {
               ADK · {health.agent_name} ({health.connected ? 'Live' : 'Local Seed'})
             </span>
           </div>
+
+          <UserNavProfile
+            user={currentUser}
+            onOpenAuthModal={() => setAuthModalOpen(true)}
+            onSignOut={() => {
+              setStoredUser(null);
+              setCurrentUser(null);
+            }}
+          />
 
           <button
             type="button"
@@ -948,7 +967,35 @@ export const App: React.FC = () => {
                         onClick={() => handleOpenPreview(e.id)}
                         title="Click to inspect storefront preview"
                       >
-                        <td className="muted num">{data.days[dayIdx]}</td>
+                        <td className="muted num">
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                            <span>{data.days[dayIdx]}</span>
+                            {items[e.id]?.publishedBy ? (
+                              <span
+                                style={{
+                                  fontSize: '0.6875rem',
+                                  color: 'var(--color-accent-300)',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: 4
+                                }}
+                              >
+                                {items[e.id]?.publishedByAvatar && (
+                                  <img
+                                    src={items[e.id]?.publishedByAvatar}
+                                    alt=""
+                                    style={{ width: 12, height: 12, borderRadius: '50%' }}
+                                  />
+                                )}
+                                {items[e.id]?.publishedBy}
+                              </span>
+                            ) : (
+                              <span style={{ fontSize: '0.6875rem', color: 'var(--color-neutral-500)' }}>
+                                @ateliernova-bot
+                              </span>
+                            )}
+                          </div>
+                        </td>
                         <td>
                           <div style={{ display: 'flex', flexDirection: 'column' }}>
                             <span>{e.p.name}</span>
@@ -1132,6 +1179,7 @@ export const App: React.FC = () => {
           itemState={items[previewOpportunity.id]}
           allProducts={data.products}
           discountCap={DISCOUNT_CAP}
+          user={currentUser}
           onClose={() => setPreviewExpId(null)}
           onPublished={(expId, layoutId, bannerId, patch) =>
             handlePublishOpportunity(expId, layoutId, bannerId, patch)
@@ -1145,8 +1193,18 @@ export const App: React.FC = () => {
         open={copilotOpen}
         onClose={() => setCopilotOpen(false)}
         health={health}
+        user={currentUser}
         onSelectExperiment={(expId) => {
           handleOpenPreview(expId);
+        }}
+      />
+
+      {/* GitHub Authentication Modal */}
+      <GitHubAuthModal
+        isOpen={authModalOpen}
+        onClose={() => setAuthModalOpen(false)}
+        onLoginSuccess={(user) => {
+          setCurrentUser(user);
         }}
       />
     </div>

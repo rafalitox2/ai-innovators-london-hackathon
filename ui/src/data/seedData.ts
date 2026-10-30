@@ -69,6 +69,8 @@ export interface ItemState {
   themeStyle?: string;
   layoutId?: string;
   bannerId?: string;
+  publishedBy?: string;
+  publishedByAvatar?: string;
 }
 
 export interface Sku0017Audit {

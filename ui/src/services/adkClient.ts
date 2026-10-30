@@ -210,11 +210,15 @@ export async function publishStorefrontOpportunity(params: {
   banner_copy: string;
   sku_id: string;
   hero_asset_url?: string;
+  published_by?: string;
+  published_by_avatar?: string;
 }): Promise<{
   status: string;
   error?: string;
   sku_id?: string;
   hero_asset_url?: string;
+  published_by?: string;
+  published_by_avatar?: string;
   layout?: { layout_id: string };
   promo_banner?: { banner_id: string };
 }> {
