@@ -67,6 +67,17 @@ export const StorefrontPreviewModal: React.FC<StorefrontPreviewModalProps> = ({
   const [heroVariationIdx, setHeroVariationIdx] = useState<number>(1);
   const [customHeroSrc, setCustomHeroSrc] = useState<string | null>(null);
   const [heroPromptNote, setHeroPromptNote] = useState<string | null>(null);
+  const [showPromptNote, setShowPromptNote] = useState<boolean>(false);
+
+  type ViewportMode = 'desktop' | 'tablet' | 'mobile';
+  const initialDeviceMode: ViewportMode = e.g.device.toLowerCase().includes('mobile')
+    ? 'mobile'
+    : e.g.device.toLowerCase().includes('tablet')
+    ? 'tablet'
+    : 'desktop';
+  const [viewportMode, setViewportMode] = useState<ViewportMode>(initialDeviceMode);
+  const [previewHeightMode, setPreviewHeightMode] = useState<'device' | 'full'>('device');
+
   const [lightboxOpen, setLightboxOpen] = useState<boolean>(false);
   const [lightboxSrc, setLightboxSrc] = useState<string>('');
   const [lightboxCaption, setLightboxCaption] = useState<string>('');
@@ -150,14 +161,23 @@ export const StorefrontPreviewModal: React.FC<StorefrontPreviewModalProps> = ({
     ];
     const nextIdx = heroVariationIdx + 1;
     const scene = scenes[heroVariationIdx % scenes.length];
-    const aspect = e.g.device.toLowerCase().includes('mobile')
+    const activeDevice =
+      viewportMode === 'mobile'
+        ? 'mobile'
+        : viewportMode === 'tablet'
+        ? 'tablet'
+        : viewportMode === 'desktop'
+        ? 'desktop'
+        : e.g.device;
+    const aspect = activeDevice.toLowerCase().includes('mobile')
       ? '9:16'
-      : e.g.device.toLowerCase().includes('tablet')
+      : activeDevice.toLowerCase().includes('tablet')
       ? '1:1'
       : '16:9';
 
     setRecreatingHero(true);
     setHeroImgFailed(false);
+    setShowPromptNote(false);
     const res = await recreateHeroImageForAudience({
       sku_id: activeProduct.sku,
       segment_id: e.g.id,
@@ -290,6 +310,70 @@ export const StorefrontPreviewModal: React.FC<StorefrontPreviewModalProps> = ({
               {e.id} · {e.g.label}
             </span>
           </div>
+
+          {/* Device Viewport Switcher */}
+          <div
+            className="viewport-switcher"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              background: 'var(--color-surface, #1e293b)',
+              border: '1px solid var(--color-border-subtle, #334155)',
+              borderRadius: 'var(--radius-sm, 6px)',
+              padding: '2px',
+              gap: '2px'
+            }}
+            role="group"
+            aria-label="Device Viewport Switcher"
+          >
+            {(
+              [
+                { id: 'desktop', label: 'Desktop', icon: '💻', widthHint: '100%' },
+                { id: 'tablet', label: 'Tablet', icon: '📟', widthHint: '768px' },
+                { id: 'mobile', label: 'Mobile', icon: '📱', widthHint: '390px' }
+              ] as const
+            ).map((vp) => {
+              const active = viewportMode === vp.id;
+              return (
+                <button
+                  key={vp.id}
+                  type="button"
+                  onClick={() => setViewportMode(vp.id)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 5,
+                    padding: '5px 10px',
+                    fontSize: 12,
+                    fontWeight: active ? 600 : 400,
+                    borderRadius: '4px',
+                    border: 'none',
+                    cursor: 'pointer',
+                    background: active
+                      ? 'var(--color-accent, #4285f4)'
+                      : 'transparent',
+                    color: active ? '#ffffff' : 'var(--color-neutral-300, #cbd5e1)',
+                    boxShadow: active ? '0 1px 3px rgba(0,0,0,0.3)' : 'none',
+                    transition: 'all 0.15s ease'
+                  }}
+                  title={`Simular viewport ${vp.label} (${vp.widthHint})`}
+                >
+                  <span style={{ fontSize: 13 }}>{vp.icon}</span>
+                  <span>{vp.label}</span>
+                  <span
+                    style={{
+                      fontSize: 10,
+                      opacity: active ? 0.9 : 0.55,
+                      fontFamily: 'monospace'
+                    }}
+                  >
+                    {vp.widthHint}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
           <div className="modal-topbar-actions">
             <button
               type="button"
@@ -303,6 +387,24 @@ export const StorefrontPreviewModal: React.FC<StorefrontPreviewModalProps> = ({
               }
             >
               View real photo
+            </button>
+            <button
+              type="button"
+              className="btn btn-ghost"
+              style={{ fontSize: 12, padding: '6px 10px', display: 'flex', alignItems: 'center', gap: 4 }}
+              onClick={() => setPreviewHeightMode((m) => (m === 'device' ? 'full' : 'device'))}
+              title={previewHeightMode === 'device' ? 'Expandir vista completa de la tienda' : 'Fijar marco interactivo scrollable'}
+            >
+              <span>{previewHeightMode === 'device' ? '⤢ Expandir tienda' : '📱 Marco interactivo'}</span>
+            </button>
+            <button
+              type="button"
+              className="btn btn-ghost"
+              style={{ fontSize: 12, padding: '6px 10px' }}
+              onClick={() => document.querySelector('.modal-guardrails')?.scrollIntoView({ behavior: 'smooth' })}
+              title="Ir a Guardrails y controles ADK"
+            >
+              🛡️ Guardrails ↓
             </button>
             <button
               type="button"
@@ -327,204 +429,216 @@ export const StorefrontPreviewModal: React.FC<StorefrontPreviewModalProps> = ({
         </div>
 
         {/* Storefront Live Preview Frame */}
-        <div className="modal-preview-frame">
-          <div className="modal-store-nav">
-            <span style={{ fontWeight: 600, color: 'var(--color-text)', marginRight: 'auto' }}>
-              AtelierNova
-            </span>
-            <span>{activeProduct.cat.replace(/_/g, ' ')}</span>
-            <span>New in</span>
-            <span>Bag (0)</span>
-          </div>
-
-          <div
-            style={{
-              padding: '8px 16px',
-              textAlign: 'center',
-              fontSize: 12,
-              fontWeight: 500,
-              background:
-                guardrail.status === 'SUCCESS'
-                  ? 'var(--color-accent-100)'
-                  : 'var(--color-danger-bg)',
-              color:
-                guardrail.status === 'SUCCESS' ? 'var(--color-accent)' : 'var(--color-danger-text)'
-            }}
-          >
-            {promoText}
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(260px, 100%), 1fr))' }}>
+        <div
+          className="modal-preview-frame"
+          style={{
+            flexShrink: 0,
+            display: 'flex',
+            flexDirection: 'column',
+            height:
+              previewHeightMode === 'full'
+                ? 'auto'
+                : viewportMode === 'mobile'
+                ? '640px'
+                : viewportMode === 'tablet'
+                ? '580px'
+                : '560px',
+            maxHeight:
+              previewHeightMode === 'full'
+                ? 'none'
+                : viewportMode === 'mobile'
+                ? 'min(660px, 72vh)'
+                : viewportMode === 'tablet'
+                ? 'min(600px, 68vh)'
+                : 'min(580px, 64vh)',
+            transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+            ...(viewportMode === 'mobile'
+              ? {
+                  maxWidth: '390px',
+                  margin: 'var(--space-4) auto',
+                  borderRadius: '36px',
+                  border: '10px solid #1e293b',
+                  boxShadow:
+                    '0 25px 50px -12px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.12)',
+                  overflow: 'hidden'
+                }
+              : viewportMode === 'tablet'
+              ? {
+                  maxWidth: '768px',
+                  margin: 'var(--space-4) auto',
+                  borderRadius: 'var(--radius-lg, 12px)',
+                  border: '1px solid var(--color-border-subtle, #334155)',
+                  boxShadow: 'var(--shadow-md, 0 10px 25px -5px rgba(0,0,0,0.4))',
+                  overflow: 'hidden'
+                }
+              : {
+                  maxWidth: '100%',
+                  margin: 'var(--space-4) var(--space-6)',
+                  borderRadius: 'var(--radius-lg, 12px)',
+                  border: '1px solid var(--color-border-subtle, #334155)',
+                  overflow: 'hidden'
+                })
+          }}
+        >
+          {/* Smartphone Status Bar Notch for Mobile Simulation */}
+          {viewportMode === 'mobile' && (
             <div
               style={{
-                minHeight: 260,
-                position: 'relative',
-                display: 'flex',
-                alignItems: 'flex-end',
-                padding: 16,
+                height: 28,
                 background: '#0f172a',
-                color: '#f8fafd',
+                color: '#94a3b8',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '0 18px',
                 fontSize: 11,
-                overflow: 'hidden'
+                fontWeight: 600,
+                borderBottom: '1px solid rgba(255,255,255,0.06)',
+                flexShrink: 0
               }}
             >
-              {!heroImgFailed && (
-                <img
-                  src={heroAssetSrc}
-                  alt={headline}
-                  data-testid="hero-preview-image"
-                  title="Click to inspect full real photo & zoom"
-                  onError={() => setHeroImgFailed(true)}
-                  onClick={() =>
-                    openPhotoLightbox(
-                      heroAssetSrc,
-                      `${activeProduct.name} (${activeProduct.sku}) · ${activeProduct.theme.replace(/_/g, ' ')} (v${heroVariationIdx})`
-                    )
-                  }
-                  style={{
-                    position: 'absolute',
-                    inset: 0,
-                    width: '100%',
-                    height: '100%',
-                    objectFit: 'cover',
-                    opacity: 1,
-                    filter: 'none',
-                    mixBlendMode: 'normal',
-                    cursor: 'zoom-in'
-                  }}
-                />
-              )}
+              <span>9:41</span>
               <div
                 style={{
-                  position: 'relative',
-                  zIndex: 1,
-                  width: '100%',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: 6,
-                  background: 'rgba(15, 23, 42, 0.72)',
-                  backdropFilter: 'blur(8px)',
-                  padding: '8px 12px',
-                  borderRadius: 'var(--radius-sm)'
+                  width: 82,
+                  height: 14,
+                  background: '#1e293b',
+                  borderRadius: '0 0 10px 10px',
+                  margin: '0 auto'
                 }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
-                  <span>
-                    Hero lifestyle render (v{heroVariationIdx}) · {activeProduct.theme.replace(/_/g, ' ')} ·{' '}
-                    {activeProduct.name}
-                  </span>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                    <button
-                      type="button"
-                      className="btn btn-ghost"
-                      data-testid="view-real-photo-btn"
-                      style={{ padding: '4px 10px', fontSize: 11, color: '#f8fafd', borderColor: 'rgba(248, 250, 253, 0.35)' }}
-                      onClick={() =>
-                        openPhotoLightbox(
-                          heroAssetSrc,
-                          `${activeProduct.name} (${activeProduct.sku}) · ${activeProduct.theme.replace(/_/g, ' ')} (v${heroVariationIdx})`
-                        )
-                      }
-                    >
-                      View real photo
-                    </button>
-                    <button
-                      type="button"
-                      className="btn btn-secondary"
-                      style={{ padding: '4px 10px', fontSize: 11 }}
-                      disabled={recreatingHero}
-                      onClick={handleRecreateHeroImage}
-                    >
-                      {recreatingHero ? 'Recreating…' : 'Recreate image'}
-                    </button>
-                  </div>
-                </div>
-                {heroPromptNote && (
-                  <span
-                    style={{
-                      fontSize: 10,
-                      color: '#e2e8f0',
-                      background: 'rgba(15, 23, 42, 0.85)',
-                      padding: '6px 8px',
-                      borderRadius: 'var(--radius-sm)'
-                    }}
-                  >
-                    {heroPromptNote}
-                  </span>
-                )}
+              />
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                <span style={{ fontSize: 9 }}>5G</span>
+                <span>100%</span>
               </div>
             </div>
+          )}
 
-            <div className="modal-hero-copy">
-              <span
+          {/* Browser Chrome Header for Desktop & Tablet Simulation */}
+          {viewportMode !== 'mobile' && (
+            <div
+              style={{
+                background: 'linear-gradient(180deg, #1e293b 0%, #0f172a 100%)',
+                padding: '8px 14px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12,
+                borderBottom: '1px solid rgba(255,255,255,0.08)',
+                userSelect: 'none',
+                flexShrink: 0
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#ef4444', display: 'inline-block' }} />
+                <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#f59e0b', display: 'inline-block' }} />
+                <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#10b981', display: 'inline-block' }} />
+              </div>
+              <div
                 style={{
-                  fontSize: 10,
-                  letterSpacing: '0.1em',
-                  textTransform: 'uppercase',
-                  color: 'var(--color-accent)'
+                  flex: 1,
+                  background: 'rgba(15, 23, 42, 0.75)',
+                  borderRadius: 6,
+                  padding: '3px 12px',
+                  fontSize: 11,
+                  color: '#94a3b8',
+                  fontFamily: 'monospace',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  border: '1px solid rgba(255, 255, 255, 0.06)'
                 }}
               >
-                {activeProduct.theme.replace(/_/g, ' ')} edit
-              </span>
-              <span style={{ fontSize: 'clamp(1.25rem, 3vw, 1.625rem)', fontWeight: 500, lineHeight: 1.15 }}>
-                {headline}
-              </span>
-              <span style={{ fontSize: 13, color: 'var(--color-neutral-400)', lineHeight: 1.5 }}>
-                {activeProduct.name} ({activeProduct.sku}) — {guardrail.sanitized_description} Curated for{' '}
-                {e.g.segmentName} shoppers on {e.g.device}.
-              </span>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-                <span className="btn btn-primary">
-                  Shop {activeProduct.shortName} ·{' '}
-                  {eur2.format(activeProduct.price * (1 - Math.min(30, Math.max(0, discountPct)) / 100))}
+                <span style={{ color: '#10b981' }}>🔒</span>
+                <span style={{ color: '#e2e8f0' }}>ateliernova.com</span>
+                <span>/collection/{activeProduct.cat.toLowerCase()}?segment={opportunity.id}</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ fontSize: 11, color: '#64748b' }}>
+                  {viewportMode === 'tablet' ? '📟 768px' : '💻 100%'}
                 </span>
-                <span
+                <button
+                  type="button"
+                  onClick={() => setPreviewHeightMode((m) => (m === 'device' ? 'full' : 'device'))}
                   style={{
-                    fontSize: 12,
-                    color: 'var(--color-neutral-500)',
-                    textDecoration: 'line-through'
+                    background: 'rgba(255,255,255,0.06)',
+                    border: '1px solid rgba(255,255,255,0.12)',
+                    borderRadius: 4,
+                    padding: '2px 8px',
+                    fontSize: 11,
+                    color: '#94a3b8',
+                    cursor: 'pointer'
                   }}
-                  className="tabular-nums"
+                  title={previewHeightMode === 'device' ? 'Expandir tienda a toda la altura' : 'Volver a marco scrollable'}
                 >
-                  {eur2.format(activeProduct.price)}
-                </span>
+                  {previewHeightMode === 'device' ? '⤢ Expandir' : '↕ Marco scroll'}
+                </button>
               </div>
             </div>
-          </div>
+          )}
 
+          {/* Interactive Scrollable Storefront Viewport */}
           <div
+            className="storefront-scroll-viewport"
             style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))',
-              gap: 12,
-              padding: 16
+              flex: '1 1 auto',
+              overflowY: 'auto',
+              overflowX: 'hidden',
+              overscrollBehavior: 'contain',
+              display: 'flex',
+              flexDirection: 'column'
             }}
           >
-            {related.map((p) => (
-              <div key={p.sku} style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                <div
-                  style={{
-                    position: 'relative',
-                    aspectRatio: '4 / 3',
-                    borderRadius: 'var(--radius-sm)',
-                    background: 'linear-gradient(160deg, var(--color-neutral-800), var(--color-neutral-900))',
-                    overflow: 'hidden',
-                    display: 'flex',
-                    alignItems: 'flex-end',
-                    padding: 8,
-                    fontSize: 10,
-                    color: 'var(--color-neutral-300)'
-                  }}
-                >
+            <div className="modal-store-nav">
+              <span style={{ fontWeight: 600, color: 'var(--color-text)', marginRight: 'auto' }}>
+                AtelierNova
+              </span>
+              <span>{activeProduct.cat.replace(/_/g, ' ')}</span>
+              {viewportMode !== 'mobile' && <span>New in</span>}
+              <span>Bag (0)</span>
+            </div>
+
+            <div
+              style={{
+                padding: '8px 16px',
+                textAlign: 'center',
+                fontSize: 12,
+                fontWeight: 500,
+                background:
+                  guardrail.status === 'SUCCESS'
+                    ? 'var(--color-accent-100)'
+                    : 'var(--color-danger-bg)',
+                color:
+                  guardrail.status === 'SUCCESS' ? 'var(--color-accent)' : 'var(--color-danger-text)'
+              }}
+            >
+              {promoText}
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(260px, 100%), 1fr))' }}>
+              <div
+                style={{
+                  minHeight: viewportMode === 'mobile' ? 320 : 260,
+                  position: 'relative',
+                  display: 'flex',
+                  alignItems: 'flex-end',
+                  padding: 16,
+                  background: '#0f172a',
+                  color: '#f8fafd',
+                  fontSize: 11,
+                  overflow: 'hidden'
+                }}
+              >
+                {!heroImgFailed && (
                   <img
-                    src={`/api/assets/hero/${e.g.id}?sku_id=${encodeURIComponent(p.sku)}&style_theme=${encodeURIComponent(p.theme)}`}
-                    alt={p.name}
-                    loading="lazy"
+                    src={heroAssetSrc}
+                    alt={headline}
+                    data-testid="hero-preview-image"
                     title="Click to inspect full real photo & zoom"
+                    onError={() => setHeroImgFailed(true)}
                     onClick={() =>
                       openPhotoLightbox(
-                        `/api/assets/hero/${e.g.id}?sku_id=${encodeURIComponent(p.sku)}&style_theme=${encodeURIComponent(p.theme)}`,
-                        `${p.name} (${p.sku}) · ${p.theme.replace(/_/g, ' ')}`
+                        heroAssetSrc,
+                        `${activeProduct.name} (${activeProduct.sku}) · ${activeProduct.theme.replace(/_/g, ' ')} (v${heroVariationIdx})`
                       )
                     }
                     style={{
@@ -539,27 +653,289 @@ export const StorefrontPreviewModal: React.FC<StorefrontPreviewModalProps> = ({
                       cursor: 'zoom-in'
                     }}
                   />
+                )}
+                <div
+                  style={{
+                    position: 'relative',
+                    zIndex: 1,
+                    width: '100%',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 6,
+                    background: 'rgba(15, 23, 42, 0.72)',
+                    backdropFilter: 'blur(8px)',
+                    padding: '8px 12px',
+                    borderRadius: 'var(--radius-sm)'
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
+                    <span>
+                      Hero lifestyle render (v{heroVariationIdx}) · {activeProduct.theme.replace(/_/g, ' ')} ·{' '}
+                      {activeProduct.name}
+                    </span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                      <button
+                        type="button"
+                        className="btn btn-ghost"
+                        data-testid="view-real-photo-btn"
+                        style={{ padding: '4px 10px', fontSize: 11, color: '#f8fafd', borderColor: 'rgba(248, 250, 253, 0.35)' }}
+                        onClick={() =>
+                          openPhotoLightbox(
+                            heroAssetSrc,
+                            `${activeProduct.name} (${activeProduct.sku}) · ${activeProduct.theme.replace(/_/g, ' ')} (v${heroVariationIdx})`
+                          )
+                        }
+                      >
+                        View real photo
+                      </button>
+                      {heroPromptNote && (
+                        <button
+                          type="button"
+                          className="btn btn-ghost"
+                          style={{
+                            padding: '4px 8px',
+                            fontSize: 11,
+                            background: showPromptNote ? 'rgba(66, 133, 244, 0.25)' : 'rgba(255, 255, 255, 0.08)',
+                            border: '1px solid rgba(255, 255, 255, 0.2)',
+                            color: showPromptNote ? '#93c5fd' : '#e2e8f0',
+                            borderRadius: 'var(--radius-sm)'
+                          }}
+                          onClick={() => setShowPromptNote((prev) => !prev)}
+                          title="Ver u ocultar el prompt exacto enviado a Vertex AI Imagen 3"
+                        >
+                          {showPromptNote ? '✕ Ocultar prompt' : '👁️ Ver prompt'}
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        className="btn btn-secondary"
+                        style={{ padding: '4px 10px', fontSize: 11 }}
+                        disabled={recreatingHero}
+                        onClick={handleRecreateHeroImage}
+                      >
+                        {recreatingHero ? 'Recreating…' : 'Recreate image'}
+                      </button>
+                    </div>
+                  </div>
+                  {showPromptNote && heroPromptNote && (
+                    <div
+                      style={{
+                        fontSize: 10,
+                        color: '#e2e8f0',
+                        background: 'rgba(15, 23, 42, 0.92)',
+                        border: '1px solid rgba(66, 133, 244, 0.35)',
+                        padding: '8px 10px',
+                        borderRadius: 'var(--radius-sm)',
+                        lineHeight: 1.45,
+                        wordBreak: 'break-word',
+                        marginTop: 2
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4, color: 'var(--color-accent)', fontWeight: 600, fontSize: 9, letterSpacing: '0.05em' }}>
+                        <span>VERTEX AI IMAGEN 3 PROMPT PAYLOAD</span>
+                        <button
+                          type="button"
+                          onClick={() => setShowPromptNote(false)}
+                          style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', padding: 0 }}
+                          title="Cerrar prompt"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                      <span style={{ fontFamily: 'var(--font-mono, monospace)' }}>
+                        {heroPromptNote}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="modal-hero-copy">
+                <span
+                  style={{
+                    fontSize: 10,
+                    letterSpacing: '0.1em',
+                    textTransform: 'uppercase',
+                    color: 'var(--color-accent)'
+                  }}
+                >
+                  {activeProduct.theme.replace(/_/g, ' ')} edit
+                </span>
+                <span style={{ fontSize: 'clamp(1.25rem, 3vw, 1.625rem)', fontWeight: 500, lineHeight: 1.15 }}>
+                  {headline}
+                </span>
+                <span style={{ fontSize: 13, color: 'var(--color-neutral-400)', lineHeight: 1.5 }}>
+                  {activeProduct.name} ({activeProduct.sku}) — {guardrail.sanitized_description} Curated for{' '}
+                  {e.g.segmentName} shoppers on {e.g.device}.
+                </span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+                  <span className="btn btn-primary">
+                    Shop {activeProduct.shortName} ·{' '}
+                    {eur2.format(activeProduct.price * (1 - Math.min(30, Math.max(0, discountPct)) / 100))}
+                  </span>
                   <span
                     style={{
-                      position: 'relative',
-                      zIndex: 1,
-                      background: 'color-mix(in srgb, var(--color-bg) 78%, transparent)',
-                      padding: '2px 6px',
-                      borderRadius: 'var(--radius-sm)'
+                      fontSize: 12,
+                      color: 'var(--color-neutral-500)',
+                      textDecoration: 'line-through'
                     }}
+                    className="tabular-nums"
                   >
-                    {p.sku}
+                    {eur2.format(activeProduct.price)}
                   </span>
                 </div>
-                <span style={{ fontSize: 12 }}>
-                  {p.sku} · {p.name}
-                </span>
-                <span style={{ fontSize: 11, color: 'var(--color-neutral-400)' }} className="tabular-nums">
-                  {eur2.format(p.price)}
-                </span>
               </div>
-            ))}
+            </div>
+
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns:
+                  viewportMode === 'mobile'
+                    ? 'repeat(2, minmax(0, 1fr))'
+                    : 'repeat(auto-fill, minmax(150px, 1fr))',
+                gap: 12,
+                padding: 16
+              }}
+            >
+              {related.map((p) => (
+                <div key={p.sku} style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  <div
+                    style={{
+                      position: 'relative',
+                      aspectRatio: '4 / 3',
+                      borderRadius: 'var(--radius-sm)',
+                      background: 'linear-gradient(160deg, var(--color-neutral-800), var(--color-neutral-900))',
+                      overflow: 'hidden',
+                      display: 'flex',
+                      alignItems: 'flex-end',
+                      padding: 8,
+                      fontSize: 10,
+                      color: 'var(--color-neutral-300)'
+                    }}
+                  >
+                    <img
+                      src={`/api/assets/hero/${e.g.id}?sku_id=${encodeURIComponent(p.sku)}&style_theme=${encodeURIComponent(p.theme)}`}
+                      alt={p.name}
+                      loading="lazy"
+                      title="Click to inspect full real photo & zoom"
+                      onClick={() =>
+                        openPhotoLightbox(
+                          `/api/assets/hero/${e.g.id}?sku_id=${encodeURIComponent(p.sku)}&style_theme=${encodeURIComponent(p.theme)}`,
+                          `${p.name} (${p.sku}) · ${p.theme.replace(/_/g, ' ')}`
+                        )
+                      }
+                      style={{
+                        position: 'absolute',
+                        inset: 0,
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover',
+                        opacity: 1,
+                        filter: 'none',
+                        mixBlendMode: 'normal',
+                        cursor: 'zoom-in'
+                      }}
+                    />
+                    <span
+                      style={{
+                        position: 'relative',
+                        zIndex: 1,
+                        background: 'color-mix(in srgb, var(--color-bg) 78%, transparent)',
+                        padding: '2px 6px',
+                        borderRadius: 'var(--radius-sm)'
+                      }}
+                    >
+                      {p.sku}
+                    </span>
+                  </div>
+                  <span style={{ fontSize: 12 }}>
+                    {p.sku} · {p.name}
+                  </span>
+                  <span style={{ fontSize: 11, color: 'var(--color-neutral-400)' }} className="tabular-nums">
+                    {eur2.format(p.price)}
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            {/* Authentic Storefront Luxury Brand Footer */}
+            <footer
+              style={{
+                padding: '24px 20px 32px',
+                borderTop: '1px solid rgba(255, 255, 255, 0.08)',
+                background: '#090d16',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 12,
+                fontSize: 11,
+                color: '#64748b',
+                textAlign: 'center',
+                userSelect: 'none'
+              }}
+            >
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'center',
+                  gap: 12,
+                  flexWrap: 'wrap',
+                  color: '#94a3b8',
+                  fontWeight: 500
+                }}
+              >
+                <span>AtelierNova Maison</span>
+                <span>·</span>
+                <span>London · Milan · Paris · Zurich</span>
+                <span>·</span>
+                <span>White-Glove Delivery</span>
+                <span>·</span>
+                <span>30-Day Atelier Trial</span>
+              </div>
+              <p style={{ margin: 0, fontSize: 10, color: '#475569' }}>
+                Curated architectural design tailored for European living spaces. All rights reserved © 2026 AtelierNova.
+              </p>
+            </footer>
           </div>
+
+          {/* Smartphone Home Indicator for Mobile Simulation */}
+          {viewportMode === 'mobile' && (
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '6px 16px 8px',
+                background: '#0f172a',
+                borderTop: '1px solid rgba(255,255,255,0.06)',
+                flexShrink: 0
+              }}
+            >
+              <button
+                type="button"
+                onClick={() => setPreviewHeightMode((m) => (m === 'device' ? 'full' : 'device'))}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  fontSize: 10,
+                  color: '#64748b',
+                  cursor: 'pointer'
+                }}
+                title={previewHeightMode === 'device' ? 'Expandir tienda a toda la altura' : 'Volver a marco móvil'}
+              >
+                {previewHeightMode === 'device' ? '⤢ Expandir' : '📱 Marco móvil'}
+              </button>
+              <div
+                style={{
+                  width: 120,
+                  height: 4,
+                  background: '#475569',
+                  borderRadius: 2
+                }}
+              />
+              <span style={{ fontSize: 10, color: '#475569' }}>iOS 18</span>
+            </div>
+          )}
         </div>
 
         {/* Interactive ADK Guardrail & Sister Table 1 A2A Controls */}
